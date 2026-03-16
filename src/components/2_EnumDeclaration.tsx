@@ -1,5 +1,8 @@
-import { Block, Children, For, List } from "@alloy-js/core";
+import { Block, Children, Declaration, For, Name, Namekey, Refkey, Scope } from "@alloy-js/core";
+import { createNamedTypeScope } from "../scopes/6_factories.js";
+import { createTypeSymbol } from "../symbols/3_factories.js";
 import { Generics, GenericsProps } from "./0_Generics.js";
+import { Attributes } from "./0a_Attributes.js";
 
 export interface UnitVariantProps {
   name: string;
@@ -28,20 +31,31 @@ export function StructVariant(props: StructVariantProps) {
 }
 
 export interface EnumDeclarationProps extends GenericsProps {
-  name: string;
+  name: string | Namekey;
   pub?: boolean;
+  attrs?: string[];
   derive?: string[];
   children: Children;
+  refkey?: Refkey;
 }
 
 export function EnumDeclaration(props: EnumDeclarationProps) {
-  const derive = props.derive && props.derive.length > 0
-    ? <>#[derive({props.derive.join(", ")})]{"\n"}</>
+  const sym = createTypeSymbol(props.name, "enum", { refkeys: props.refkey });
+  const scope = createNamedTypeScope(sym);
+
+  const allAttrs = [
+    ...(props.derive && props.derive.length > 0 ? [`derive(${props.derive.join(", ")})`] : []),
+    ...(props.attrs ?? []),
+  ];
+  const attrsBlock = allAttrs.length > 0
+    ? <><Attributes attrs={allAttrs} />{"\n"}</>
     : null;
 
   const vis = props.pub ? "pub " : "";
 
-  return <>
-    {derive}{vis}enum {props.name}<Generics {...props} /> <Block>{props.children}</Block>
-  </>;
+  return (
+    <Declaration symbol={sym}>
+      {attrsBlock}{vis}enum <Name /><Generics {...props} /> <Scope value={scope}><Block>{props.children}</Block></Scope>
+    </Declaration>
+  );
 }

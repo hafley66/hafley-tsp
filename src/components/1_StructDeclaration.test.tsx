@@ -1,28 +1,42 @@
-import { List } from "@alloy-js/core";
+import { List, Output, Scope, createScope } from "@alloy-js/core";
 import { describe, expect, it } from "vitest";
+import { RustLexicalScope } from "../scopes/1_lexical.js";
 import { StructDeclaration, StructField, TupleStructDeclaration } from "./1_StructDeclaration.js";
+
+function RustRoot(props: { children: any }) {
+  const scope = createScope(RustLexicalScope, "root", undefined);
+  return (
+    <Output>
+      <Scope value={scope}>
+        {props.children}
+      </Scope>
+    </Output>
+  );
+}
 
 describe("StructDeclaration", () => {
   it("unit struct (no body)", () => {
     expect(
-      <StructDeclaration name="Foo" />
+      <RustRoot><StructDeclaration name="Foo" /></RustRoot>
     ).toRenderTo("struct Foo;");
   });
 
   it("empty braced struct", () => {
     expect(
-      <StructDeclaration name="Foo" braced />
+      <RustRoot><StructDeclaration name="Foo" braced /></RustRoot>
     ).toRenderTo("struct Foo {}");
   });
 
   it("fields with types", () => {
     expect(
-      <StructDeclaration name="Foo">
-        <List hardline>
-          <StructField name="bar" type="i32" />
-          <StructField name="baz" type="String" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration name="Foo">
+          <List hardline>
+            <StructField name="bar" type="i32" />
+            <StructField name="baz" type="String" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo {
         bar: i32,
@@ -33,11 +47,13 @@ describe("StructDeclaration", () => {
 
   it("pub fields", () => {
     expect(
-      <StructDeclaration name="Foo">
-        <List hardline>
-          <StructField name="bar" type="i32" pub />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration name="Foo">
+          <List hardline>
+            <StructField name="bar" type="i32" pub />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo {
         pub bar: i32,
@@ -47,17 +63,19 @@ describe("StructDeclaration", () => {
 
   it("pub struct", () => {
     expect(
-      <StructDeclaration name="Foo" pub />
+      <RustRoot><StructDeclaration name="Foo" pub /></RustRoot>
     ).toRenderTo("pub struct Foo;");
   });
 
   it("derive attribute", () => {
     expect(
-      <StructDeclaration name="Foo" derive={["Debug", "Clone"]}>
-        <List hardline>
-          <StructField name="x" type="i32" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration name="Foo" derive={["Debug", "Clone"]}>
+          <List hardline>
+            <StructField name="x" type="i32" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       #[derive(Debug, Clone)]
       struct Foo {
@@ -68,11 +86,13 @@ describe("StructDeclaration", () => {
 
   it("generic type parameter", () => {
     expect(
-      <StructDeclaration name="Foo" typeParams={[{ name: "T" }]}>
-        <List hardline>
-          <StructField name="bar" type="T" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration name="Foo" typeParams={[{ name: "T" }]}>
+          <List hardline>
+            <StructField name="bar" type="T" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo<T> {
         bar: T,
@@ -82,11 +102,13 @@ describe("StructDeclaration", () => {
 
   it("generic with trait bounds", () => {
     expect(
-      <StructDeclaration name="Foo" typeParams={[{ name: "T", bounds: ["Display", "Clone"] }]}>
-        <List hardline>
-          <StructField name="bar" type="T" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration name="Foo" typeParams={[{ name: "T", bounds: ["Display", "Clone"] }]}>
+          <List hardline>
+            <StructField name="bar" type="T" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo<T: Display + Clone> {
         bar: T,
@@ -96,11 +118,13 @@ describe("StructDeclaration", () => {
 
   it("lifetime parameter", () => {
     expect(
-      <StructDeclaration name="Foo" lifetimes={[{ name: "a" }]}>
-        <List hardline>
-          <StructField name="bar" type="&'a str" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration name="Foo" lifetimes={[{ name: "a" }]}>
+          <List hardline>
+            <StructField name="bar" type="&'a str" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo<'a> {
         bar: &'a str,
@@ -110,15 +134,17 @@ describe("StructDeclaration", () => {
 
   it("mixed lifetime + generic", () => {
     expect(
-      <StructDeclaration
-        name="Foo"
-        lifetimes={[{ name: "a" }]}
-        typeParams={[{ name: "T", bounds: ["'a"] }]}
-      >
-        <List hardline>
-          <StructField name="bar" type="&'a T" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration
+          name="Foo"
+          lifetimes={[{ name: "a" }]}
+          typeParams={[{ name: "T", bounds: ["'a"] }]}
+        >
+          <List hardline>
+            <StructField name="bar" type="&'a T" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo<'a, T: 'a> {
         bar: &'a T,
@@ -128,15 +154,17 @@ describe("StructDeclaration", () => {
 
   it("where clause", () => {
     expect(
-      <StructDeclaration
-        name="Foo"
-        typeParams={[{ name: "T" }]}
-        where={[{ target: "T", bounds: ["Serialize"] }]}
-      >
-        <List hardline>
-          <StructField name="bar" type="T" />
-        </List>
-      </StructDeclaration>
+      <RustRoot>
+        <StructDeclaration
+          name="Foo"
+          typeParams={[{ name: "T" }]}
+          where={[{ target: "T", bounds: ["Serialize"] }]}
+        >
+          <List hardline>
+            <StructField name="bar" type="T" />
+          </List>
+        </StructDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       struct Foo<T>
       where
@@ -151,13 +179,15 @@ describe("StructDeclaration", () => {
 describe("TupleStructDeclaration", () => {
   it("basic tuple struct", () => {
     expect(
-      <TupleStructDeclaration name="Point" fields={["f64", "f64"]} />
+      <RustRoot><TupleStructDeclaration name="Point" fields={["f64", "f64"]} /></RustRoot>
     ).toRenderTo("struct Point(f64, f64);");
   });
 
   it("with derive", () => {
     expect(
-      <TupleStructDeclaration name="Point" derive={["Debug"]} fields={["f64", "f64"]} />
+      <RustRoot>
+        <TupleStructDeclaration name="Point" derive={["Debug"]} fields={["f64", "f64"]} />
+      </RustRoot>
     ).toRenderTo(`
       #[derive(Debug)]
       struct Point(f64, f64);

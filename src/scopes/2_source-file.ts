@@ -7,12 +7,13 @@ import {
 } from "@alloy-js/core";
 import { RustSymbol } from "../symbols/0_rust.js";
 import { RustNamedTypeSymbol } from "../symbols/1_named-type.js";
+import { RustScope } from "./0_rust.js";
 import { RustLexicalScope } from "./1_lexical.js";
 
 export type UseRecords = Map<RustNamedTypeSymbol, RustSymbol>;
 
 export class RustSourceFileScope extends RustLexicalScope {
-  #uses = shallowReactive<UseRecords>(new Map());
+  uses = shallowReactive<UseRecords>(new Map());
 
   constructor(
     name: string,
@@ -22,13 +23,9 @@ export class RustSourceFileScope extends RustLexicalScope {
     super(name, parent, options);
   }
 
-  get uses() {
-    return this.#uses;
-  }
-
   addUse(symbol: RustNamedTypeSymbol): RustSymbol {
-    if (this.#uses.has(symbol)) {
-      return this.#uses.get(symbol)!;
+    if (this.uses.has(symbol)) {
+      return this.uses.get(symbol)!;
     }
 
     const localSymbol = createSymbol(RustSymbol, symbol.name, this.declarations, {
@@ -36,7 +33,7 @@ export class RustSourceFileScope extends RustLexicalScope {
       binder: this.binder,
     });
 
-    this.#uses.set(symbol, localSymbol);
+    this.uses.set(symbol, localSymbol);
     return localSymbol;
   }
 }

@@ -1,5 +1,6 @@
-import { List } from "@alloy-js/core";
+import { List, Output, Scope, createScope } from "@alloy-js/core";
 import { describe, expect, it } from "vitest";
+import { RustLexicalScope } from "../scopes/1_lexical.js";
 import { StructField } from "./1_StructDeclaration.js";
 import {
   EnumDeclaration,
@@ -8,16 +9,29 @@ import {
   StructVariant,
 } from "./2_EnumDeclaration.js";
 
+function RustRoot(props: { children: any }) {
+  const scope = createScope(RustLexicalScope, "root", undefined);
+  return (
+    <Output>
+      <Scope value={scope}>
+        {props.children}
+      </Scope>
+    </Output>
+  );
+}
+
 describe("EnumDeclaration", () => {
   it("unit variants", () => {
     expect(
-      <EnumDeclaration name="Color">
-        <List hardline>
-          <UnitVariant name="Red" />
-          <UnitVariant name="Green" />
-          <UnitVariant name="Blue" />
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Color">
+          <List hardline>
+            <UnitVariant name="Red" />
+            <UnitVariant name="Green" />
+            <UnitVariant name="Blue" />
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       enum Color {
         Red,
@@ -29,12 +43,14 @@ describe("EnumDeclaration", () => {
 
   it("tuple variants", () => {
     expect(
-      <EnumDeclaration name="Shape">
-        <List hardline>
-          <TupleVariant name="Circle" fields={["f64"]} />
-          <TupleVariant name="Rect" fields={["f64", "f64"]} />
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Shape">
+          <List hardline>
+            <TupleVariant name="Circle" fields={["f64"]} />
+            <TupleVariant name="Rect" fields={["f64", "f64"]} />
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       enum Shape {
         Circle(f64),
@@ -45,17 +61,19 @@ describe("EnumDeclaration", () => {
 
   it("struct variants", () => {
     expect(
-      <EnumDeclaration name="Message">
-        <List hardline>
-          <UnitVariant name="Quit" />
-          <StructVariant name="Move">
-            <List hardline>
-              <StructField name="x" type="i32" />
-              <StructField name="y" type="i32" />
-            </List>
-          </StructVariant>
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Message">
+          <List hardline>
+            <UnitVariant name="Quit" />
+            <StructVariant name="Move">
+              <List hardline>
+                <StructField name="x" type="i32" />
+                <StructField name="y" type="i32" />
+              </List>
+            </StructVariant>
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       enum Message {
         Quit,
@@ -69,18 +87,20 @@ describe("EnumDeclaration", () => {
 
   it("mixed variant types", () => {
     expect(
-      <EnumDeclaration name="Event">
-        <List hardline>
-          <UnitVariant name="None" />
-          <TupleVariant name="Click" fields={["i32", "i32"]} />
-          <StructVariant name="KeyPress">
-            <List hardline>
-              <StructField name="key" type="char" />
-              <StructField name="ctrl" type="bool" />
-            </List>
-          </StructVariant>
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Event">
+          <List hardline>
+            <UnitVariant name="None" />
+            <TupleVariant name="Click" fields={["i32", "i32"]} />
+            <StructVariant name="KeyPress">
+              <List hardline>
+                <StructField name="key" type="char" />
+                <StructField name="ctrl" type="bool" />
+              </List>
+            </StructVariant>
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       enum Event {
         None,
@@ -95,11 +115,13 @@ describe("EnumDeclaration", () => {
 
   it("derive attribute", () => {
     expect(
-      <EnumDeclaration name="Color" derive={["Debug", "PartialEq"]}>
-        <List hardline>
-          <UnitVariant name="Red" />
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Color" derive={["Debug", "PartialEq"]}>
+          <List hardline>
+            <UnitVariant name="Red" />
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       #[derive(Debug, PartialEq)]
       enum Color {
@@ -110,12 +132,14 @@ describe("EnumDeclaration", () => {
 
   it("generic enum", () => {
     expect(
-      <EnumDeclaration name="Option" typeParams={[{ name: "T" }]}>
-        <List hardline>
-          <TupleVariant name="Some" fields={["T"]} />
-          <UnitVariant name="None" />
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Option" typeParams={[{ name: "T" }]}>
+          <List hardline>
+            <TupleVariant name="Some" fields={["T"]} />
+            <UnitVariant name="None" />
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       enum Option<T> {
         Some(T),
@@ -126,11 +150,13 @@ describe("EnumDeclaration", () => {
 
   it("pub enum", () => {
     expect(
-      <EnumDeclaration name="Color" pub>
-        <List hardline>
-          <UnitVariant name="Red" />
-        </List>
-      </EnumDeclaration>
+      <RustRoot>
+        <EnumDeclaration name="Color" pub>
+          <List hardline>
+            <UnitVariant name="Red" />
+          </List>
+        </EnumDeclaration>
+      </RustRoot>
     ).toRenderTo(`
       pub enum Color {
         Red,

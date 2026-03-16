@@ -1,4 +1,5 @@
-import { Block, Children } from "@alloy-js/core";
+import { Block, Children, Scope } from "@alloy-js/core";
+import { createFunctionScope } from "../scopes/6_factories.js";
 import { Generics, GenericsProps, WhereClause, WhereClauseProps } from "./0_Generics.js";
 
 export interface ImplBlockProps extends GenericsProps {
@@ -11,6 +12,9 @@ export interface ImplBlockProps extends GenericsProps {
 }
 
 export function ImplBlock(props: ImplBlockProps) {
+  // impl blocks get a lexical scope so methods inside can create function symbols
+  const scope = createFunctionScope();
+
   const whereClause = props.where && props.where.length > 0
     ? <WhereClause clauses={props.where} />
     : null;
@@ -20,7 +24,7 @@ export function ImplBlock(props: ImplBlockProps) {
     : null;
 
   const body = props.children !== undefined && props.children !== null
-    ? <Block>{props.children}</Block>
+    ? <Scope value={scope}><Block>{props.children}</Block></Scope>
     : <>{"{ }"}</>;
 
   return <>

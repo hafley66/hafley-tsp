@@ -1,22 +1,36 @@
-import { List } from "@alloy-js/core";
+import { List, Output, Scope, createScope } from "@alloy-js/core";
 import { describe, expect, it } from "vitest";
+import { RustLexicalScope } from "../scopes/1_lexical.js";
 import { FunctionDeclaration } from "./3_FunctionDeclaration.js";
 import { ImplBlock } from "./4_ImplBlock.js";
+
+function RustRoot(props: { children: any }) {
+  const scope = createScope(RustLexicalScope, "root", undefined);
+  return (
+    <Output>
+      <Scope value={scope}>
+        {props.children}
+      </Scope>
+    </Output>
+  );
+}
 
 describe("ImplBlock", () => {
   it("inherent impl, empty", () => {
     expect(
-      <ImplBlock target="Foo" />
+      <RustRoot><ImplBlock target="Foo" /></RustRoot>
     ).toRenderTo("impl Foo { }");
   });
 
   it("inherent impl with method", () => {
     expect(
-      <ImplBlock target="Foo">
-        <FunctionDeclaration name="bar" pub>
-          42
-        </FunctionDeclaration>
-      </ImplBlock>
+      <RustRoot>
+        <ImplBlock target="Foo">
+          <FunctionDeclaration name="bar" pub>
+            42
+          </FunctionDeclaration>
+        </ImplBlock>
+      </RustRoot>
     ).toRenderTo(`
       impl Foo {
         pub fn bar() {
@@ -28,21 +42,23 @@ describe("ImplBlock", () => {
 
   it("trait impl", () => {
     expect(
-      <ImplBlock target="Foo" trait="Display">
-        <FunctionDeclaration
-          name="fmt"
-          params={[
-            { name: "&self", type: "" },
-            { name: "f", type: "&mut fmt::Formatter<'_>" },
-          ]}
-          returns="fmt::Result"
-        >
-          write!(f, "Foo")
-        </FunctionDeclaration>
-      </ImplBlock>
+      <RustRoot>
+        <ImplBlock target="Foo" trait="Display">
+          <FunctionDeclaration
+            name="fmt"
+            selfParam="&"
+            params={[
+              { name: "f", type: "&mut fmt::Formatter<'_>" },
+            ]}
+            returns="fmt::Result"
+          >
+            write!(f, "Foo")
+          </FunctionDeclaration>
+        </ImplBlock>
+      </RustRoot>
     ).toRenderTo(`
       impl Display for Foo {
-        fn fmt(&self: , f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
           write!(f, "Foo")
         }
       }
@@ -51,17 +67,19 @@ describe("ImplBlock", () => {
 
   it("generic impl", () => {
     expect(
-      <ImplBlock target="Foo<T>" typeParams={[{ name: "T" }]} />
+      <RustRoot><ImplBlock target="Foo<T>" typeParams={[{ name: "T" }]} /></RustRoot>
     ).toRenderTo("impl<T> Foo<T> { }");
   });
 
   it("impl with where clause", () => {
     expect(
-      <ImplBlock
-        target="Foo<T>"
-        typeParams={[{ name: "T" }]}
-        where={[{ target: "T", bounds: ["Clone"] }]}
-      />
+      <RustRoot>
+        <ImplBlock
+          target="Foo<T>"
+          typeParams={[{ name: "T" }]}
+          where={[{ target: "T", bounds: ["Clone"] }]}
+        />
+      </RustRoot>
     ).toRenderTo(`
       impl<T> Foo<T>
       where
@@ -72,7 +90,7 @@ describe("ImplBlock", () => {
 
   it("multiple impl blocks for same type", () => {
     expect(
-      <>
+      <RustRoot>
         <ImplBlock target="Foo">
           <FunctionDeclaration name="new" returns="Self">
             todo!()
@@ -84,7 +102,7 @@ describe("ImplBlock", () => {
             todo!()
           </FunctionDeclaration>
         </ImplBlock>
-      </>
+      </RustRoot>
     ).toRenderTo(`
       impl Foo {
         fn new() -> Self {
@@ -102,19 +120,21 @@ describe("ImplBlock", () => {
 
   it("trait impl with generics on both", () => {
     expect(
-      <ImplBlock
-        target="Vec<T>"
-        trait="From<T>"
-        typeParams={[{ name: "T" }]}
-      >
-        <FunctionDeclaration
-          name="from"
-          params={[{ name: "item", type: "T" }]}
-          returns="Self"
+      <RustRoot>
+        <ImplBlock
+          target="Vec<T>"
+          trait="From<T>"
+          typeParams={[{ name: "T" }]}
         >
-          vec![item]
-        </FunctionDeclaration>
-      </ImplBlock>
+          <FunctionDeclaration
+            name="from"
+            params={[{ name: "item", type: "T" }]}
+            returns="Self"
+          >
+            vec![item]
+          </FunctionDeclaration>
+        </ImplBlock>
+      </RustRoot>
     ).toRenderTo(`
       impl<T> From<T> for Vec<T> {
         fn from(item: T) -> Self {
