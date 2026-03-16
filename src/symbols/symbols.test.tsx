@@ -12,7 +12,7 @@ import { RustSymbol } from "./00_rust.js";
 import { RustNamedTypeSymbol } from "./01_named-type.js";
 import { RustFunctionSymbol } from "./02_function.js";
 import { RustLexicalScope } from "../scopes/01_lexical.js";
-import { RustNamedTypeScope } from "../scopes/03_named-type.js";
+import { RustNamedTypeScope } from "../scopes/04_named-type.js";
 import { createTypeSymbol, createFieldSymbol, createFunctionSymbol } from "./03_factories.js";
 
 // Minimal wrapper that provides a RustLexicalScope for symbol creation

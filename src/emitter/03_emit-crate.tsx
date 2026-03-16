@@ -1,8 +1,8 @@
 import { Output, render, refkey } from "@alloy-js/core";
-import { CrateDirectory } from "../components/08_CrateDirectory.js";
-import { ModDirectory } from "../components/10_ModDirectory.js";
-import { SourceFile } from "../components/05_SourceFile.js";
-import { VisibilityContext } from "../scopes/05_contexts.js";
+import { CrateDirectory } from "../components/24_CrateDirectory.js";
+import { ModDirectory } from "../components/25_ModDirectory.js";
+import { SourceFile } from "../components/23_SourceFile.js";
+import { VisibilityContext } from "../scopes/06_contexts.js";
 import { emitTypeDef } from "./02_emit-model.js";
 import type { RefkeyRegistry } from "./01_type-map.js";
 import type { TypeDef } from "./00_types.js";

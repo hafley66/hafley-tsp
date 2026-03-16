@@ -1,10 +1,10 @@
 import { createSymbol, Namekey, NamePolicyGetter } from "@alloy-js/core";
 import { RustElements, useRustNamePolicy } from "../00_name-policy.js";
-import { useRustScope } from "../scopes/05_contexts.js";
-import { useNamedTypeScope } from "../scopes/05_contexts.js";
+import { useRustScope } from "../scopes/06_contexts.js";
+import { useNamedTypeScope } from "../scopes/06_contexts.js";
 import { RustLexicalScope } from "../scopes/01_lexical.js";
-import { RustNamedTypeScope } from "../scopes/03_named-type.js";
-import { RustFunctionScope } from "../scopes/04_function.js";
+import { RustNamedTypeScope } from "../scopes/04_named-type.js";
+import { RustFunctionScope } from "../scopes/05_function.js";
 import { RustSymbol, RustSymbolOptions } from "./00_rust.js";
 import { RustNamedTypeSymbol, RustNamedTypeSymbolOptions, RustTypeKind } from "./01_named-type.js";
 import { RustFunctionSymbol } from "./02_function.js";

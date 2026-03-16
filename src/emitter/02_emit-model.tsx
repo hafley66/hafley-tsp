@@ -1,7 +1,7 @@
 import { List, refkey, Refkey } from "@alloy-js/core";
-import { StructDeclaration, StructField } from "../components/01_StructDeclaration.js";
-import { EnumDeclaration, UnitVariant } from "../components/02_EnumDeclaration.js";
-import { SourceFile } from "../components/05_SourceFile.js";
+import { StructDeclaration, StructField } from "../components/10_StructDeclaration.js";
+import { EnumDeclaration, UnitVariant } from "../components/11_EnumDeclaration.js";
+import { SourceFile } from "../components/23_SourceFile.js";
 import { mapType, wrapOptional, type RefkeyRegistry } from "./01_type-map.js";
 import type { ModelDef, EnumDef, TypeDef } from "./00_types.js";
 
