@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`TsReplaceFile > first emit: builds file with sigils and manual scaffold 1`] = `
+"// alloy-auto-start
+generated content
+// alloy-auto-end
+
+manual scaffold
+"
+`;
+
+exports[`TsReplaceFile > first emit: multiple auto zones 1`] = `
+"// alloy-imports-start
+import line
+// alloy-imports-end
+// alloy-state-start
+state content
+// alloy-state-end
+
+manual body
+"
+`;
+
+exports[`TsReplaceFile > re-emit: missing file falls back to first-emit mode 1`] = `
+"// alloy-auto-start
+generated
+// alloy-auto-end
+
+scaffold
+"
+`;
+
+exports[`TsReplaceFile > re-emit: preserves multiple manual sections between zones 1`] = `
+"header manual code
+// alloy-imports-start
+new imports
+// alloy-imports-end
+middle manual code
+// alloy-state-start
+new state
+// alloy-state-end
+footer manual code
+"
+`;
+
+exports[`TsReplaceFile > re-emit: replaces auto zone, preserves manual code 1`] = `
+"// alloy-auto-start
+new generated code
+// alloy-auto-end
+
+// user wrote this by hand
+export function MyComponent() {
+  return <div>custom</div>;
+}
+"
+`;

@@ -1,8 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`React component emitter > emits a Counter component 1`] = `
-"// --- AUTO-GENERATED (do not edit above this line) ---
-
+"// alloy-auto-start
 export interface CounterState {
   count: number;
 }
@@ -42,8 +41,7 @@ export function counterStateReducer(
         return state;
     }
 }
-
-// --- MANUAL (edit below this line) ---
+// alloy-auto-end
 
 import { useReducer } from "react";
 
@@ -57,8 +55,7 @@ export function Counter() {
 `;
 
 exports[`React component emitter > emits a PostEditor component 1`] = `
-"// --- AUTO-GENERATED (do not edit above this line) ---
-
+"// alloy-auto-start
 export interface PostEditorState {
   title: string;
   body: string;
@@ -107,8 +104,7 @@ export function postEditorStateReducer(
         return state;
     }
 }
-
-// --- MANUAL (edit below this line) ---
+// alloy-auto-end
 
 import { useReducer } from "react";
 
@@ -122,7 +118,7 @@ export function PostEditor() {
 `;
 
 exports[`TanStack Router route emitter > emits route files from AppRoutes model 1`] = `
-"// --- AUTO-GENERATED (do not edit above this line) ---
+"// alloy-auto-start
 import { createFileRoute } from "@tanstack/react-router";
 import { useReducer } from "react";
 
@@ -148,8 +144,7 @@ export function dashboardStateReducer(
         return state;
     }
 }
-
-// --- MANUAL (edit below this line) ---
+// alloy-auto-end
 
 function DashboardPage() {
   const [state, dispatch] = useReducer(dashboardStateReducer, {} as DashboardState);
@@ -165,7 +160,7 @@ export const Route = createFileRoute("/")({
 `;
 
 exports[`TanStack Router route emitter > emits route files from AppRoutes model 2`] = `
-"// --- AUTO-GENERATED (do not edit above this line) ---
+"// alloy-auto-start
 import { createFileRoute } from "@tanstack/react-router";
 import { useReducer } from "react";
 
@@ -199,8 +194,7 @@ export function userDetailStateReducer(
         return state;
     }
 }
-
-// --- MANUAL (edit below this line) ---
+// alloy-auto-end
 
 function UserDetailPage() {
   const [state, dispatch] = useReducer(userDetailStateReducer, {} as UserDetailState);

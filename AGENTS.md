@@ -241,3 +241,7 @@ If a domain has multiple update intents, name them by what they do:
 The emitter maps domain operations to HTTP methods, gRPC calls, WebSocket messages, or whatever the target needs. The TypeSpec source doesn't know or care about transport.
 
 This applies to event/reducer naming too. Events are domain actions: `add_item`, `remove_item`, `clear_cart` -- not `post_item`, `delete_item`.
+
+## History
+
+- `31b4651` -- Initial commit. React/TanStack Router emitter, AGENTS.md, full strength/weakness analysis of every design decision in commit message. Read that commit message for the tradeoff rationale behind each idea in this file.

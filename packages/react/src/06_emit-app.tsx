@@ -3,8 +3,8 @@
 import { Output, render } from "@alloy-js/core";
 import * as ts from "@alloy-js/typescript";
 import { TspContext } from "@typespec/emitter-framework";
-import { emitReactComponent } from "./02_emit-component.js";
-import { emitRouteFile } from "./04_emit-route.js";
+import { emitReactComponent } from "./04_emit-component.js";
+import { emitRouteFile } from "./05_emit-route.js";
 import type { ReactAppOptions } from "./00_types.js";
 
 export function emitReactApp(options: ReactAppOptions) {

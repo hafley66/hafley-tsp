@@ -1,5 +1,4 @@
-// Emits a single TanStack Router route file with auto/manual zones.
-// Reuses component type emission from 02_emit-component.tsx patterns.
+// Shared emitter components used by both component and route emitters.
 
 import { List, refkey, type Refkey } from "@alloy-js/core";
 import * as ts from "@alloy-js/typescript";
@@ -7,26 +6,25 @@ import {
   InterfaceDeclaration as TspInterface,
   InterfaceMember as TspInterfaceMember,
 } from "@typespec/emitter-framework/typescript";
-import type { Model, Union, ModelProperty, UnionVariant } from "@typespec/compiler";
-import type { RouteDef } from "./00_types.js";
+import type { Model, ModelProperty, UnionVariant } from "@typespec/compiler";
 
+// emitter-framework prefixes its refkeys with this symbol so they don't
+// collide with bare refkey() calls. We need the same prefix so our
+// references resolve against TspInterface's declarations.
 const EF_PREFIX = Symbol.for("emitter-framework:typescript");
-function efRefkey(...args: unknown[]): Refkey {
+export function efRefkey(...args: unknown[]): Refkey {
   return refkey(EF_PREFIX, ...args);
 }
 
-const AUTO_MARKER = "// --- AUTO-GENERATED (do not edit above this line) ---";
-const MANUAL_MARKER = "// --- MANUAL (edit below this line) ---";
-
-function toCamelCase(name: string): string {
+export function toCamelCase(name: string): string {
   return name.charAt(0).toLowerCase() + name.slice(1);
 }
 
-function hasDefault(prop: ModelProperty): boolean {
+export function hasDefault(prop: ModelProperty): boolean {
   return prop.defaultValue !== undefined;
 }
 
-function defaultToString(prop: ModelProperty): string | null {
+export function defaultToString(prop: ModelProperty): string | null {
   const val = prop.defaultValue;
   if (val === undefined) return null;
   switch (val.valueKind) {
@@ -38,7 +36,8 @@ function defaultToString(prop: ModelProperty): string | null {
   }
 }
 
-function EventInterface(props: { variant: UnionVariant; refkey: Refkey }) {
+// Emit event interface with type discriminant
+export function EventInterface(props: { variant: UnionVariant; refkey: Refkey }) {
   const variantType = props.variant.type;
   const name = variantType.kind === "Model" ? variantType.name : String(props.variant.name);
   const discriminant = String(props.variant.name);
@@ -57,7 +56,8 @@ function EventInterface(props: { variant: UnionVariant; refkey: Refkey }) {
   );
 }
 
-function EventUnionType(props: {
+// Emit the event union type alias
+export function EventUnionType(props: {
   name: string;
   refkey: Refkey;
   variantRefkeys: { name: string; refkey: Refkey }[];
@@ -71,7 +71,8 @@ function EventUnionType(props: {
   );
 }
 
-function DefaultsConst(props: {
+// Emit defaults constant from model properties
+export function DefaultsConst(props: {
   stateName: string;
   stateRefkey: Refkey;
   stateModel: Model;
@@ -95,7 +96,8 @@ function DefaultsConst(props: {
   );
 }
 
-function ReducerFunction(props: {
+// Emit reducer function with exhaustive switch shell
+export function ReducerFunction(props: {
   stateName: string;
   stateRefkey: Refkey;
   unionRefkey: Refkey;
@@ -123,36 +125,23 @@ function ReducerFunction(props: {
   );
 }
 
-// Emit a TanStack Router route file
-export function emitRouteFile(route: RouteDef) {
-  const stateRk = efRefkey(route.state);
-  const unionRk = efRefkey(route.events);
-
-  const variants = Array.from(route.events.variants.values());
+// Emit the full auto zone content: state interface, event types, defaults, reducer
+export function AutoStateBlock(props: {
+  state: Model;
+  events: import("@typespec/compiler").Union;
+}) {
+  const stateRk = efRefkey(props.state);
+  const unionRk = efRefkey(props.events);
+  const variants = Array.from(props.events.variants.values());
   const variantRks = variants.map(v => ({
     name: String(v.name),
     refkey: refkey(v),
   }));
+  const stateName = props.state.name;
 
-  const stateName = route.state.name;
-  const defaultsName = `${toCamelCase(stateName)}Defaults`;
-  const reducerName = `${toCamelCase(stateName)}Reducer`;
-
-  const allProps = Array.from(route.state.properties.values());
-  const hasAllDefaults = allProps.every(p => p.optional || hasDefault(p));
-
-  // Extract $param names from the path for useParams destructuring
-  const paramNames = (route.path.match(/\$\w+/g) || []).map(p => p.slice(1));
-
-  const filePath = `routes/${route.fileName}.tsx`;
-
-  const jsx = (
-    <ts.SourceFile path={filePath}>
-      {AUTO_MARKER}{"\n"}
-      {`import { createFileRoute } from "@tanstack/react-router";\n`}
-      {`import { useReducer } from "react";\n\n`}
-
-      <TspInterface type={route.state} export />{"\n\n"}
+  return (
+    <>
+      <TspInterface type={props.state} export />{"\n\n"}
 
       {variants.map((v, i) => (
         <>
@@ -161,7 +150,7 @@ export function emitRouteFile(route: RouteDef) {
       ))}
 
       <EventUnionType
-        name={route.events.name!}
+        name={props.events.name!}
         refkey={unionRk}
         variantRefkeys={variantRks}
       />{"\n\n"}
@@ -169,7 +158,7 @@ export function emitRouteFile(route: RouteDef) {
       <DefaultsConst
         stateName={stateName}
         stateRefkey={stateRk}
-        stateModel={route.state}
+        stateModel={props.state}
       />{"\n\n"}
 
       <ReducerFunction
@@ -177,26 +166,7 @@ export function emitRouteFile(route: RouteDef) {
         stateRefkey={stateRk}
         unionRefkey={unionRk}
         variants={variants}
-      />{"\n\n"}
-
-      {MANUAL_MARKER}{"\n\n"}
-
-      {`function ${route.componentName}Page() {\n`}
-      {hasAllDefaults
-        ? `  const [state, dispatch] = useReducer(${reducerName}, ${defaultsName});\n`
-        : `  const [state, dispatch] = useReducer(${reducerName}, {} as ${stateName});\n`
-      }
-      {paramNames.length > 0
-        ? `  const { ${paramNames.join(", ")} } = Route.useParams();\n`
-        : ""
-      }
-      {`\n  // TODO: render\n  return <div>TODO</div>;\n}\n\n`}
-
-      {`export const Route = createFileRoute("${route.path}")({\n`}
-      {`  component: ${route.componentName}Page,\n`}
-      {`});\n`}
-    </ts.SourceFile>
+      />
+    </>
   );
-
-  return { path: route.path, fileName: route.fileName, jsx };
 }

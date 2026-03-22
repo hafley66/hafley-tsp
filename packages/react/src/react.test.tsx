@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createTester } from "@typespec/compiler/testing";
 import { resolvePath } from "@typespec/compiler";
 import type { Model, Union, Namespace } from "@typespec/compiler";
-import { emitReactApp } from "./03_emit-app.js";
+import { emitReactApp } from "./06_emit-app.js";
 import { extractRoutes } from "./01_extract-routes.js";
 import type { ComponentDef } from "./00_types.js";
 
