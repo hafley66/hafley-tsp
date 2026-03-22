@@ -1,0 +1,217 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`React component emitter > emits a Counter component 1`] = `
+"// --- AUTO-GENERATED (do not edit above this line) ---
+
+export interface CounterState {
+  count: number;
+}
+
+interface Increment {
+  type: "increment"
+  amount: number
+}
+
+interface Decrement {
+  type: "decrement"
+}
+
+interface Reset {
+  type: "reset"
+}
+
+export type CounterEvent = Increment | Decrement | Reset;
+
+export const counterStateDefaults: CounterState = {
+  count: 0,
+}
+
+export function counterStateReducer(
+  state: CounterState,
+  event: CounterEvent,
+): CounterState {
+  switch (event.type) {
+      case "increment":
+        // TODO: handle increment
+        return state;
+      case "decrement":
+        // TODO: handle decrement
+        return state;
+      case "reset":
+        // TODO: handle reset
+        return state;
+    }
+}
+
+// --- MANUAL (edit below this line) ---
+
+import { useReducer } from "react";
+
+export function Counter() {
+  const [state, dispatch] = useReducer(counterStateReducer, counterStateDefaults);
+
+  // TODO: render
+  return <div>TODO</div>;
+}
+"
+`;
+
+exports[`React component emitter > emits a PostEditor component 1`] = `
+"// --- AUTO-GENERATED (do not edit above this line) ---
+
+export interface PostEditorState {
+  title: string;
+  body: string;
+  dirty: boolean;
+  tags: Array<string>;
+}
+
+interface UpdateTitle {
+  type: "updateTitle"
+  value: string
+}
+
+interface UpdateBody {
+  type: "updateBody"
+  value: string
+}
+
+interface ToggleDirty {
+  type: "toggleDirty"
+}
+
+interface Save {
+  type: "save"
+}
+
+export type PostEditorEvent = UpdateTitle | UpdateBody | ToggleDirty | Save;
+
+
+
+export function postEditorStateReducer(
+  state: PostEditorState,
+  event: PostEditorEvent,
+): PostEditorState {
+  switch (event.type) {
+      case "updateTitle":
+        // TODO: handle updateTitle
+        return state;
+      case "updateBody":
+        // TODO: handle updateBody
+        return state;
+      case "toggleDirty":
+        // TODO: handle toggleDirty
+        return state;
+      case "save":
+        // TODO: handle save
+        return state;
+    }
+}
+
+// --- MANUAL (edit below this line) ---
+
+import { useReducer } from "react";
+
+export function PostEditor() {
+  const [state, dispatch] = useReducer(postEditorStateReducer, {} as PostEditorState);
+
+  // TODO: render
+  return <div>TODO</div>;
+}
+"
+`;
+
+exports[`TanStack Router route emitter > emits route files from AppRoutes model 1`] = `
+"// --- AUTO-GENERATED (do not edit above this line) ---
+import { createFileRoute } from "@tanstack/react-router";
+import { useReducer } from "react";
+
+export interface DashboardState {
+  widgets: Array<string>;
+}
+
+interface RefreshWidgets {
+  type: "refresh"
+}
+
+export type DashboardEvent = RefreshWidgets;
+
+
+
+export function dashboardStateReducer(
+  state: DashboardState,
+  event: DashboardEvent,
+): DashboardState {
+  switch (event.type) {
+      case "refresh":
+        // TODO: handle refresh
+        return state;
+    }
+}
+
+// --- MANUAL (edit below this line) ---
+
+function DashboardPage() {
+  const [state, dispatch] = useReducer(dashboardStateReducer, {} as DashboardState);
+
+  // TODO: render
+  return <div>TODO</div>;
+}
+
+export const Route = createFileRoute("/")({
+  component: DashboardPage,
+});
+"
+`;
+
+exports[`TanStack Router route emitter > emits route files from AppRoutes model 2`] = `
+"// --- AUTO-GENERATED (do not edit above this line) ---
+import { createFileRoute } from "@tanstack/react-router";
+import { useReducer } from "react";
+
+export interface UserDetailState {
+  editing: boolean;
+}
+
+interface ToggleEdit {
+  type: "toggleEdit"
+}
+
+interface SaveUser {
+  type: "save"
+  name: string
+}
+
+export type UserDetailEvent = ToggleEdit | SaveUser;
+
+
+
+export function userDetailStateReducer(
+  state: UserDetailState,
+  event: UserDetailEvent,
+): UserDetailState {
+  switch (event.type) {
+      case "toggleEdit":
+        // TODO: handle toggleEdit
+        return state;
+      case "save":
+        // TODO: handle save
+        return state;
+    }
+}
+
+// --- MANUAL (edit below this line) ---
+
+function UserDetailPage() {
+  const [state, dispatch] = useReducer(userDetailStateReducer, {} as UserDetailState);
+  const { userId } = Route.useParams();
+
+  // TODO: render
+  return <div>TODO</div>;
+}
+
+export const Route = createFileRoute("/users/$userId")({
+  component: UserDetailPage,
+});
+"
+`;

@@ -1,0 +1,20 @@
+{
+  "name": "@hafley/tsp-react",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest -w"
+  },
+  "dependencies": {
+    "@alloy-js/core": "0.23.0-dev.12",
+    "@alloy-js/typescript": "0.23.0-dev.7",
+    "@typespec/compiler": "^1.0.0"
+  },
+  "devDependencies": {
+    "@alloy-js/rollup-plugin": "^0.1.0",
+    "@typespec/emitter-framework": "0.17.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.0"
+  }
+}
