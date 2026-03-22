@@ -33,6 +33,28 @@ importers:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@25.5.0)(yaml@2.8.3)
 
+  packages/rust:
+    dependencies:
+      '@alloy-js/core':
+        specifier: 0.23.0-dev.12
+        version: 0.23.0-dev.12
+      '@typespec/compiler':
+        specifier: ^1.0.0
+        version: 1.10.0(@types/node@25.5.0)
+      pathe:
+        specifier: ^2.0.3
+        version: 2.0.3
+    devDependencies:
+      '@alloy-js/rollup-plugin':
+        specifier: ^0.1.0
+        version: 0.1.0(@babel/core@7.29.0)(rollup@4.59.1)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@25.5.0)(yaml@2.8.3)
+
 packages:
 
   '@alloy-js/babel-plugin-jsx-dom-expressions@0.39.1':

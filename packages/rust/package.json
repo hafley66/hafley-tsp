@@ -1,9 +1,10 @@
 {
-  "name": "hafley-alloy",
+  "name": "@hafley/alloy-rs",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "test": "vitest run",
+    "test:cargo": "CARGO_CHECK=1 vitest run",
     "test:watch": "vitest -w"
   },
   "dependencies": {

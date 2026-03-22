@@ -213,7 +213,7 @@ describe("emitter", () => {
     `);
   });
 
-  it("cross-refs compile with cargo check", () => {
+  it.skipIf(!process.env.CARGO_CHECK)("cross-refs compile with cargo check", () => {
     const POST_WITH_AUTHOR: TypeDef = {
       kind: "model",
       name: "BlogPost",

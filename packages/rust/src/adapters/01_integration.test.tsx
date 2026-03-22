@@ -172,7 +172,7 @@ describe("typespec adapter -> emitCrate integration", () => {
     `);
   });
 
-  it("compiles with cargo check", () => {
+  it.skipIf(!process.env.CARGO_CHECK)("compiles with cargo check", () => {
     const defs = programToTypeDefs(program);
     const res = emitCrate(defs);
 
