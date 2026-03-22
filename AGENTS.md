@@ -228,6 +228,53 @@ Manual files also participate in Alloy's scope graph. When a dev writes manual c
 
 Detection: if the manual file contains an opt-out marker comment, or if the `_auto` file is deleted by the dev, the emitter respects that and stops generating. TypeSpec compilation still runs, still validates, still catches type errors -- it just doesn't write files.
 
+## Transport-Agnostic Operations
+
+### Every boundary operation is RPC
+
+All operations are RPC with input and output. HTTP placement (`@path`, `@query`, `@body`, `@header`) is one transport's opinion about where input fields go. TypeSpec IS the neutral representation -- no separate IR needed.
+
+The same operation `listUsers(session: UserSession, @path org_id: int64): User[]` emits differently per transport, but the operation definition is transport-agnostic.
+
+### Param classification
+
+Two categories, determined by decorator presence on the TypeSpec operation:
+
+1. **Sourced params** -- have `@path`, `@query`, `@body`, or `@header`. Each transport binding decides extraction syntax:
+   - HTTP/axum: `@path org_id` becomes `Path(org_id): Path<i64>`
+   - WS: `@path org_id` collapses to `msg.extract("org_id")` (all sourced params are message body in WS)
+   - gRPC: all sourced params are message fields
+
+2. **Resolved params** -- no source decorator, type is a model (e.g., `UserSession`, `DbPool`). The type itself carries per-transport extraction logic, emitted once on the type's own file. No middleware layer; the type IS the computation:
+   - axum: `FromRequestParts` impl on `UserSession`
+   - WS: `UserSession::from_ws_connection(conn)` method
+
+### Emitter reads classification via `getHttpOperation()`
+
+`@typespec/http` provides `getHttpOperation(op)` which returns `HttpOperation` with:
+- `parameters.parameters[]` each with `type: "path" | "query" | "header" | "cookie"`
+- `parameters.body` for body params
+- Params with NO HTTP decorator = resolved types (our addition, not in the HTTP lib)
+
+### Single file per endpoint, N auto zones
+
+Each endpoint is one `.rs` file with:
+- N `AutoZone`s (one per transport binding: `// alloy-http-start`, `// alloy-ws-start`)
+- 1 `ManualZone` (transport-agnostic impl function, frozen after first emit)
+- All transport bindings delegate to the same manual impl function
+- Compiler catches staleness: if the operation signature changes, auto zones update delegation calls, manual fn signature mismatches, build fails
+
+### Resolved type extractor emission
+
+Types like `UserSession` get their own file with:
+- The struct definition (always present)
+- Per-transport extractor auto zones (`// alloy-axum-extractor-start`, etc.)
+- Emitted once, referenced by all endpoints using that type
+
+### Denormalized discriminants
+
+No stringly-typed dispatch. Each param source is a distinct decorator (`@path`, `@query`, `@body`, `@header`), not a `source: string` field. When the emitter classifies params, it produces typed variants, not strings that get `=== "path"` checked downstream.
+
 ## Domain Modeling Language
 
 ### CRUD words, not HTTP verbs
@@ -242,6 +289,12 @@ The emitter maps domain operations to HTTP methods, gRPC calls, WebSocket messag
 
 This applies to event/reducer naming too. Events are domain actions: `add_item`, `remove_item`, `clear_cart` -- not `post_item`, `delete_item`.
 
+## Reference Sources
+
+- `@typespec/http` in `node_modules` -- programmatic API for `getHttpOperation()`, `HttpOperationParameter`, param classification
+- `github.com/microsoft/typespec` -- clone locally for deep reference on compiler internals, HTTP lib implementation, emitter framework source
+
 ## History
 
 - `31b4651` -- Initial commit. React/TanStack Router emitter, AGENTS.md, full strength/weakness analysis of every design decision in commit message. Read that commit message for the tradeoff rationale behind each idea in this file.
+- `5d3cc47` -- AxumEndpoint, spliceZones fix, folder reorg, test perf. Single-transport endpoint with auto/manual zones.

@@ -13,3 +13,5 @@ export * from "./components/1_declarations/5_VariableDeclaration.js";
 export * from "./components/1_declarations/6_ImplBlock.js";
 export * from "./components/4_codegen/3_ReplaceFile.js";
 export * from "./components/4_codegen/4_AxumEndpoint.js";
+export * from "./components/4_codegen/5_TransportBinding.js";
+export * from "./components/4_codegen/6_Endpoint.js";
