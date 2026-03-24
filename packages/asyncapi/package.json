@@ -10,6 +10,7 @@
     }
   },
   "scripts": {
+    "generate": "tsx src/generate.ts",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

@@ -24,16 +24,29 @@ const SHAPE_MAP: Record<number, DecoratorDefData["shape"]> = {
   4: "exclusive",
 };
 
+const TARGET_MAP: Record<number, string> = {
+  0: "Namespace",
+  1: "Interface",
+  2: "Operation",
+  3: "Model",
+  4: "ModelProperty",
+  5: "Enum",
+  6: "EnumMember",
+  7: "Scalar",
+  8: "Union",
+  9: "UnionVariant",
+};
+
 export function $decoratorDef(
   context: DecoratorContext,
   target: Model,
   shape: number,
-  targets: string,
+  targets: number[],
   options?: { exclusiveKey?: string; exclusiveValue?: string; doc?: string },
 ) {
   const data: DecoratorDefData = {
     shape: SHAPE_MAP[shape] ?? "value",
-    targets,
+    targets: targets.map(t => TARGET_MAP[t] ?? "Model").join(" | "),
     exclusiveKey: options?.exclusiveKey,
     exclusiveValue: options?.exclusiveValue,
     doc: options?.doc,

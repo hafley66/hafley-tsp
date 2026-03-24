@@ -29,7 +29,7 @@ export const $lib = createTypeSpecLibrary({
     },
   },
   state: {
-    servers: { description: "State for @server decorator" },
+    server: { description: "State for @server decorator" },
     channel: { description: "State for @channel decorator" },
     direction: { description: "State for @send / @receive decorators" },
     reply: { description: "State for @reply decorator" },

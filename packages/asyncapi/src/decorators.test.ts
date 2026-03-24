@@ -3,9 +3,9 @@ import {
   $server, $channel, $send, $receive, $reply,
   $correlationId, $payload, $messageHeader,
   $contentType, $amqpBinding, $amqpOperationBinding,
-  getServers, getChannelAddress, isChannel, getDirection,
+  getServer, getChannel, hasChannel, getDirection,
   getReply, getCorrelationId, isPayload, getMessageHeader,
-  isMessageHeader, getContentType, getAmqpBinding, getAmqpOperationBinding,
+  hasMessageHeader, getContentType, getAmqpBinding, getAmqpOperationBinding,
 } from "./decorators.js";
 import { AsyncApiStateKeys } from "./lib.js";
 import type { DecoratorContext, Program, Type } from "@typespec/compiler";
@@ -29,14 +29,14 @@ function mockTarget(name = "test"): Type {
   return { kind: "Model", name } as any;
 }
 
-describe("asyncapi decorators (factory-backed)", () => {
+describe("asyncapi decorators (generated from spec)", () => {
   it("@server accumulates multiple servers", () => {
     const program = mockProgram();
     const target = mockTarget("MyService");
     const ctx = mockContext(program);
     $server(ctx, target as any, "rabbitmq.example.org", "amqp");
     $server(ctx, target as any, "api.example.com", "http", { protocolVersion: "2.0" });
-    expect(getServers(program, target)).toMatchInlineSnapshot(`
+    expect(getServer(program, target)).toMatchInlineSnapshot(`
       [
         {
           "pathname": undefined,
@@ -54,13 +54,13 @@ describe("asyncapi decorators (factory-backed)", () => {
     `);
   });
 
-  it("@channel stores address, isChannel checks presence", () => {
+  it("@channel stores address, hasChannel checks presence", () => {
     const program = mockProgram();
     const target = mockTarget("Events");
     $channel(mockContext(program), target as any, "/users/{userId}/events");
-    expect(getChannelAddress(program, target)).toBe("/users/{userId}/events");
-    expect(isChannel(program, target)).toBe(true);
-    expect(isChannel(program, mockTarget("Other"))).toBe(false);
+    expect(getChannel(program, target)).toBe("/users/{userId}/events");
+    expect(hasChannel(program, target)).toBe(true);
+    expect(hasChannel(program, mockTarget("Other"))).toBe(false);
   });
 
   it("@send and @receive are mutually exclusive", () => {
@@ -113,23 +113,13 @@ describe("asyncapi decorators (factory-backed)", () => {
     expect(isPayload(program, target)).toBe(true);
   });
 
-  it("@messageHeader stores name, defaults to target.name", () => {
+  it("@messageHeader stores name string", () => {
     const program = mockProgram();
-    const explicit = mockTarget("requestId");
-    $messageHeader(mockContext(program), explicit as any, "x-request-id");
-    expect(getMessageHeader(program, explicit)).toMatchInlineSnapshot(`
-      {
-        "name": "x-request-id",
-      }
-    `);
-
-    const implicit = mockTarget("correlationId");
-    $messageHeader(mockContext(program), implicit as any);
-    expect(getMessageHeader(program, implicit)).toMatchInlineSnapshot(`
-      {
-        "name": "correlationId",
-      }
-    `);
+    const target = mockTarget("requestId");
+    $messageHeader(mockContext(program), target as any, "x-request-id");
+    expect(getMessageHeader(program, target)).toBe("x-request-id");
+    expect(hasMessageHeader(program, target)).toBe(true);
+    expect(hasMessageHeader(program, mockTarget("Other"))).toBe(false);
   });
 
   it("@contentType stores media type", () => {

@@ -3,21 +3,29 @@ export {
   type ServerDef,
   type Direction,
   type ReplyDef,
-  type MessageHeaderDef,
-  type AmqpChannelBindingsDef,
-  type AmqpOperationBindingsDef,
-  getServers,
-  getChannelAddress,
-  isChannel,
+  getServer,
+  hasServer,
+  getChannel,
+  hasChannel,
   getDirection,
   getReply,
+  hasReply,
   getCorrelationId,
+  hasCorrelationId,
   isPayload,
   getMessageHeader,
-  isMessageHeader,
+  hasMessageHeader,
   getContentType,
+  hasContentType,
   getAmqpBinding,
+  hasAmqpBinding,
   getAmqpOperationBinding,
+  hasAmqpOperationBinding,
 } from "./decorators.js";
+
+export type {
+  AmqpChannelBindingsDef,
+  AmqpOperationBindingsDef,
+} from "./0_types.js";
 
 export { $lib, AsyncApiStateKeys } from "./lib.js";

@@ -55,6 +55,8 @@ export interface DecoratorSpec {
 export interface LibrarySpec {
   namespace: string;
   decorators: DecoratorSpec[];
+  /** Extra TS import lines inserted after standard imports */
+  tsImports?: string[];
 }
 
 // --------------------------------------------------------------------------
@@ -209,21 +211,26 @@ function generateFactoryCall(dec: DecoratorSpec, stateKeysName: string): string 
     case "exclusive":
       return `const _${dec.name} = exclusiveDec<string>(${stateKey}, "${dec.exclusiveValue ?? dec.name}", onDuplicate${pascalCase(dec.exclusiveKey ?? dec.name)});`;
 
-    case "object": {
-      const allParams = [...(dec.params ?? []), ...(dec.options ?? []).map(f => ({ ...f, optional: true }))];
-      const buildParams = allParams.map(p => p.name).join(", ");
-      const buildBody = allParams.map(p => {
-        if (p.optional) return `${p.name}: ${p.name}`;
-        return `${p.name}`;
-      }).join(", ");
-      return `const _${dec.name} = objectDec<${tsStateType(dec)}>(${stateKey},\n  (_target, ${buildParams}) => ({ ${buildBody} }),\n);`;
-    }
-
+    case "object":
     case "list": {
-      const allParams = [...(dec.params ?? []), ...(dec.options ?? []).map(f => ({ ...f, optional: true }))];
-      const buildParams = allParams.map(p => p.name).join(", ");
-      const buildBody = allParams.map(p => `${p.name}`).join(", ");
-      return `const _${dec.name} = listDec<${tsStateType(dec)}>(${stateKey},\n  (_target, ${buildParams}) => ({ ${buildBody} }),\n);`;
+      const factory = dec.shape === "object" ? "objectDec" : "listDec";
+      const params = dec.params ?? [];
+      const opts = dec.options ?? [];
+      const hasOptions = opts.length > 0;
+
+      // Positional params come first, then optional options bag
+      const buildParams = hasOptions
+        ? [...params.map(p => p.name), "options"].join(", ")
+        : params.map(p => p.name).join(", ");
+
+      // Body: positional params as shorthand, options fields destructured from bag
+      const bodyParts = [
+        ...params.map(p => p.name),
+        ...opts.map(f => `${f.name}: options?.${f.name}`),
+      ];
+      const buildBody = bodyParts.join(", ");
+
+      return `const _${dec.name} = ${factory}<${tsStateType(dec)}>(${stateKey},\n  (_target, ${buildParams}) => ({ ${buildBody} }),\n);`;
     }
   }
 }
@@ -274,6 +281,9 @@ export function generateTs(spec: LibrarySpec, stateKeysName: string): string {
   sections.push(`import type { Program, Type } from "@typespec/compiler";`);
   sections.push(`import { ${stateKeysName}, reportDiagnostic } from "./lib.js";`);
   sections.push(`import { flagDec, valueDec, objectDec, listDec, exclusiveDec } from "./decorator-factory.js";`);
+  if (spec.tsImports) {
+    for (const line of spec.tsImports) sections.push(line);
+  }
   sections.push("");
   sections.push(`export const namespace = "${spec.namespace}";`);
 

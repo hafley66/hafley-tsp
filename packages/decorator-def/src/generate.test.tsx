@@ -55,26 +55,26 @@ describe("decorator-def pipeline", () => {
     const program = mockProgram();
     const ctx = mockCtx(program);
 
+    // Target enum ordinals: 0=Namespace, 1=Interface, 2=Operation, 3=Model, 4=ModelProperty
+    const T = { Namespace: 0, Interface: 1, Operation: 2, Model: 3, ModelProperty: 4 };
+
     // Define decorators using @decoratorDef
     const channel = mockModel("channel", [
       mockProp("address", mockScalar("string")),
     ]);
-    // shape=1 (value), targets="Namespace | Interface"
-    $decoratorDef(ctx, channel, 1, "Namespace | Interface");
+    $decoratorDef(ctx, channel, 1, [T.Namespace, T.Interface]);
 
     const payload = mockModel("payload", []);
-    // shape=0 (flag), targets="ModelProperty"
-    $decoratorDef(ctx, payload, 0, "ModelProperty");
+    $decoratorDef(ctx, payload, 0, [T.ModelProperty]);
 
     const send = mockModel("send", []);
-    // shape=4 (exclusive), targets="Operation"
-    $decoratorDef(ctx, send, 4, "Operation", {
+    $decoratorDef(ctx, send, 4, [T.Operation], {
       exclusiveKey: "direction",
       exclusiveValue: "send",
     });
 
     const receive = mockModel("receive", []);
-    $decoratorDef(ctx, receive, 4, "Operation", {
+    $decoratorDef(ctx, receive, 4, [T.Operation], {
       exclusiveKey: "direction",
       exclusiveValue: "receive",
     });
@@ -83,15 +83,13 @@ describe("decorator-def pipeline", () => {
       mockProp("url", mockScalar("string")),
       mockProp("protocol", mockScalar("string")),
     ]);
-    // shape=3 (list), targets="Namespace"
-    $decoratorDef(ctx, server, 3, "Namespace", { doc: "Declare a server." });
+    $decoratorDef(ctx, server, 3, [T.Namespace], { doc: "Declare a server." });
 
     const reply = mockModel("reply", [
       mockProp("channel", mockScalar("string"), true),
       mockProp("addressExpr", mockScalar("string"), true),
     ]);
-    // shape=2 (object), targets="Operation"
-    $decoratorDef(ctx, reply, 2, "Operation");
+    $decoratorDef(ctx, reply, 2, [T.Operation]);
 
     // Wire up global namespace
     const myNs = mockNamespace("MyLib", [channel, payload, send, receive, server, reply]);

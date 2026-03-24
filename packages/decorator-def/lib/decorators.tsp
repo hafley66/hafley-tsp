@@ -11,16 +11,30 @@ enum Shape {
   exclusive,
 }
 
+/** TypeSpec node types a decorator can target */
+enum Target {
+  Namespace,
+  Interface,
+  Operation,
+  Model,
+  ModelProperty,
+  Enum,
+  EnumMember,
+  Scalar,
+  Union,
+  UnionVariant,
+}
+
 /**
  * Mark a model as a decorator definition.
  * The model's properties become the decorator's parameters.
  *
  * @param shape How the decorator stores state.
- * @param targets What TypeSpec nodes this decorator can be applied to.
+ * @param targets Which TypeSpec node types this decorator applies to.
  *
  * @example
  * ```typespec
- * @decoratorDef(Shape.value, "Namespace | Interface")
+ * @decoratorDef(Shape.value, #[Target.Namespace, Target.Interface])
  * model channel {
  *   address: string;
  * }
@@ -28,20 +42,20 @@ enum Shape {
  *
  * @example Flag (no params)
  * ```typespec
- * @decoratorDef(Shape.flag, "ModelProperty")
+ * @decoratorDef(Shape.flag, #[Target.ModelProperty])
  * model payload {}
  * ```
  *
  * @example Exclusive pair
  * ```typespec
- * @decoratorDef(Shape.exclusive, "Operation", #{ exclusiveKey: "direction", exclusiveValue: "send" })
+ * @decoratorDef(Shape.exclusive, #[Target.Operation], #{ exclusiveKey: "direction", exclusiveValue: "send" })
  * model send {}
  * ```
  */
 extern dec decoratorDef(
   target: Model,
   shape: valueof Shape,
-  targets: valueof string,
+  targets: valueof Target[],
   options?: valueof DecoratorDefOptions
 );
 
