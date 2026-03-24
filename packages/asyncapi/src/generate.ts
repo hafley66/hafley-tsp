@@ -7,7 +7,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateTsp, generateTs } from "./decorator-codegen.js";
+import { generateTsp, generateTs } from "@hafley/typespec-decorator-def/codegen";
 import { asyncapiSpec } from "./decorator-spec.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

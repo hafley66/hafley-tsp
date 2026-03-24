@@ -7,6 +7,12 @@
     ".": {
       "typespec": "./lib/main.tsp",
       "default": "./dist/src/index.js"
+    },
+    "./factory": {
+      "default": "./dist/src/decorator-factory.js"
+    },
+    "./codegen": {
+      "default": "./dist/src/decorator-codegen.js"
     }
   },
   "scripts": {

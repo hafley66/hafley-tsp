@@ -1,0 +1,119 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`decorator-codegen > generates .ts factory-backed decorators 1`] = `
+"import type { Program, Type } from "@typespec/compiler";
+import { TestLibStateKeys, reportDiagnostic } from "./lib.js";
+import { flagDec, valueDec, objectDec, listDec, exclusiveDec } from "./decorator-factory.js";
+
+export const namespace = "TestLib";
+
+// ---- State types ----
+export interface MetaDef {
+  label?: string;
+  priority?: number;
+}
+
+export interface HookDef {
+  name: string;
+}
+
+// ---- Conflict handlers ----
+function onDuplicateMode(program: any, target: any, name: string) {
+  reportDiagnostic(program, { code: "duplicate-mode", format: { name }, target });
+}
+
+// ---- Decorator instances ----
+const _tag = valueDec<string>(TestLibStateKeys.tag);
+const _mark = flagDec(TestLibStateKeys.mark);
+const _on = exclusiveDec<string>(TestLibStateKeys.mode, "on", onDuplicateMode);
+const _off = exclusiveDec<string>(TestLibStateKeys.mode, "off", onDuplicateMode);
+const _meta = objectDec<MetaDef>(TestLibStateKeys.meta,
+  (_target, options) => ({ label: options?.label, priority: options?.priority }),
+);
+const _hook = listDec<HookDef>(TestLibStateKeys.hook,
+  (_target, name) => ({ name }),
+);
+
+// ---- $decorator exports ----
+export const $tag = _tag.$decorator;
+export const $mark = _mark.$decorator;
+export const $on = _on.$decorator;
+export const $off = _off.$decorator;
+export const $meta = _meta.$decorator;
+export const $hook = _hook.$decorator;
+
+// ---- Accessor exports ----
+export const getTag = _tag.get;
+export const hasTag = _tag.has;
+export const isMark = _mark.has;
+export const getMeta = _meta.get;
+export const hasMeta = _meta.has;
+export const getHook = _hook.get;
+export const hasHook = _hook.has;
+
+// ---- Exclusive group types + getters ----
+export type Mode = "on" | "off";
+export const getMode = _on.get as (program: Program, target: Type) => Mode | undefined;
+
+// ---- $decorators map (for tsp-index.ts) ----
+export const $decorators = {
+  "TestLib": {
+    tag: $tag,
+    mark: $mark,
+    on: $on,
+    off: $off,
+    meta: $meta,
+    hook: $hook,
+  },
+};
+"
+`;
+
+exports[`decorator-codegen > generates .tsp declarations 1`] = `
+"using TypeSpec.Reflection;
+
+namespace TestLib;
+
+/**
+ * Tag a model.
+ *
+ */
+extern dec tag(target: Model, value: valueof string);
+
+extern dec mark(target: ModelProperty);
+
+extern dec on(target: Operation);
+
+extern dec off(target: Operation);
+
+model MetaOptions {
+  label?: string;
+
+  priority?: int32;
+}
+
+extern dec meta(target: Operation, options?: valueof MetaOptions);
+
+extern dec hook(target: Namespace, name: valueof string);
+"
+`;
+
+exports[`decorator-codegen > generates state keys 1`] = `
+{
+  "hook": {
+    "description": "State for @hook decorator",
+  },
+  "mark": {
+    "description": "State for @mark decorator",
+  },
+  "meta": {
+    "description": "State for @meta decorator",
+  },
+  "mode": {
+    "description": "State for @off decorator",
+  },
+  "tag": {
+    "description": "State for @tag decorator",
+  },
+}
+`;

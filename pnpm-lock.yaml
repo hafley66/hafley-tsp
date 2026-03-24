@@ -10,6 +10,9 @@ importers:
 
   packages/asyncapi:
     dependencies:
+      '@hafley/typespec-decorator-def':
+        specifier: workspace:*
+        version: link:../decorator-def
       '@typespec/compiler':
         specifier: ^1.0.0
         version: 1.10.0(@types/node@25.5.0)

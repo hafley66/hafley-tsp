@@ -55,6 +55,8 @@ export interface DecoratorSpec {
 export interface LibrarySpec {
   namespace: string;
   decorators: DecoratorSpec[];
+  /** Import path for the decorator-factory module (default: "./decorator-factory.js") */
+  factoryImport?: string;
   /** Extra TS import lines inserted after standard imports */
   tsImports?: string[];
 }
@@ -280,7 +282,8 @@ export function generateTs(spec: LibrarySpec, stateKeysName: string): string {
 
   sections.push(`import type { Program, Type } from "@typespec/compiler";`);
   sections.push(`import { ${stateKeysName}, reportDiagnostic } from "./lib.js";`);
-  sections.push(`import { flagDec, valueDec, objectDec, listDec, exclusiveDec } from "./decorator-factory.js";`);
+  const factoryPath = spec.factoryImport ?? "./decorator-factory.js";
+  sections.push(`import { flagDec, valueDec, objectDec, listDec, exclusiveDec } from "${factoryPath}";`);
   if (spec.tsImports) {
     for (const line of spec.tsImports) sections.push(line);
   }

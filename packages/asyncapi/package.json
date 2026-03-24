@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hafley/typespec-decorator-def": "workspace:*",
     "@typespec/compiler": "^1.0.0"
   },
   "devDependencies": {

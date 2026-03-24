@@ -1,6 +1,6 @@
 import type { Program, Type } from "@typespec/compiler";
 import { AsyncApiStateKeys, reportDiagnostic } from "./lib.js";
-import { flagDec, valueDec, objectDec, listDec, exclusiveDec } from "./decorator-factory.js";
+import { flagDec, valueDec, objectDec, listDec, exclusiveDec } from "@hafley/typespec-decorator-def/factory";
 import type { AmqpChannelBindingsDef, AmqpOperationBindingsDef } from "./0_types.js";
 
 export const namespace = "AsyncAPI";

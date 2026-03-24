@@ -6,10 +6,11 @@
  *   - src/decorators.ts   (factory-backed implementations + accessors)
  */
 
-import type { LibrarySpec } from "./decorator-codegen.js";
+import type { LibrarySpec } from "@hafley/typespec-decorator-def/codegen";
 
 export const asyncapiSpec: LibrarySpec = {
   namespace: "AsyncAPI",
+  factoryImport: "@hafley/typespec-decorator-def/factory",
   tsImports: [
     `import type { AmqpChannelBindingsDef, AmqpOperationBindingsDef } from "./0_types.js";`,
   ],
