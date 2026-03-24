@@ -1,1 +1,1 @@
-20260323.0.decorator-def-typespec-projections.md
+20260324.1.decorator-def-wire-extract.md
