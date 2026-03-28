@@ -90,10 +90,10 @@ extern dec contentType(target: Namespace | Interface | Operation, mediaType: val
  * Apply AMQP-specific channel bindings.
  *
  */
-extern dec amqpBinding(target: Namespace | Interface, bindings: valueof AmqpChannelBindingsDef);
+extern dec amqpBinding(target: Namespace | Interface, bindings: valueof AmqpChannelBindings);
 
 /**
  * Apply AMQP-specific operation bindings.
  *
  */
-extern dec amqpOperationBinding(target: Operation, bindings: valueof AmqpOperationBindingsDef);
+extern dec amqpOperationBinding(target: Operation, bindings: valueof AmqpOperationBindings);

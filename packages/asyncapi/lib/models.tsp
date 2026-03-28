@@ -1,27 +1,31 @@
 namespace AsyncAPI;
 
+model AmqpExchangeBindings {
+  name?: string;
+  /** "topic", "direct", "fanout", "default", "headers" */
+  type?: string;
+  durable?: boolean;
+  autoDelete?: boolean;
+  vhost?: string;
+}
+
+model AmqpQueueBindings {
+  name?: string;
+  durable?: boolean;
+  exclusive?: boolean;
+  autoDelete?: boolean;
+  vhost?: string;
+}
+
 model AmqpChannelBindings {
   /** "queue" or "routingKey" */
-  is?: string;
+  `is`?: string;
 
   /** Exchange configuration (when is = "routingKey") */
-  exchange?: {
-    name?: string;
-    /** "topic", "direct", "fanout", "default", "headers" */
-    type?: string;
-    durable?: boolean;
-    autoDelete?: boolean;
-    vhost?: string;
-  };
+  exchange?: AmqpExchangeBindings;
 
   /** Queue configuration (when is = "queue") */
-  queue?: {
-    name?: string;
-    durable?: boolean;
-    exclusive?: boolean;
-    autoDelete?: boolean;
-    vhost?: string;
-  };
+  queue?: AmqpQueueBindings;
 }
 
 model AmqpOperationBindings {

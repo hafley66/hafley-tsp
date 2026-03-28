@@ -1,5 +1,13 @@
 {
   "name": "hafley-tsp",
   "private": true,
-  "packageManager": "pnpm@10.5.2"
+  "type": "module",
+  "packageManager": "pnpm@10.5.2",
+  "devDependencies": {
+    "@typespec/compiler": "^1.0.0",
+    "tsx": "^4.0.0"
+  },
+  "scripts": {
+    "graph": "node --import tsx/esm tools/tsp-dot.ts"
+  }
 }
