@@ -1,5 +1,6 @@
 // TEST: can function return values be passed to other functions?
-// EXPECT: exploring fn composition
+// EXPECT: curry() fails (cannot return JS functions from TSP fns)
+// KNOWN-FAIL: fixture 10 -- curry line errors, rest compiles
 #suppress "experimental-feature" ""
 import "../lib/fn-return.tsp";
 using FnReturn;

@@ -1,0 +1,25 @@
+{
+  "name": "@hafley/typespec-binding-core",
+  "version": "0.1.0",
+  "type": "module",
+  "tspMain": "lib/main.tsp",
+  "exports": {
+    ".": {
+      "typespec": "./lib/main.tsp",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hafley/typespec-decorator-def": "workspace:*",
+    "@typespec/compiler": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.0"
+  },
+  "packageManager": "pnpm@10.5.2"
+}

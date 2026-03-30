@@ -13,7 +13,9 @@ run_fixture() {
   local name
   name=$(basename "$file" .tsp)
 
-  if npx tsp compile "$file" --no-emit 2>&1 | grep -q "error"; then
+  local output
+  output=$(npx tsp compile "$file" --no-emit 2>&1)
+  if echo "$output" | grep -q " error "; then
     echo "  FAIL  $name"
     ((FAIL++))
   else

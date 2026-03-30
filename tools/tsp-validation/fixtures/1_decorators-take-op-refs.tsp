@@ -2,7 +2,12 @@
 // EXPECT: compiles clean
 import "../lib/reflect.tsp";
 
-namespace Orders {
+alias derp = "LOL";
+model A {`x-derp`:  derp;}
+
+alias B = A.`x-derp`;
+const a:A = #{ `x-derp`: "LOL"};
+namespace `Orders` {
   model Order { id: string; status: string; }
 
   namespace mut {
