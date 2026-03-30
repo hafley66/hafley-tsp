@@ -36,6 +36,12 @@ export const $lib = createTypeSpecLibrary({
     default: { description: "State for @Entity.default decorator" },
     relation: { description: "State for @Rel.* decorators" },
     binding: { description: "State for @Bind.from decorator" },
+    sourceGraphql: { description: "State for @Source.graphql decorator" },
+    sourceRest: { description: "State for @Source.rest decorator" },
+    sourcePaginated: { description: "State for @Source.paginated decorator" },
+    sourceNested: { description: "State for @Source.nested decorator" },
+    sourcePollInterval: { description: "State for @Source.pollInterval decorator" },
+    syncStrategy: { description: "State for @Sync.strategy decorator" },
   },
 });
 

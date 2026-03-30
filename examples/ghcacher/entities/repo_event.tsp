@@ -5,7 +5,9 @@ import "./repo.tsp";
 using Entity;
 using Rel;
 using Bind;
+using Sync;
 
+@Sync.strategy("insert-ignore")
 model RepoEvent {
   @Entity.pk id: integer;
   @Rel.belongsTo repo: Repo;

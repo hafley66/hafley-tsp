@@ -20,6 +20,15 @@ import {
   getBinding,
   hasBinding,
   getAllRelations,
+  isSourceGraphql,
+  getSourceRest,
+  hasSourceRest,
+  isSourcePaginated,
+  getSourcePollInterval,
+  hasSourcePollInterval,
+  getSourceNested,
+  getSyncStrategy,
+  hasSyncStrategy,
 } from "./decorators.js";
 
 // ── Fact table row types ──────────────────────────────────
@@ -86,6 +95,32 @@ export interface AutoMapFact {
   field: string;
 }
 
+export interface SourceFact {
+  model: string;
+  transport: "graphql" | "rest";
+  endpoint?: string; // REST path pattern
+  paginated: boolean;
+  poll_interval?: number;
+}
+
+export interface SourceNestedFact {
+  model: string;
+  parent: string;
+  path: string; // JSON traversal from parent, e.g. "reviews.nodes"
+}
+
+export interface SyncStrategyFact {
+  entity: string;
+  strategy: "upsert" | "insert-ignore" | "delete-replace";
+}
+
+export interface SourceFieldFact {
+  model: string;
+  name: string;
+  type: string;
+  nullable: boolean;
+}
+
 export interface FactDB {
   entities: EntityFact[];
   fields: FieldFact[];
@@ -98,6 +133,10 @@ export interface FactDB {
   bindings: BindingFact[];
   field_maps: FieldMapFact[];
   auto_maps: AutoMapFact[];
+  sources: SourceFact[];
+  source_nested: SourceNestedFact[];
+  sync_strategies: SyncStrategyFact[];
+  source_fields: SourceFieldFact[];
 }
 
 // ── Type resolution ───────────────────────────────────────
@@ -254,6 +293,10 @@ export function extractFacts(program: Program): FactDB {
     bindings: [],
     field_maps: [],
     auto_maps: [],
+    sources: [],
+    source_nested: [],
+    sync_strategies: [],
+    source_fields: [],
   };
 
   const globalNs = program.getGlobalNamespaceType();
@@ -346,6 +389,58 @@ export function extractFacts(program: Program): FactDB {
     );
     db.field_maps.push(...fieldMaps);
     db.auto_maps.push(...autoMaps);
+  }
+
+  // Pass 4: Source model facts (transport, endpoint, nesting, fields)
+  for (const model of allModels) {
+    const isGql = isSourceGraphql(program, model);
+    const restPath = hasSourceRest(program, model) ? getSourceRest(program, model) : undefined;
+    if (!isGql && !restPath) continue;
+
+    const pollInterval = hasSourcePollInterval(program, model)
+      ? getSourcePollInterval(program, model)
+      : undefined;
+
+    db.sources.push({
+      model: model.name,
+      transport: isGql ? "graphql" : "rest",
+      endpoint: restPath,
+      paginated: isSourcePaginated(program, model),
+      poll_interval: pollInterval,
+    });
+
+    // Extract source model fields for GraphQL query gen and JSON factory gen
+    for (const [, prop] of model.properties) {
+      if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
+      const { typeName, nullable } = resolveFieldType(prop.type);
+      db.source_fields.push({
+        model: model.name,
+        name: prop.name,
+        type: typeName,
+        nullable,
+      });
+    }
+
+    // Nested source
+    const nested = getSourceNested(program, model.name);
+    if (nested) {
+      db.source_nested.push({
+        model: model.name,
+        parent: nested.parent,
+        path: nested.path,
+      });
+    }
+  }
+
+  // Pass 5: Sync strategy on entity models
+  for (const model of allModels) {
+    if (!entityModels.has(model.name)) continue;
+    if (hasSyncStrategy(program, model)) {
+      db.sync_strategies.push({
+        entity: model.name,
+        strategy: getSyncStrategy(program, model) as any,
+      });
+    }
   }
 
   return db;

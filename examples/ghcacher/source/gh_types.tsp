@@ -1,4 +1,7 @@
 /** Source models -- GitHub API wire format, camelCase preserved. */
+import "../../../packages/binding-core/lib/main.tsp";
+
+using Source;
 
 model GhUser {
   login: string | null;
@@ -9,6 +12,7 @@ model GhRef {
   oid: string | null;
 }
 
+@Source.graphql
 model GhReview {
   id: integer;
   author: GhUser;
@@ -22,6 +26,7 @@ model GhLabel {
   color: string | null;
 }
 
+@Source.graphql
 model GhPullRequest {
   id: string;
   number: integer;
@@ -43,12 +48,16 @@ model GhPullRequest {
   body: string | null;
 }
 
+@Source.rest("/orgs/{owner}/repos")
+@Source.paginated
 model GhRepo {
   owner: GhUser;
   name: string;
   defaultBranchRef: GhRef;
 }
 
+@Source.rest("/repos/{owner}/{name}/branches")
+@Source.paginated
 model GhBranch {
   name: string;
   commit: { sha: string | null };
@@ -65,6 +74,7 @@ model GhNotificationRepository {
   name: string;
 }
 
+@Source.rest("/notifications")
 model GhNotification {
   id: string;
   repository: GhNotificationRepository;
@@ -75,6 +85,7 @@ model GhNotification {
   last_read_at: string | null;
 }
 
+@Source.graphql
 model GhPrComment {
   id: integer;
   author: GhUser;
@@ -86,6 +97,7 @@ model GhPrComment {
   updated_at: string;
 }
 
+@Source.graphql
 model GhStatusCheck {
   context: string;
   state: string;
@@ -94,6 +106,9 @@ model GhStatusCheck {
   updated_at: string | null;
 }
 
+@Source.rest("/repos/{owner}/{name}/events")
+@Source.paginated
+@Source.pollInterval(60)
 model GhRepoEvent {
   id: string;
   type: string;

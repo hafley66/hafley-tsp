@@ -131,6 +131,63 @@ export function getAllRelations(program: Program): Map<string, RelationDef[]> {
 }
 
 // ──────────────────────────────────────────────────────────
+// Source namespace
+// ──────────────────────────────────────────────────────────
+
+const _sourceGraphql = flagDec(BindingCoreStateKeys.sourceGraphql as any);
+const _sourceRest = valueDec<string>(BindingCoreStateKeys.sourceRest as any);
+const _sourcePaginated = flagDec(BindingCoreStateKeys.sourcePaginated as any);
+const _sourcePollInterval = valueDec<number>(BindingCoreStateKeys.sourcePollInterval as any);
+
+const SOURCE_NESTED_KEY = Symbol.for("hafley:source-nested");
+
+export interface NestedDef {
+  parent: string;
+  path: string;
+}
+
+export function $graphql(ctx: DecoratorContext, target: Model) {
+  _sourceGraphql.$decorator(ctx, target);
+}
+export function $rest(ctx: DecoratorContext, target: Model, path: string) {
+  _sourceRest.$decorator(ctx, target, path);
+}
+export function $paginated(ctx: DecoratorContext, target: Model) {
+  _sourcePaginated.$decorator(ctx, target);
+}
+export function $nested(ctx: DecoratorContext, target: Model, parent: Model, path: string) {
+  const map: Map<string, NestedDef> = ctx.program.stateMap(SOURCE_NESTED_KEY) as any;
+  map.set(target.name, { parent: parent.name, path });
+}
+export function $pollInterval(ctx: DecoratorContext, target: Model, seconds: number) {
+  _sourcePollInterval.$decorator(ctx, target, seconds);
+}
+
+export const isSourceGraphql = _sourceGraphql.has;
+export const getSourceRest = _sourceRest.get;
+export const hasSourceRest = _sourceRest.has;
+export const isSourcePaginated = _sourcePaginated.has;
+export const getSourcePollInterval = _sourcePollInterval.get;
+export const hasSourcePollInterval = _sourcePollInterval.has;
+
+export function getSourceNested(program: Program, modelName: string): NestedDef | undefined {
+  return (program.stateMap(SOURCE_NESTED_KEY) as any).get(modelName);
+}
+
+// ──────────────────────────────────────────────────────────
+// Sync namespace
+// ──────────────────────────────────────────────────────────
+
+const _syncStrategy = valueDec<string>(BindingCoreStateKeys.syncStrategy as any);
+
+export function $strategy(ctx: DecoratorContext, target: Model, value: string) {
+  _syncStrategy.$decorator(ctx, target, value);
+}
+
+export const getSyncStrategy = _syncStrategy.get;
+export const hasSyncStrategy = _syncStrategy.has;
+
+// ──────────────────────────────────────────────────────────
 // $decorators map (TSP runtime binding)
 // ──────────────────────────────────────────────────────────
 
@@ -150,5 +207,15 @@ export const $decorators = {
   },
   Bind: {
     from: $from,
+  },
+  Source: {
+    graphql: $graphql,
+    rest: $rest,
+    paginated: $paginated,
+    nested: $nested,
+    pollInterval: $pollInterval,
+  },
+  Sync: {
+    strategy: $strategy,
   },
 };
