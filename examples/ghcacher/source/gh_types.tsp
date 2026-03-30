@@ -74,3 +74,30 @@ model GhNotification {
   updated_at: string;
   last_read_at: string | null;
 }
+
+model GhPrComment {
+  id: integer;
+  author: GhUser;
+  body: string;
+  path: string | null;
+  line: integer | null;
+  in_reply_to_id: integer | null;
+  created_at: string;
+  updated_at: string;
+}
+
+model GhStatusCheck {
+  context: string;
+  state: string;
+  target_url: string | null;
+  description: string | null;
+  updated_at: string | null;
+}
+
+model GhRepoEvent {
+  id: string;
+  type: string;
+  actor: GhUser;
+  payload: string; // JSON blob
+  created_at: string;
+}

@@ -1,6 +1,6 @@
 import type { DecoratorContext, Model, ModelProperty, Program, Type } from "@typespec/compiler";
 import { BindingCoreStateKeys, reportDiagnostic } from "./lib.js";
-import { flagDec, listDec, objectDec } from "@hafley/typespec-decorator-def/factory";
+import { flagDec, listDec, objectDec, valueDec } from "@hafley/typespec-decorator-def/factory";
 
 // ──────────────────────────────────────────────────────────
 // Entity namespace
@@ -24,6 +24,8 @@ const _index = listDec<{ anchor: string; fields: string[] }>(
     fields: fields.map((f: any) => f.name ?? String(f)),
   }),
 );
+
+const _default = valueDec<string>(BindingCoreStateKeys.default as any);
 
 // ──────────────────────────────────────────────────────────
 // Rel namespace -- stores by model name STRING (phase stable)
@@ -86,6 +88,9 @@ export function $manual(ctx: DecoratorContext, target: ModelProperty) {
 export function $index(ctx: DecoratorContext, target: ModelProperty, ...fields: Type[]) {
   _index.$decorator(ctx, target, ...fields);
 }
+export function $default(ctx: DecoratorContext, target: ModelProperty, value: string) {
+  _default.$decorator(ctx, target, value);
+}
 
 export function $belongsTo(ctx: DecoratorContext, target: ModelProperty) {
   storeRelation(ctx, target, "belongsTo");
@@ -112,6 +117,8 @@ export const isPk = _pk.has;
 export const isManual = _manual.has;
 export const getUnique = _unique.get;
 export const getIndex = _index.get;
+export const getDefault = _default.get;
+export const hasDefault = _default.has;
 export const getBinding = _binding.get;
 export const hasBinding = _binding.has;
 
@@ -133,6 +140,7 @@ export const $decorators = {
     unique: $unique,
     manual: $manual,
     index: $index,
+    default: $default,
   },
   Rel: {
     belongsTo: $belongsTo,

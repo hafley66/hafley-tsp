@@ -1,0 +1,1454 @@
+{
+  "entities": [
+    {
+      "name": "Repo"
+    },
+    {
+      "name": "Branch"
+    },
+    {
+      "name": "PullRequest"
+    },
+    {
+      "name": "PrReview"
+    },
+    {
+      "name": "PrComment"
+    },
+    {
+      "name": "PrStatusCheck"
+    },
+    {
+      "name": "PrLabel"
+    },
+    {
+      "name": "PrRequestedReviewer"
+    },
+    {
+      "name": "RepoEvent"
+    },
+    {
+      "name": "Notification"
+    },
+    {
+      "name": "Checkout"
+    },
+    {
+      "name": "CallLog"
+    },
+    {
+      "name": "ChangeLog"
+    },
+    {
+      "name": "PollState"
+    }
+  ],
+  "fields": [
+    {
+      "entity": "Repo",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Repo",
+      "name": "owner",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Repo",
+      "name": "name",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Repo",
+      "name": "default_branch",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Repo",
+      "name": "gh_node_id",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Repo",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "repo",
+      "type": "Repo",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "name",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "sha",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "behind_default",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "ahead_default",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Branch",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "repo",
+      "type": "Repo",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "number",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "gh_node_id",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "state",
+      "type": "PrState",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "title",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "author.login",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "PullRequest",
+      "name": "head_ref",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "head_sha",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "base_ref",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "mergeable",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "is_draft",
+      "type": "boolean",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "additions",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "deletions",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "changed_files",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "created_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "merged_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "closed_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "body",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PullRequest",
+      "name": "raw_json",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrReview",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrReview",
+      "name": "pr",
+      "type": "PullRequest",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrReview",
+      "name": "gh_id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrReview",
+      "name": "author.login",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "PrReview",
+      "name": "state",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrReview",
+      "name": "body",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrReview",
+      "name": "submitted_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "pr",
+      "type": "PullRequest",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "gh_id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "author.login",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "PrComment",
+      "name": "body",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "path",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "line",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "in_reply_to_id",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "created_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrComment",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "pr",
+      "type": "PullRequest",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "context",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "state",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "target_url",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "description",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrStatusCheck",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrLabel",
+      "name": "pr",
+      "type": "PullRequest",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrLabel",
+      "name": "label",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrLabel",
+      "name": "color",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrRequestedReviewer",
+      "name": "pr",
+      "type": "PullRequest",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PrRequestedReviewer",
+      "name": "reviewer",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "repo",
+      "type": "Repo",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "gh_id",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "type",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "actor.login",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "payload_json",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "RepoEvent",
+      "name": "created_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "gh_id",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "repo",
+      "type": "Repo",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "subject.type",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "Notification",
+      "name": "subject.title",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "Notification",
+      "name": "subject.url",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": true
+    },
+    {
+      "entity": "Notification",
+      "name": "subject_number",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "html_url",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "reason",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "unread",
+      "type": "boolean",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Notification",
+      "name": "last_read_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Checkout",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Checkout",
+      "name": "repo",
+      "type": "Repo",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Checkout",
+      "name": "branch",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Checkout",
+      "name": "local_path",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Checkout",
+      "name": "sha",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "Checkout",
+      "name": "checked_out_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "endpoint",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "api_type",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "method",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "status_code",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "etag",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "last_modified",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "rate_remaining",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "rate_reset",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "gql_cost",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "cache_hit",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "duration_ms",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "CallLog",
+      "name": "called_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "entity_type",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "entity_id",
+      "type": "integer",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "event",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "repo_slug",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "payload_json",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "ChangeLog",
+      "name": "occurred_at",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PollState",
+      "name": "endpoint",
+      "type": "string",
+      "nullable": false,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PollState",
+      "name": "etag",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PollState",
+      "name": "last_modified",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PollState",
+      "name": "poll_interval",
+      "type": "integer",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PollState",
+      "name": "last_polled_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    },
+    {
+      "entity": "PollState",
+      "name": "last_changed_at",
+      "type": "string",
+      "nullable": true,
+      "is_dot_path": false
+    }
+  ],
+  "pks": [
+    {
+      "entity": "Repo",
+      "field": "id"
+    },
+    {
+      "entity": "Branch",
+      "field": "id"
+    },
+    {
+      "entity": "PullRequest",
+      "field": "id"
+    },
+    {
+      "entity": "PrReview",
+      "field": "id"
+    },
+    {
+      "entity": "PrComment",
+      "field": "id"
+    },
+    {
+      "entity": "PrStatusCheck",
+      "field": "id"
+    },
+    {
+      "entity": "PrLabel",
+      "field": "pr"
+    },
+    {
+      "entity": "PrLabel",
+      "field": "label"
+    },
+    {
+      "entity": "PrRequestedReviewer",
+      "field": "pr"
+    },
+    {
+      "entity": "PrRequestedReviewer",
+      "field": "reviewer"
+    },
+    {
+      "entity": "RepoEvent",
+      "field": "id"
+    },
+    {
+      "entity": "Notification",
+      "field": "id"
+    },
+    {
+      "entity": "Checkout",
+      "field": "id"
+    },
+    {
+      "entity": "CallLog",
+      "field": "id"
+    },
+    {
+      "entity": "ChangeLog",
+      "field": "id"
+    },
+    {
+      "entity": "PollState",
+      "field": "endpoint"
+    }
+  ],
+  "uniques": [
+    {
+      "entity": "Repo",
+      "fields": [
+        "owner",
+        "name"
+      ]
+    },
+    {
+      "entity": "Branch",
+      "fields": [
+        "repo",
+        "name"
+      ]
+    },
+    {
+      "entity": "PullRequest",
+      "fields": [
+        "repo",
+        "number"
+      ]
+    },
+    {
+      "entity": "PrReview",
+      "fields": [
+        "pr",
+        "gh_id"
+      ]
+    },
+    {
+      "entity": "PrComment",
+      "fields": [
+        "pr",
+        "gh_id"
+      ]
+    },
+    {
+      "entity": "PrStatusCheck",
+      "fields": [
+        "pr",
+        "context"
+      ]
+    },
+    {
+      "entity": "RepoEvent",
+      "fields": [
+        "repo",
+        "gh_id"
+      ]
+    },
+    {
+      "entity": "Checkout",
+      "fields": [
+        "repo",
+        "branch"
+      ]
+    }
+  ],
+  "indexes": [
+    {
+      "entity": "PullRequest",
+      "fields": [
+        "repo",
+        "state"
+      ]
+    },
+    {
+      "entity": "PullRequest",
+      "fields": [
+        "updated_at"
+      ]
+    },
+    {
+      "entity": "RepoEvent",
+      "fields": [
+        "repo",
+        "type"
+      ]
+    },
+    {
+      "entity": "RepoEvent",
+      "fields": [
+        "created_at"
+      ]
+    },
+    {
+      "entity": "Notification",
+      "fields": [
+        "unread",
+        "updated_at"
+      ]
+    },
+    {
+      "entity": "CallLog",
+      "fields": [
+        "endpoint",
+        "called_at"
+      ]
+    },
+    {
+      "entity": "ChangeLog",
+      "fields": [
+        "entity_type",
+        "occurred_at"
+      ]
+    }
+  ],
+  "defaults": [
+    {
+      "entity": "Repo",
+      "field": "default_branch",
+      "value": "'main'"
+    },
+    {
+      "entity": "PullRequest",
+      "field": "is_draft",
+      "value": "0"
+    },
+    {
+      "entity": "CallLog",
+      "field": "api_type",
+      "value": "'rest'"
+    },
+    {
+      "entity": "CallLog",
+      "field": "method",
+      "value": "'GET'"
+    },
+    {
+      "entity": "CallLog",
+      "field": "cache_hit",
+      "value": "0"
+    },
+    {
+      "entity": "CallLog",
+      "field": "called_at",
+      "value": "(strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
+    },
+    {
+      "entity": "ChangeLog",
+      "field": "occurred_at",
+      "value": "(strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))"
+    }
+  ],
+  "manuals": [
+    {
+      "entity": "PullRequest",
+      "field": "raw_json"
+    },
+    {
+      "entity": "Notification",
+      "field": "subject_number"
+    },
+    {
+      "entity": "Notification",
+      "field": "html_url"
+    }
+  ],
+  "relations": [
+    {
+      "entity": "Branch",
+      "field": "repo",
+      "kind": "belongsTo",
+      "target": "Repo"
+    },
+    {
+      "entity": "PullRequest",
+      "field": "repo",
+      "kind": "belongsTo",
+      "target": "Repo"
+    },
+    {
+      "entity": "PrReview",
+      "field": "pr",
+      "kind": "belongsTo",
+      "target": "PullRequest"
+    },
+    {
+      "entity": "PrComment",
+      "field": "pr",
+      "kind": "belongsTo",
+      "target": "PullRequest"
+    },
+    {
+      "entity": "PrStatusCheck",
+      "field": "pr",
+      "kind": "belongsTo",
+      "target": "PullRequest"
+    },
+    {
+      "entity": "PrLabel",
+      "field": "pr",
+      "kind": "belongsTo",
+      "target": "PullRequest"
+    },
+    {
+      "entity": "PrRequestedReviewer",
+      "field": "pr",
+      "kind": "belongsTo",
+      "target": "PullRequest"
+    },
+    {
+      "entity": "RepoEvent",
+      "field": "repo",
+      "kind": "belongsTo",
+      "target": "Repo"
+    },
+    {
+      "entity": "Notification",
+      "field": "repo",
+      "kind": "belongsTo",
+      "target": "Repo"
+    },
+    {
+      "entity": "Checkout",
+      "field": "repo",
+      "kind": "belongsTo",
+      "target": "Repo"
+    }
+  ],
+  "bindings": [
+    {
+      "name": "RepoBinding",
+      "source": "GhRepo",
+      "target": "Repo"
+    },
+    {
+      "name": "BranchBinding",
+      "source": "GhBranch",
+      "target": "Branch"
+    },
+    {
+      "name": "PrBinding",
+      "source": "GhPullRequest",
+      "target": "PullRequest"
+    },
+    {
+      "name": "PrReviewBinding",
+      "source": "GhReview",
+      "target": "PrReview"
+    },
+    {
+      "name": "PrCommentBinding",
+      "source": "GhPrComment",
+      "target": "PrComment"
+    },
+    {
+      "name": "PrStatusCheckBinding",
+      "source": "GhStatusCheck",
+      "target": "PrStatusCheck"
+    },
+    {
+      "name": "RepoEventBinding",
+      "source": "GhRepoEvent",
+      "target": "RepoEvent"
+    },
+    {
+      "name": "NotificationBinding",
+      "source": "GhNotification",
+      "target": "Notification"
+    }
+  ],
+  "field_maps": [
+    {
+      "binding": "RepoBinding",
+      "target_field": "owner",
+      "source_chain": [
+        "GhRepo.owner",
+        "GhUser.login"
+      ]
+    },
+    {
+      "binding": "RepoBinding",
+      "target_field": "default_branch",
+      "source_chain": [
+        "GhRepo.defaultBranchRef",
+        "GhRef.name"
+      ]
+    },
+    {
+      "binding": "BranchBinding",
+      "target_field": "sha",
+      "source_chain": [
+        "GhBranch.commit"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "gh_node_id",
+      "source_chain": [
+        "GhPullRequest.id"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "is_draft",
+      "source_chain": [
+        "GhPullRequest.isDraft"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "head_ref",
+      "source_chain": [
+        "GhPullRequest.headRefName"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "head_sha",
+      "source_chain": [
+        "GhPullRequest.headRefOid"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "base_ref",
+      "source_chain": [
+        "GhPullRequest.baseRefName"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "changed_files",
+      "source_chain": [
+        "GhPullRequest.changedFiles"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "created_at",
+      "source_chain": [
+        "GhPullRequest.createdAt"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "updated_at",
+      "source_chain": [
+        "GhPullRequest.updatedAt"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "merged_at",
+      "source_chain": [
+        "GhPullRequest.mergedAt"
+      ]
+    },
+    {
+      "binding": "PrBinding",
+      "target_field": "closed_at",
+      "source_chain": [
+        "GhPullRequest.closedAt"
+      ]
+    },
+    {
+      "binding": "PrReviewBinding",
+      "target_field": "gh_id",
+      "source_chain": [
+        "GhReview.id"
+      ]
+    },
+    {
+      "binding": "PrReviewBinding",
+      "target_field": "submitted_at",
+      "source_chain": [
+        "GhReview.submittedAt"
+      ]
+    },
+    {
+      "binding": "PrCommentBinding",
+      "target_field": "gh_id",
+      "source_chain": [
+        "GhPrComment.id"
+      ]
+    },
+    {
+      "binding": "PrCommentBinding",
+      "target_field": "in_reply_to_id",
+      "source_chain": [
+        "GhPrComment.in_reply_to_id"
+      ]
+    },
+    {
+      "binding": "PrStatusCheckBinding",
+      "target_field": "target_url",
+      "source_chain": [
+        "GhStatusCheck.target_url"
+      ]
+    },
+    {
+      "binding": "RepoEventBinding",
+      "target_field": "gh_id",
+      "source_chain": [
+        "GhRepoEvent.id"
+      ]
+    },
+    {
+      "binding": "RepoEventBinding",
+      "target_field": "payload_json",
+      "source_chain": [
+        "GhRepoEvent.payload"
+      ]
+    },
+    {
+      "binding": "RepoEventBinding",
+      "target_field": "created_at",
+      "source_chain": [
+        "GhRepoEvent.created_at"
+      ]
+    },
+    {
+      "binding": "NotificationBinding",
+      "target_field": "gh_id",
+      "source_chain": [
+        "GhNotification.id"
+      ]
+    }
+  ],
+  "auto_maps": [
+    {
+      "binding": "RepoBinding",
+      "field": "name"
+    },
+    {
+      "binding": "BranchBinding",
+      "field": "name"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "id"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "number"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "state"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "title"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "mergeable"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "additions"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "deletions"
+    },
+    {
+      "binding": "PrBinding",
+      "field": "body"
+    },
+    {
+      "binding": "PrReviewBinding",
+      "field": "id"
+    },
+    {
+      "binding": "PrReviewBinding",
+      "field": "state"
+    },
+    {
+      "binding": "PrReviewBinding",
+      "field": "body"
+    },
+    {
+      "binding": "PrCommentBinding",
+      "field": "id"
+    },
+    {
+      "binding": "PrCommentBinding",
+      "field": "body"
+    },
+    {
+      "binding": "PrCommentBinding",
+      "field": "path"
+    },
+    {
+      "binding": "PrCommentBinding",
+      "field": "line"
+    },
+    {
+      "binding": "PrCommentBinding",
+      "field": "created_at"
+    },
+    {
+      "binding": "PrCommentBinding",
+      "field": "updated_at"
+    },
+    {
+      "binding": "PrStatusCheckBinding",
+      "field": "context"
+    },
+    {
+      "binding": "PrStatusCheckBinding",
+      "field": "state"
+    },
+    {
+      "binding": "PrStatusCheckBinding",
+      "field": "description"
+    },
+    {
+      "binding": "PrStatusCheckBinding",
+      "field": "updated_at"
+    },
+    {
+      "binding": "RepoEventBinding",
+      "field": "id"
+    },
+    {
+      "binding": "RepoEventBinding",
+      "field": "type"
+    },
+    {
+      "binding": "NotificationBinding",
+      "field": "id"
+    },
+    {
+      "binding": "NotificationBinding",
+      "field": "reason"
+    },
+    {
+      "binding": "NotificationBinding",
+      "field": "unread"
+    },
+    {
+      "binding": "NotificationBinding",
+      "field": "updated_at"
+    },
+    {
+      "binding": "NotificationBinding",
+      "field": "last_read_at"
+    }
+  ]
+}

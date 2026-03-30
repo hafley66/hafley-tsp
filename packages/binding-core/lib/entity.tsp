@@ -32,4 +32,22 @@ namespace Entity {
    * Declare a composite index on this field plus additional fields.
    */
   extern dec index(target: ModelProperty, ...fields: ModelProperty[]);
+
+  /**
+   * Default value for this column. String is passed through verbatim to SQL.
+   * Use for literals ("main", "0") or expressions ("(strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))").
+   *
+   * @example
+   * ```typespec
+   * @Entity.default("main")
+   * default_branch: string;
+   *
+   * @Entity.default("0")
+   * draft: boolean;
+   *
+   * @Entity.default("(strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))")
+   * created_at: string;
+   * ```
+   */
+  extern dec default(target: ModelProperty, value: valueof string);
 }

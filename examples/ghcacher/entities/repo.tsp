@@ -10,6 +10,7 @@ model Repo {
   @Entity.unique(Repo.owner, Repo.name)
   owner: string;
   name: string;
+  @Entity.default("'main'")
   default_branch: string;
   gh_node_id: string | null;
   updated_at: string | null;

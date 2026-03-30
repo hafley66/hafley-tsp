@@ -21,6 +21,7 @@ model PullRequest {
   head_sha: string | null;
   base_ref: string | null;
   mergeable: string | null;
+  @Entity.default("0")
   is_draft: boolean;
   additions: integer | null;
   deletions: integer | null;
