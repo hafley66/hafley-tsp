@@ -1,5 +1,6 @@
 // $onValidate -- runs after all types are checked.
-// Extracts fact tables from decorator state, writes facts.json + schema.sql to tsp-output/.
+// Builds facts.json from extractFacts (for debug/external consumers),
+// then passes program directly to emitters (they walk the graph themselves).
 
 import type { Program } from "@typespec/compiler";
 import { extractFacts } from "./2_facts.js";
@@ -11,12 +12,11 @@ import { join } from "path";
 
 export async function $onValidate(program: Program) {
   const facts = extractFacts(program);
-  const sql = emitSQL(facts);
+  const sql = emitSQL(program);
   const existingRs = join(program.projectRoot ?? ".", "tsp-output", "generated.rs");
-  const rust = emitRust(facts, existingRs);
-  const go = emitGo(facts);
+  const rust = emitRust(program, existingRs);
+  const go = emitGo(program);
 
-  // Print summary
   console.log(
     `\n  binding-core: ${facts.entities.length} entities, ` +
       `${facts.fields.length} fields, ` +
@@ -25,7 +25,6 @@ export async function $onValidate(program: Program) {
       `${facts.sources.length} sources`,
   );
 
-  // Write outputs
   const outputDir = join(program.projectRoot ?? ".", "tsp-output");
   await mkdir(outputDir, { recursive: true });
 

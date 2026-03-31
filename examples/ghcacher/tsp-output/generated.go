@@ -19,7 +19,7 @@ type Repo struct {
 
 type Branch struct {
   Id int64 `db:"id" json:"id"`
-  RepoId int64 `db:"repo_id" json:"repo"`
+  RepoId int64 `db:"repo_id" json:"repo_id"`
   Name string `db:"name" json:"name"`
   Sha *string `db:"sha" json:"sha"`
   BehindDefault *int64 `db:"behind_default" json:"behind_default"`
@@ -29,7 +29,7 @@ type Branch struct {
 
 type PullRequest struct {
   Id int64 `db:"id" json:"id"`
-  RepoId int64 `db:"repo_id" json:"repo"`
+  RepoId int64 `db:"repo_id" json:"repo_id"`
   Number int64 `db:"number" json:"number"`
   GhNodeId *string `db:"gh_node_id" json:"gh_node_id"`
   State string `db:"state" json:"state"`
@@ -53,7 +53,7 @@ type PullRequest struct {
 
 type PrReview struct {
   Id int64 `db:"id" json:"id"`
-  PrId int64 `db:"pr_id" json:"pr"`
+  PrId int64 `db:"pr_id" json:"pr_id"`
   GhId int64 `db:"gh_id" json:"gh_id"`
   AuthorLogin *string `db:"author_login" json:"author_login"`
   State string `db:"state" json:"state"`
@@ -63,7 +63,7 @@ type PrReview struct {
 
 type PrComment struct {
   Id int64 `db:"id" json:"id"`
-  PrId int64 `db:"pr_id" json:"pr"`
+  PrId int64 `db:"pr_id" json:"pr_id"`
   GhId int64 `db:"gh_id" json:"gh_id"`
   AuthorLogin *string `db:"author_login" json:"author_login"`
   Body string `db:"body" json:"body"`
@@ -76,7 +76,7 @@ type PrComment struct {
 
 type PrStatusCheck struct {
   Id int64 `db:"id" json:"id"`
-  PrId int64 `db:"pr_id" json:"pr"`
+  PrId int64 `db:"pr_id" json:"pr_id"`
   Context string `db:"context" json:"context"`
   State string `db:"state" json:"state"`
   TargetUrl *string `db:"target_url" json:"target_url"`
@@ -85,19 +85,19 @@ type PrStatusCheck struct {
 }
 
 type PrLabel struct {
-  PrId int64 `db:"pr_id" json:"pr"`
+  PrId int64 `db:"pr_id" json:"pr_id"`
   Label string `db:"label" json:"label"`
   Color *string `db:"color" json:"color"`
 }
 
 type PrRequestedReviewer struct {
-  PrId int64 `db:"pr_id" json:"pr"`
+  PrId int64 `db:"pr_id" json:"pr_id"`
   Reviewer string `db:"reviewer" json:"reviewer"`
 }
 
 type RepoEvent struct {
   Id int64 `db:"id" json:"id"`
-  RepoId int64 `db:"repo_id" json:"repo"`
+  RepoId int64 `db:"repo_id" json:"repo_id"`
   GhId string `db:"gh_id" json:"gh_id"`
   Type string `db:"type" json:"type"`
   ActorLogin *string `db:"actor_login" json:"actor_login"`
@@ -108,7 +108,7 @@ type RepoEvent struct {
 type Notification struct {
   Id int64 `db:"id" json:"id"`
   GhId string `db:"gh_id" json:"gh_id"`
-  RepoId int64 `db:"repo_id" json:"repo"`
+  RepoId int64 `db:"repo_id" json:"repo_id"`
   SubjectType *string `db:"subject_type" json:"subject_type"`
   SubjectTitle *string `db:"subject_title" json:"subject_title"`
   SubjectUrl *string `db:"subject_url" json:"subject_url"`
@@ -122,7 +122,7 @@ type Notification struct {
 
 type Checkout struct {
   Id int64 `db:"id" json:"id"`
-  RepoId int64 `db:"repo_id" json:"repo"`
+  RepoId int64 `db:"repo_id" json:"repo_id"`
   Branch string `db:"branch" json:"branch"`
   LocalPath string `db:"local_path" json:"local_path"`
   Sha *string `db:"sha" json:"sha"`

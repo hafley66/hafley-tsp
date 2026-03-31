@@ -1,280 +1,200 @@
-// Go emitter -- consumes FactDB, produces generated.go via alloy-go JSX.
-// Targets database/sql + sqlx for DB access.
+// Go emitter -- walks the TSP program graph directly via decorator accessors.
+// Targets database/sql + sqlx.
 
 import { Output, render, List, type OutputDirectory } from "@alloy-js/core";
 import {
-  ModuleDirectory,
-  SourceDirectory,
-  SourceFile,
-  StructTypeDeclaration,
-  StructMember,
-  FunctionDeclaration,
+  ModuleDirectory, SourceDirectory, SourceFile,
+  StructTypeDeclaration, StructMember,
 } from "@alloy-js/go";
 
-import type { FactDB, FieldFact, RelationFact } from "./2_facts.js";
+import type { Program } from "@typespec/compiler";
+import {
+  resolvedFields, resolveFieldType, collectModels, isEntityModel, snakeCase,
+  extractChain, type ResolvedField,
+} from "./2_facts.js";
+import {
+  isPk, isManual, getUnique, getDefault, hasDefault,
+  getBinding, hasBinding, getAllRelations,
+  getSyncStrategy, hasSyncStrategy,
+  type RelationDef,
+} from "./decorators.js";
 
 // ── Type mapping ──────────────────────────────────────────
 
 const GO_TYPE: Record<string, string> = {
-  string: "string",
-  integer: "int64",
+  string: "string", integer: "int64",
   int8: "int8", int16: "int16", int32: "int32", int64: "int64",
   uint8: "uint8", uint16: "uint16", uint32: "uint32", uint64: "uint64",
   float: "float64", float32: "float32", float64: "float64",
-  boolean: "bool",
-  bytes: "[]byte",
+  boolean: "bool", bytes: "[]byte",
 };
 
-function goType(tspType: string, nullable: boolean): string {
-  const base = GO_TYPE[tspType] ?? "string";
+function goType(t: string, nullable: boolean): string {
+  const base = GO_TYPE[t] ?? "string";
   if (!nullable) return base;
-  // Pointer type for nullable
-  if (base === "string") return "*string";
-  if (base === "bool") return "*bool";
-  if (base === "[]byte") return "[]byte"; // slices are already nullable
+  if (base === "[]byte") return "[]byte";
   return `*${base}`;
 }
 
 function pascalCase(s: string): string {
-  return s
-    .replace(/\./g, "_")
-    .split(/[-_]/)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join("");
+  return s.replace(/\./g, "_").split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join("");
 }
 
-function snakeCase(name: string): string {
-  return name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\./g, "_").toLowerCase();
-}
+// ── Per-field helpers ─────────────────────────────────────
 
-function sqlColName(field: FieldFact, rels: Map<string, RelationFact>): string {
-  const rel = rels.get(`${field.entity}.${field.name}`);
-  return rel ? `${snakeCase(field.name)}_id` : snakeCase(field.name);
-}
-
-// ── Lookup builders (shared with Rust emitter) ───────────
-
-function buildLookups(db: FactDB) {
-  const pksByEntity = new Map<string, string[]>();
-  for (const pk of db.pks) {
-    if (!pksByEntity.has(pk.entity)) pksByEntity.set(pk.entity, []);
-    pksByEntity.get(pk.entity)!.push(pk.field);
-  }
-  const relsByKey = new Map<string, RelationFact>();
-  for (const rel of db.relations) relsByKey.set(`${rel.entity}.${rel.field}`, rel);
-  const defaultsByKey = new Map<string, string>();
-  for (const d of db.defaults) defaultsByKey.set(`${d.entity}.${d.field}`, d.value);
-  const uniquesByEntity = new Map<string, string[][]>();
-  for (const u of db.uniques) {
-    if (!uniquesByEntity.has(u.entity)) uniquesByEntity.set(u.entity, []);
-    uniquesByEntity.get(u.entity)!.push(u.fields);
-  }
-  const manualFields = new Set<string>();
-  for (const m of db.manuals) manualFields.add(`${m.entity}.${m.field}`);
-  const syncStrategyByEntity = new Map<string, string>();
-  for (const s of db.sync_strategies) syncStrategyByEntity.set(s.entity, s.strategy);
-  const bindingByTarget = new Map<string, string>();
-  const bindingByName = new Map<string, { source: string; target: string }>();
-  for (const b of db.bindings) {
-    bindingByTarget.set(b.target, b.name);
-    bindingByName.set(b.name, { source: b.source, target: b.target });
-  }
-
-  return {
-    pksByEntity, relsByKey, defaultsByKey, uniquesByEntity, manualFields,
-    syncStrategyByEntity, bindingByTarget, bindingByName,
-  };
-}
-
-type Lookups = ReturnType<typeof buildLookups>;
-
-// ── Row struct field helpers ─────────────────────────────
-
-function rowFieldGoName(f: FieldFact, rels: Map<string, RelationFact>): string {
+function goName(f: ResolvedField): string {
   const col = snakeCase(f.name).replace(/\./g, "_");
-  const rel = rels.get(`${f.entity}.${f.name}`);
-  return pascalCase(rel ? `${col}_id` : col);
+  return pascalCase(f.rel ? `${col}_id` : col);
 }
 
-function rowFieldGoType(f: FieldFact, rels: Map<string, RelationFact>): string {
-  const rel = rels.get(`${f.entity}.${f.name}`);
-  return rel ? (f.nullable ? "*int64" : "int64") : goType(f.type, f.nullable);
+function goFieldType(f: ResolvedField): string {
+  return f.rel ? (f.nullable ? "*int64" : "int64") : goType(f.typeName, f.nullable);
 }
 
-function rowFieldDbTag(f: FieldFact, rels: Map<string, RelationFact>): string {
-  const rel = rels.get(`${f.entity}.${f.name}`);
-  return rel ? `${snakeCase(f.name)}_id` : snakeCase(f.name).replace(/\./g, "_");
+function dbTag(f: ResolvedField): string {
+  return f.rel ? `${snakeCase(f.name)}_id` : snakeCase(f.name).replace(/\./g, "_");
 }
 
-// ── Upsert function emitter (string) ────────────────────
+function jsonTag(f: ResolvedField): string {
+  const base = snakeCase(f.name).replace(/\./g, "_");
+  return f.rel ? `${base}_id` : base;
+}
 
-function emitUpsertFn(entityName: string, fields: FieldFact[], lookups: Lookups): string {
-  const { pksByEntity, relsByKey, uniquesByEntity, manualFields, syncStrategyByEntity } = lookups;
-  const tableName = snakeCase(entityName);
-  const pks = pksByEntity.get(entityName) ?? [];
-  const strategy = syncStrategyByEntity.get(entityName) ?? "upsert";
-  const isAutoIncrPk = pks.length === 1 && fields.find(f => f.name === pks[0])?.type === "integer";
+function sqlCol(f: ResolvedField): string {
+  return f.rel ? `${snakeCase(f.name)}_id` : snakeCase(f.name);
+}
 
-  const upsertFields = fields.filter(f => {
-    if (isAutoIncrPk && pks.includes(f.name)) return false;
-    if (manualFields.has(`${entityName}.${f.name}`)) return false;
-    return true;
-  });
+// ── Upsert function emitter ─────────────────────────────
 
-  const colNames = upsertFields.map(f => sqlColName(f, relsByKey));
+function emitUpsertFn(program: Program, fields: ResolvedField[], modelName: string): string {
+  const pks = fields.filter(f => f.isPk).map(f => f.name);
+  const isAutoIncr = pks.length === 1 && fields.find(f => f.name === pks[0])?.typeName === "integer";
+  const strategy = hasSyncStrategy(program, fields[0].prop.model!) ? getSyncStrategy(program, fields[0].prop.model!) : "upsert";
+  const tableName = snakeCase(modelName);
+
+  const upsertFields = fields.filter(f => !(isAutoIncr && f.isPk) && !f.isManual);
+  const colNames = upsertFields.map(sqlCol);
   const placeholders = upsertFields.map((_, i) => `$${i + 1}`).join(", ");
   const fnName = strategy === "insert-ignore" ? `Insert${pascalCase(tableName)}` : `Upsert${pascalCase(tableName)}`;
-  const returnsId = isAutoIncrPk && strategy === "upsert";
+  const returnsId = isAutoIncr && strategy === "upsert";
 
-  // Build params struct fields
-  const params = upsertFields.map(f => {
-    const rel = relsByKey.get(`${entityName}.${f.name}`);
-    const paramName = snakeCase(rel ? `${f.name}_id` : f.name).replace(/\./g, "_");
-    const ty = rel ? (f.nullable ? "*int64" : "int64") : goType(f.type, f.nullable);
-    return { paramName, ty };
-  });
+  const params = upsertFields.map(f => ({
+    name: snakeCase(f.rel ? `${f.name}_id` : f.name).replace(/\./g, "_"),
+    ty: f.rel ? (f.nullable ? "*int64" : "int64") : goType(f.typeName, f.nullable),
+  }));
 
   const lines: string[] = [];
-  lines.push(`func ${fnName}(ctx context.Context, db *sqlx.DB, ${params.map(p => `${p.paramName} ${p.ty}`).join(", ")}) (${returnsId ? "int64, " : ""}error) {`);
+  lines.push(`func ${fnName}(ctx context.Context, db *sqlx.DB, ${params.map(p => `${p.name} ${p.ty}`).join(", ")}) (${returnsId ? "int64, " : ""}error) {`);
 
   if (strategy === "insert-ignore" || strategy === "delete-replace") {
-    lines.push(`\tquery := \`INSERT OR IGNORE INTO ${tableName}`);
-    lines.push(`\t\t(${colNames.join(", ")})`);
-    lines.push(`\t\tVALUES (${placeholders})\``);
+    lines.push(`\tquery := \`INSERT OR IGNORE INTO ${tableName}`, `\t\t(${colNames.join(", ")})`, `\t\tVALUES (${placeholders})\``);
   } else {
-    const uniques = uniquesByEntity.get(entityName) ?? [];
-    let conflictCols: string[];
-    if (uniques.length > 0) {
-      conflictCols = uniques[0].map(f => {
-        const rel = relsByKey.get(`${entityName}.${f}`);
-        return rel ? `${snakeCase(f)}_id` : snakeCase(f);
-      });
-    } else {
-      conflictCols = pks.map(p => {
-        const rel = relsByKey.get(`${entityName}.${p}`);
-        return rel ? `${snakeCase(p)}_id` : snakeCase(p);
-      });
+    const uniques: string[][] = [];
+    for (const f of fields) {
+      for (const u of (getUnique(program, f.prop) ?? [])) uniques.push(u.fields);
     }
+
+    const conflictCols = (uniques.length > 0 ? uniques[0] : pks).map(n => {
+      const f = fields.find(fv => fv.name === n);
+      return f?.rel ? `${snakeCase(n)}_id` : snakeCase(n);
+    });
     const updateCols = colNames.filter(c => !conflictCols.includes(c) && !pks.map(p => snakeCase(p)).includes(c));
 
-    lines.push(`\tquery := \`INSERT INTO ${tableName}`);
-    lines.push(`\t\t(${colNames.join(", ")})`);
-    lines.push(`\t\tVALUES (${placeholders})`);
+    lines.push(`\tquery := \`INSERT INTO ${tableName}`, `\t\t(${colNames.join(", ")})`, `\t\tVALUES (${placeholders})`);
     if (conflictCols.length > 0 && updateCols.length > 0) {
       lines.push(`\t\tON CONFLICT(${conflictCols.join(", ")}) DO UPDATE SET`);
       lines.push(`\t\t\t${updateCols.map(c => `${c} = excluded.${c}`).join(",\n\t\t\t")}`);
     } else if (conflictCols.length > 0) {
       lines.push(`\t\tON CONFLICT(${conflictCols.join(", ")}) DO NOTHING`);
     }
-    if (returnsId) lines.push(`\t\tRETURNING id\``);
-    else lines.push(`\t\``);
+    lines.push(returnsId ? `\t\tRETURNING id\`` : `\t\``);
   }
 
-  const bindArgs = params.map(p => p.paramName).join(", ");
-
+  const bindArgs = params.map(p => p.name).join(", ");
   if (returnsId) {
-    lines.push(`\tvar id int64`);
-    lines.push(`\terr := db.QueryRowContext(ctx, query, ${bindArgs}).Scan(&id)`);
-    lines.push(`\treturn id, err`);
+    lines.push(`\tvar id int64`, `\terr := db.QueryRowContext(ctx, query, ${bindArgs}).Scan(&id)`, `\treturn id, err`);
   } else {
-    lines.push(`\t_, err := db.ExecContext(ctx, query, ${bindArgs})`);
-    lines.push(`\treturn err`);
+    lines.push(`\t_, err := db.ExecContext(ctx, query, ${bindArgs})`, `\treturn err`);
   }
   lines.push(`}`);
   return lines.join("\n");
 }
 
-// ── JSON extraction emitter (string) ────────────────────
+// ── JSON extraction emitter ─────────────────────────────
 
-function emitJsonAccess(expr: string, field: FieldFact): string {
-  const base = GO_TYPE[field.type] ?? "string";
-  if (field.nullable) {
-    if (base === "string") return `jsonOptString(${expr})`;
-    if (base === "int64") return `jsonOptInt64(${expr})`;
-    if (base === "bool") return `jsonOptBool(${expr})`;
-    return `jsonOptString(${expr})`;
-  }
-  if (base === "string") return `jsonString(${expr})`;
-  if (base === "int64") return `jsonInt64(${expr})`;
-  if (base === "bool") return `jsonBool(${expr})`;
-  return `jsonString(${expr})`;
+function jsonAccess(expr: string, typeName: string, nullable: boolean): string {
+  const base = GO_TYPE[typeName] ?? "string";
+  const fn = nullable
+    ? { string: "jsonOptString", int64: "jsonOptInt64", bool: "jsonOptBool" }[base] ?? "jsonOptString"
+    : { string: "jsonString", int64: "jsonInt64", bool: "jsonBool" }[base] ?? "jsonString";
+  return `${fn}(${expr})`;
 }
 
-function emitExtractFn(bindingName: string, db: FactDB, lookups: Lookups): string {
-  const { bindingByName, relsByKey } = lookups;
-  const info = bindingByName.get(bindingName);
-  if (!info) return "";
+function emitExtractFn(program: Program, bindingModel: any, relMap: Map<string, RelationDef[]>): string {
+  const binding = getBinding(program, bindingModel)!;
+  const target = binding.targetModel;
+  const source = binding.sourceModel;
+  const fields = resolvedFields(program, target, relMap);
+  const pks = fields.filter(f => f.isPk).map(f => f.name);
+  const isAutoIncr = pks.length === 1 && fields.find(f => f.name === pks[0])?.typeName === "integer";
 
-  const entityFields = db.fields.filter(f => f.entity === info.target);
-  const fieldMaps = db.field_maps.filter(fm => fm.binding === bindingName);
-  const autoMaps = db.auto_maps.filter(am => am.binding === bindingName);
-  const manuals = new Set(db.manuals.filter(m => m.entity === info.target).map(m => m.field));
-  const pks = lookups.pksByEntity.get(info.target) ?? [];
-  const isAutoIncrPk = pks.length === 1 && entityFields.find(f => f.name === pks[0])?.type === "integer";
-
-  const structName = `${info.target}Fields`;
-  const fnName = `Extract${pascalCase(info.target)}`;
+  // Explicit field maps from binding model properties
   const fieldMapByTarget = new Map<string, string[]>();
-  for (const fm of fieldMaps) fieldMapByTarget.set(fm.target_field, fm.source_chain);
-  const autoMapSet = new Set(autoMaps.map(am => am.field));
+  const explicit = new Set<string>();
+  for (const [, prop] of bindingModel.properties) {
+    explicit.add(prop.name);
+    const chain = extractChain(prop.type);
+    if (chain.length > 0) fieldMapByTarget.set(prop.name, chain);
+  }
 
+  // Auto maps
+  const sourceNames = new Set([...source.properties.keys()]);
+  const autoSet = new Set<string>();
+  for (const [, prop] of target.properties) {
+    if (explicit.has(prop.name) || prop.name.includes(".") || prop.name.startsWith("_")) continue;
+    if (sourceNames.has(prop.name)) autoSet.add(prop.name);
+  }
+
+  const fnName = `Extract${pascalCase(target.name)}`;
   const lines: string[] = [];
-  lines.push(`// Extract${pascalCase(info.target)} extracts ${info.target} fields from a ${info.source} JSON value.`);
-  lines.push(`func ${fnName}(src map[string]interface{}) ${structName} {`);
-  lines.push(`\treturn ${structName}{`);
+  lines.push(`// ${fnName} extracts ${target.name} fields from a ${source.name} JSON value.`);
+  lines.push(`func ${fnName}(src map[string]interface{}) ${target.name}Fields {`);
+  lines.push(`\treturn ${target.name}Fields{`);
 
-  for (const field of entityFields) {
-    if (relsByKey.get(`${info.target}.${field.name}`)) continue;
-    if (manuals.has(field.name)) continue;
-    if (isAutoIncrPk && pks.includes(field.name)) continue;
-
-    const goField = pascalCase(snakeCase(field.name).replace(/\./g, "_"));
-    const chain = fieldMapByTarget.get(field.name);
+  for (const f of fields) {
+    if (f.rel || f.isManual || (isAutoIncr && f.isPk)) continue;
+    const goField = pascalCase(snakeCase(f.name).replace(/\./g, "_"));
+    const chain = fieldMapByTarget.get(f.name);
 
     if (chain) {
       const jsonPath = chain.map(link => { const dot = link.indexOf("."); return dot >= 0 ? link.substring(dot + 1) : link; });
-      if (jsonPath.length === 1) {
-        lines.push(`\t\t${goField}: ${emitJsonAccess(`src["${jsonPath[0]}"]`, field)},`);
-      } else {
-        // nested: dig(src, "a", "b")
-        const pathArgs = jsonPath.map(p => `"${p}"`).join(", ");
-        lines.push(`\t\t${goField}: ${emitJsonAccess(`dig(src, ${pathArgs})`, field)},`);
-      }
-    } else if (field.is_dot_path) {
-      const parts = field.name.split(".");
-      const pathArgs = parts.map(p => `"${p}"`).join(", ");
-      lines.push(`\t\t${goField}: ${emitJsonAccess(`dig(src, ${pathArgs})`, field)},`);
-    } else if (autoMapSet.has(field.name)) {
-      lines.push(`\t\t${goField}: ${emitJsonAccess(`src["${field.name}"]`, field)},`);
+      const expr = jsonPath.length === 1 ? `src["${jsonPath[0]}"]` : `dig(src, ${jsonPath.map(p => `"${p}"`).join(", ")})`;
+      lines.push(`\t\t${goField}: ${jsonAccess(expr, f.typeName, f.nullable)},`);
+    } else if (f.isDotPath) {
+      lines.push(`\t\t${goField}: ${jsonAccess(`dig(src, ${f.name.split(".").map(p => `"${p}"`).join(", ")})`, f.typeName, f.nullable)},`);
+    } else if (autoSet.has(f.name)) {
+      lines.push(`\t\t${goField}: ${jsonAccess(`src["${f.name}"]`, f.typeName, f.nullable)},`);
     }
   }
 
-  lines.push(`\t}`);
-  lines.push(`}`);
+  lines.push(`\t}`, `}`);
   return lines.join("\n");
 }
 
 // ── Main entry point ─────────────────────────────────────
 
-const GO_IMPORTS = [
-  `"context"`,
-  `"database/sql"`,
-  `"encoding/json"`,
-];
+export function emitGo(program: Program): string {
+  const allModels = collectModels(program.getGlobalNamespaceType());
+  const relMap = getAllRelations(program);
+  const entities = allModels.filter(m => isEntityModel(program, m));
+  const bindings = allModels.filter(m => hasBinding(program, m));
+  const hasExtracts = bindings.length > 0;
 
-export function emitGo(db: FactDB): string {
-  const lookups = buildLookups(db);
+  // Pre-resolve fields per entity
+  const fieldsByEntity = new Map(entities.map(m => [m.name, resolvedFields(program, m, relMap)]));
 
-  // Build upsert + extract sections as strings (complex logic, not worth JSX)
-  const upsertSections = db.entities
-    .map(e => emitUpsertFn(e.name, db.fields.filter(f => f.entity === e.name), lookups))
-    .filter(Boolean);
-
-  const extractSections = db.bindings
-    .map(b => emitExtractFn(b.name, db, lookups))
-    .filter(Boolean);
-
-  const hasExtracts = extractSections.length > 0;
+  const upsertSections = entities.map(m => emitUpsertFn(program, fieldsByEntity.get(m.name)!, m.name)).filter(Boolean);
+  const extractSections = bindings.map(m => emitExtractFn(program, m, relMap)).filter(Boolean);
 
   const tree = (
     <Output>
@@ -282,24 +202,19 @@ export function emitGo(db: FactDB): string {
       <SourceDirectory path="db">
       <SourceFile path="generated.go">
 
-        {/* ── Imports ── */}
         {"import (\n"}
-        {GO_IMPORTS.map(i => `\t${i}\n`).join("")}
+        {`\t"context"\n\t"database/sql"\n\t"encoding/json"\n`}
         {hasExtracts && `\n\t"github.com/jmoiron/sqlx"\n`}
         {")\n\n"}
 
-        {/* ── Row structs ── */}
-        {db.entities.map((e) => {
-          const fields = db.fields.filter(f => f.entity === e.name);
+        {/* Row structs */}
+        {entities.map(model => {
+          const fields = fieldsByEntity.get(model.name)!;
           return <>
-            <StructTypeDeclaration name={e.name}>
+            <StructTypeDeclaration name={model.name}>
               <List hardline>
                 {fields.map(f => (
-                  <StructMember
-                    name={rowFieldGoName(f, lookups.relsByKey)}
-                    type={rowFieldGoType(f, lookups.relsByKey)}
-                    tag={{ db: rowFieldDbTag(f, lookups.relsByKey), json: snakeCase(f.name).replace(/\./g, "_") }}
-                  />
+                  <StructMember name={goName(f)} type={goFieldType(f)} tag={{ db: dbTag(f), json: jsonTag(f) }} />
                 ))}
               </List>
             </StructTypeDeclaration>
@@ -307,24 +222,21 @@ export function emitGo(db: FactDB): string {
           </>;
         })}
 
-        {/* ── Extraction structs ── */}
-        {db.bindings.map((binding) => {
-          const fields = db.fields.filter(f => f.entity === binding.target);
-          const pks = lookups.pksByEntity.get(binding.target) ?? [];
-          const isAutoIncrPk = pks.length === 1 && fields.find(f => f.name === pks[0])?.type === "integer";
-          const extractable = fields.filter(f => {
-            if (lookups.relsByKey.get(`${binding.target}.${f.name}`)) return false;
-            if (lookups.manualFields.has(`${binding.target}.${f.name}`)) return false;
-            if (isAutoIncrPk && pks.includes(f.name)) return false;
-            return true;
-          });
+        {/* Extraction structs */}
+        {bindings.map(bindingModel => {
+          const binding = getBinding(program, bindingModel)!;
+          const fields = fieldsByEntity.get(binding.targetModel.name);
+          if (!fields) return null;
+          const pks = fields.filter(f => f.isPk).map(f => f.name);
+          const isAutoIncr = pks.length === 1 && fields.find(f => f.name === pks[0])?.typeName === "integer";
+          const extractable = fields.filter(f => !f.rel && !f.isManual && !(isAutoIncr && f.isPk));
           if (extractable.length === 0) return null;
           return <>
-            <StructTypeDeclaration name={`${binding.target}Fields`}>
+            <StructTypeDeclaration name={`${binding.targetModel.name}Fields`}>
               <List hardline>
                 {extractable.map(f => {
                   const col = snakeCase(f.name).replace(/\./g, "_");
-                  return <StructMember name={pascalCase(col)} type={goType(f.type, f.nullable)} tag={{ db: col, json: col }} />;
+                  return <StructMember name={pascalCase(col)} type={goType(f.typeName, f.nullable)} tag={{ db: col, json: col }} />;
                 })}
               </List>
             </StructTypeDeclaration>
@@ -332,7 +244,7 @@ export function emitGo(db: FactDB): string {
           </>;
         })}
 
-        {/* ── JSON helpers ── */}
+        {/* JSON helpers */}
         {hasExtracts && <>
           {"// ── JSON access helpers ──\n\n"}
           {"func jsonString(v interface{}) string {\n\tif s, ok := v.(string); ok { return s }\n\treturn \"\"\n}\n\n"}
@@ -344,11 +256,8 @@ export function emitGo(db: FactDB): string {
           {"func dig(m map[string]interface{}, keys ...string) interface{} {\n\tvar cur interface{} = m\n\tfor _, k := range keys {\n\t\tif mm, ok := cur.(map[string]interface{}); ok {\n\t\t\tcur = mm[k]\n\t\t} else {\n\t\t\treturn nil\n\t\t}\n\t}\n\treturn cur\n}\n\n"}
         </>}
 
-        {/* ── Upsert functions ── */}
         {upsertSections.join("\n\n")}
         {upsertSections.length > 0 && "\n\n"}
-
-        {/* ── Extraction functions ── */}
         {extractSections.join("\n\n")}
         {extractSections.length > 0 && "\n"}
 
@@ -365,10 +274,7 @@ export function emitGo(db: FactDB): string {
 function findFileContentDeep(dir: OutputDirectory): string {
   for (const item of dir.contents) {
     if (item.kind === "file" && item.path.endsWith(".go")) return (item as any).contents ?? "";
-    if (item.kind === "directory") {
-      const found = findFileContentDeep(item);
-      if (found) return found;
-    }
+    if (item.kind === "directory") { const found = findFileContentDeep(item); if (found) return found; }
   }
   return "";
 }
@@ -376,10 +282,7 @@ function findFileContentDeep(dir: OutputDirectory): string {
 function findFileContent(dir: OutputDirectory, name: string): string {
   for (const item of dir.contents) {
     if (item.kind === "file" && item.path === name) return (item as any).contents ?? "";
-    if (item.kind === "directory") {
-      const found = findFileContent(item, name);
-      if (found) return found;
-    }
+    if (item.kind === "directory") { const found = findFileContent(item, name); if (found) return found; }
   }
   return "";
 }

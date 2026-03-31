@@ -213,9 +213,60 @@ export interface FactDB {
   http_routes: HttpRouteFact[];
 }
 
+// ── Shared utilities (used by emitters + fact serializer) ─
+
+export function snakeCase(name: string): string {
+  return name.replace(/([a-z0-9])([A-Z])/g, "$1_$2").replace(/\./g, "_").toLowerCase();
+}
+
+/** Unwrap Model[] to Model, return target model name from a RelationDef. */
+export function resolveRelTarget(rel: { targetType: Type | undefined }): string {
+  let t = rel.targetType;
+  if (t?.kind === "Model" && (t as Model).indexer?.value) {
+    t = (t as Model).indexer!.value;
+  }
+  return t?.kind === "Model" ? (t as Model).name : "?";
+}
+
+/** Per-field resolved info -- the common query every emitter runs on each property. */
+export interface ResolvedField {
+  prop: ModelProperty;
+  name: string;
+  typeName: string;
+  nullable: boolean;
+  isDotPath: boolean;
+  isPk: boolean;
+  isManual: boolean;
+  default?: string;
+  rel?: import("./decorators.js").RelationDef;
+}
+
+/** Walk model.properties once, skip `never` intrinsics, resolve types + common decorators. */
+export function resolvedFields(
+  program: Program, model: Model,
+  relMap: Map<string, import("./decorators.js").RelationDef[]>,
+): ResolvedField[] {
+  const rels = relMap.get(model.name) ?? [];
+  const relByField = new Map(rels.map(r => [r.property, r]));
+  const result: ResolvedField[] = [];
+  for (const [, prop] of model.properties) {
+    if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
+    const { typeName, nullable } = resolveFieldType(prop.type);
+    result.push({
+      prop, name: prop.name, typeName, nullable,
+      isDotPath: prop.name.includes("."),
+      isPk: isPk(program, prop),
+      isManual: isManual(program, prop),
+      default: hasDefault(program, prop) ? getDefault(program, prop) : undefined,
+      rel: relByField.get(prop.name),
+    });
+  }
+  return result;
+}
+
 // ── Type resolution ───────────────────────────────────────
 
-function resolveScalarName(scalar: Scalar): string {
+export function resolveScalarName(scalar: Scalar): string {
   // Preserve integer/float distinction -- don't collapse to "numeric"
   // Walk one level at a time; stop at integer/float/string/boolean/etc.
   const meaningful = new Set([
@@ -241,7 +292,7 @@ function resolveScalarName(scalar: Scalar): string {
 }
 
 /** Unwrap `T | null` unions, return [resolved type name, nullable]. */
-function resolveFieldType(type: Type): { typeName: string; nullable: boolean } {
+export function resolveFieldType(type: Type): { typeName: string; nullable: boolean } {
   if (type.kind === "Union") {
     const union = type as Union;
     const variants = [...union.variants.values()];
@@ -266,7 +317,7 @@ function resolveFieldType(type: Type): { typeName: string; nullable: boolean } {
 // ── Model classification ──────────────────────────────────
 
 /** A model is an entity if any of its properties have Entity.* or Rel.* decorators. */
-function isEntityModel(program: Program, model: Model): boolean {
+export function isEntityModel(program: Program, model: Model): boolean {
   for (const [, prop] of model.properties) {
     if (isPk(program, prop)) return true;
     if (isManual(program, prop)) return true;
@@ -324,7 +375,7 @@ function extractFieldMaps(
 }
 
 /** Walk a Tuple type to extract "Model.property" chain strings. */
-function extractChain(type: Type): string[] {
+export function extractChain(type: Type): string[] {
   if (type.kind === "Tuple") {
     const tuple = type as any;
     return tuple.values.map((v: any) => {
@@ -341,7 +392,7 @@ function extractChain(type: Type): string[] {
 
 // ── Main extractor ────────────────────────────────────────
 
-function collectModels(ns: Namespace): Model[] {
+export function collectModels(ns: Namespace): Model[] {
   const models: Model[] = [];
   for (const [, model] of ns.models) {
     if (!model.name || model.name === "") continue;
