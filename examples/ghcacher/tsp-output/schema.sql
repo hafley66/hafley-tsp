@@ -116,7 +116,8 @@ CREATE TABLE IF NOT EXISTS notification (
     reason TEXT NOT NULL,
     unread INTEGER NOT NULL,
     updated_at TEXT NOT NULL,
-    last_read_at TEXT
+    last_read_at TEXT,
+    UNIQUE(gh_id)
 );
 
 CREATE TABLE IF NOT EXISTS checkout (

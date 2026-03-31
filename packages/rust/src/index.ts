@@ -15,3 +15,7 @@ export * from "./components/4_codegen/3_ReplaceFile.js";
 export * from "./components/4_codegen/4_AxumEndpoint.js";
 export * from "./components/4_codegen/5_TransportBinding.js";
 export * from "./components/4_codegen/6_Endpoint.js";
+export * from "./components/3_files/0_SourceFile.js";
+export * from "./components/3_files/1_CrateDirectory.js";
+export * from "./components/3_files/2_ModDirectory.js";
+export { VisibilityContext } from "./scopes/06_contexts.js";

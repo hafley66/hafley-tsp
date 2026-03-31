@@ -42,6 +42,22 @@ export const $lib = createTypeSpecLibrary({
     sourceNested: { description: "State for @Source.nested decorator" },
     sourcePollInterval: { description: "State for @Source.pollInterval decorator" },
     syncStrategy: { description: "State for @Sync.strategy decorator" },
+    // Config namespace
+    configSource: { description: "State for @Config.source decorator" },
+    configEnv: { description: "State for @Config.env decorator" },
+    configSecret: { description: "State for @Config.secret decorator" },
+    configPath: { description: "State for @Config.path decorator" },
+    // Cli namespace
+    cliCommand: { description: "State for @Cli.command decorator" },
+    cliSubcommand: { description: "State for @Cli.subcommand decorator" },
+    cliFlag: { description: "State for @Cli.flag decorator" },
+    cliArg: { description: "State for @Cli.arg decorator" },
+    cliShort: { description: "State for @Cli.short decorator" },
+    cliAbout: { description: "State for @Cli.about decorator" },
+    // Http namespace
+    httpRouter: { description: "State for @Http.router decorator" },
+    httpRoute: { description: "State for @Http.get/post/put/delete decorators" },
+    httpState: { description: "State for @Http.state decorator" },
   },
 });
 

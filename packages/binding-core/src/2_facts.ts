@@ -29,6 +29,24 @@ import {
   getSourceNested,
   getSyncStrategy,
   hasSyncStrategy,
+  isConfigSource,
+  hasConfigEnv,
+  getConfigEnv,
+  isConfigSecret,
+  hasConfigPath,
+  getConfigPath,
+  isCliCommand,
+  isCliFlag,
+  hasCliArg,
+  getCliArg,
+  hasCliShort,
+  getCliShort,
+  hasCliAbout,
+  getCliAbout,
+  getCliSubcommand,
+  isHttpRouter,
+  getHttpRoutes,
+  getHttpState,
 } from "./decorators.js";
 
 // ── Fact table row types ──────────────────────────────────
@@ -121,6 +139,55 @@ export interface SourceFieldFact {
   nullable: boolean;
 }
 
+// Config facts
+export interface ConfigModelFact {
+  model: string;
+  path?: string; // config file path pattern
+}
+
+export interface ConfigFieldFact {
+  model: string;
+  name: string;
+  type: string;
+  nullable: boolean;
+  env?: string; // env var override
+  secret: boolean;
+  default?: string; // default value from @Entity.default
+}
+
+// Cli facts
+export interface CliCommandFact {
+  model: string;
+  parent?: string; // subcommand parent
+  about?: string;
+}
+
+export interface CliFieldFact {
+  model: string;
+  name: string;
+  type: string;
+  nullable: boolean;
+  kind: "flag" | "arg";
+  position?: number; // for positional args
+  short?: string;
+  about?: string;
+  env?: string; // from @Config.env if cross-decorated
+  default?: string;
+}
+
+// Http facts
+export interface HttpRouterFact {
+  model: string;
+  state_model?: string; // config model for axum State
+}
+
+export interface HttpRouteFact {
+  router: string;
+  method: "get" | "post" | "put" | "delete";
+  path: string;
+  handler: string; // property name as handler fn name
+}
+
 export interface FactDB {
   entities: EntityFact[];
   fields: FieldFact[];
@@ -137,6 +204,13 @@ export interface FactDB {
   source_nested: SourceNestedFact[];
   sync_strategies: SyncStrategyFact[];
   source_fields: SourceFieldFact[];
+  // Config/Cli/Http
+  config_models: ConfigModelFact[];
+  config_fields: ConfigFieldFact[];
+  cli_commands: CliCommandFact[];
+  cli_fields: CliFieldFact[];
+  http_routers: HttpRouterFact[];
+  http_routes: HttpRouteFact[];
 }
 
 // ── Type resolution ───────────────────────────────────────
@@ -297,6 +371,12 @@ export function extractFacts(program: Program): FactDB {
     source_nested: [],
     sync_strategies: [],
     source_fields: [],
+    config_models: [],
+    config_fields: [],
+    cli_commands: [],
+    cli_fields: [],
+    http_routers: [],
+    http_routes: [],
   };
 
   const globalNs = program.getGlobalNamespaceType();
@@ -432,6 +512,25 @@ export function extractFacts(program: Program): FactDB {
     }
   }
 
+  // Pass 4b: Extract fields from models referenced as field types by source models
+  // (e.g., GhUser referenced as author field type in GhPullRequest)
+  const sourceFieldTypes = new Set(db.source_fields.map(sf => sf.type));
+  const extractedModels = new Set(db.sources.map(s => s.model));
+  for (const model of allModels) {
+    if (extractedModels.has(model.name)) continue;
+    if (!sourceFieldTypes.has(model.name)) continue;
+    for (const [, prop] of model.properties) {
+      if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
+      const { typeName, nullable } = resolveFieldType(prop.type);
+      db.source_fields.push({
+        model: model.name,
+        name: prop.name,
+        type: typeName,
+        nullable,
+      });
+    }
+  }
+
   // Pass 5: Sync strategy on entity models
   for (const model of allModels) {
     if (!entityModels.has(model.name)) continue;
@@ -443,5 +542,101 @@ export function extractFacts(program: Program): FactDB {
     }
   }
 
+  // Pass 6: Config models and fields
+  for (const model of allModels) {
+    if (!isConfigSource(program, model)) continue;
+
+    db.config_models.push({
+      model: model.name,
+      path: hasConfigPath(program, model) ? getConfigPath(program, model) : undefined,
+    });
+
+    for (const [, prop] of model.properties) {
+      if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
+      const { typeName, nullable } = resolveFieldType(prop.type);
+      const fieldDefault = hasDefault(program, prop) ? getDefault(program, prop) : undefined;
+      db.config_fields.push({
+        model: model.name,
+        name: prop.name,
+        type: typeName,
+        nullable,
+        env: hasConfigEnv(program, prop) ? getConfigEnv(program, prop) : undefined,
+        secret: isConfigSecret(program, prop),
+        default: fieldDefault,
+      });
+    }
+  }
+
+  // Pass 7: Cli commands and fields
+  for (const model of allModels) {
+    if (!isCliCommand(program, model)) continue;
+
+    const sub = getCliSubcommand(program, model.name);
+    db.cli_commands.push({
+      model: model.name,
+      parent: sub?.parent,
+      about: hasCliAbout(program, model) ? getCliAbout(program, model) : undefined,
+    });
+
+    for (const [, prop] of model.properties) {
+      if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
+      const { typeName, nullable } = resolveFieldType(prop.type);
+
+      const isFlagField = isCliFlag(program, prop);
+      const isArgField = hasCliArg(program, prop);
+      if (!isFlagField && !isArgField) continue;
+
+      // Cross-cutting: pick up @Config.env if present on the same field
+      const envName = hasConfigEnv(program, prop) ? getConfigEnv(program, prop) : undefined;
+      const fieldDefault = hasDefault(program, prop) ? getDefault(program, prop) : undefined;
+
+      db.cli_fields.push({
+        model: model.name,
+        name: prop.name,
+        type: typeName,
+        nullable,
+        kind: isArgField ? "arg" : "flag",
+        position: isArgField ? getCliArg(program, prop) : undefined,
+        short: hasCliShort(program, prop) ? getCliShort(program, prop) : undefined,
+        about: hasCliAbout(program, prop) ? getCliAbout(program, prop) : undefined,
+        env: envName,
+        default: fieldDefault,
+      });
+    }
+  }
+
+  // Pass 8: Http routers and routes
+  for (const model of allModels) {
+    if (!isHttpRouter(program, model)) continue;
+
+    db.http_routers.push({
+      model: model.name,
+      state_model: getHttpState(program, model.name),
+    });
+
+    const routes = getHttpRoutes(program, model.name);
+    if (routes) {
+      for (const route of routes) {
+        // Find the property name that triggered this route
+        // Routes are stored in order of property iteration
+        db.http_routes.push({
+          router: model.name,
+          method: route.method,
+          path: route.path,
+          handler: snakeCaseName(route.path),
+        });
+      }
+    }
+  }
+
   return db;
+}
+
+function snakeCaseName(path: string): string {
+  // /api/prs/:id -> api_prs_by_id
+  return path
+    .replace(/^\//, "")
+    .replace(/\/:(\w+)/g, "_by_$1")
+    .replace(/\//g, "_")
+    .replace(/-/g, "_");
 }

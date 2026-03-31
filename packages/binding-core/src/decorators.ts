@@ -188,6 +188,137 @@ export const getSyncStrategy = _syncStrategy.get;
 export const hasSyncStrategy = _syncStrategy.has;
 
 // ──────────────────────────────────────────────────────────
+// Config namespace
+// ──────────────────────────────────────────────────────────
+
+const _configSource = flagDec(BindingCoreStateKeys.configSource as any);
+const _configEnv = valueDec<string>(BindingCoreStateKeys.configEnv as any);
+const _configSecret = flagDec(BindingCoreStateKeys.configSecret as any);
+const _configPath = valueDec<string>(BindingCoreStateKeys.configPath as any);
+
+export function $source(ctx: DecoratorContext, target: Model) {
+  _configSource.$decorator(ctx, target);
+}
+export function $envVar(ctx: DecoratorContext, target: ModelProperty, name: string) {
+  _configEnv.$decorator(ctx, target, name);
+}
+export function $secret(ctx: DecoratorContext, target: ModelProperty) {
+  _configSecret.$decorator(ctx, target);
+}
+export function $path(ctx: DecoratorContext, target: Model, pattern: string) {
+  _configPath.$decorator(ctx, target, pattern);
+}
+
+export const isConfigSource = _configSource.has;
+export const getConfigEnv = _configEnv.get;
+export const hasConfigEnv = _configEnv.has;
+export const isConfigSecret = _configSecret.has;
+export const getConfigPath = _configPath.get;
+export const hasConfigPath = _configPath.has;
+
+// ──────────────────────────────────────────────────────────
+// Cli namespace
+// ──────────────────────────────────────────────────────────
+
+const _cliCommand = flagDec(BindingCoreStateKeys.cliCommand as any);
+const _cliFlag = flagDec(BindingCoreStateKeys.cliFlag as any);
+const _cliArg = valueDec<number>(BindingCoreStateKeys.cliArg as any);
+const _cliShort = valueDec<string>(BindingCoreStateKeys.cliShort as any);
+const _cliAbout = valueDec<string>(BindingCoreStateKeys.cliAbout as any);
+
+const CLI_SUBCOMMAND_KEY = Symbol.for("hafley:cli-subcommand");
+
+export interface SubcommandDef {
+  parent: string;
+}
+
+export function $command(ctx: DecoratorContext, target: Model) {
+  _cliCommand.$decorator(ctx, target);
+}
+export function $subcommand(ctx: DecoratorContext, target: Model, parent: Model) {
+  const map: Map<string, SubcommandDef> = ctx.program.stateMap(CLI_SUBCOMMAND_KEY) as any;
+  map.set(target.name, { parent: parent.name });
+}
+export function $cliFlag(ctx: DecoratorContext, target: ModelProperty) {
+  _cliFlag.$decorator(ctx, target);
+}
+export function $cliArg(ctx: DecoratorContext, target: ModelProperty, position: number) {
+  _cliArg.$decorator(ctx, target, position);
+}
+export function $short(ctx: DecoratorContext, target: ModelProperty, char: string) {
+  _cliShort.$decorator(ctx, target, char);
+}
+export function $about(ctx: DecoratorContext, target: Model | ModelProperty, text: string) {
+  _cliAbout.$decorator(ctx, target, text);
+}
+
+export const isCliCommand = _cliCommand.has;
+export const isCliFlag = _cliFlag.has;
+export const getCliArg = _cliArg.get;
+export const hasCliArg = _cliArg.has;
+export const getCliShort = _cliShort.get;
+export const hasCliShort = _cliShort.has;
+export const getCliAbout = _cliAbout.get;
+export const hasCliAbout = _cliAbout.has;
+
+export function getCliSubcommand(program: Program, modelName: string): SubcommandDef | undefined {
+  return (program.stateMap(CLI_SUBCOMMAND_KEY) as any).get(modelName);
+}
+
+// ──────────────────────────────────────────────────────────
+// Http namespace
+// ──────────────────────────────────────────────────────────
+
+const _httpRouter = flagDec(BindingCoreStateKeys.httpRouter as any);
+
+const HTTP_ROUTE_KEY = Symbol.for("hafley:http-route");
+const HTTP_STATE_KEY = Symbol.for("hafley:http-state");
+
+export interface HttpRouteDef {
+  method: "get" | "post" | "put" | "delete";
+  path: string;
+}
+
+export function $router(ctx: DecoratorContext, target: Model) {
+  _httpRouter.$decorator(ctx, target);
+}
+
+function storeRoute(ctx: DecoratorContext, target: ModelProperty, method: HttpRouteDef["method"], path: string) {
+  const map: Map<string, HttpRouteDef[]> = ctx.program.stateMap(HTTP_ROUTE_KEY) as any;
+  const modelName = getParentModelName(target);
+  if (!map.has(modelName)) map.set(modelName, []);
+  map.get(modelName)!.push({ method, path });
+}
+
+export function $get(ctx: DecoratorContext, target: ModelProperty, path: string) {
+  storeRoute(ctx, target, "get", path);
+}
+export function $post(ctx: DecoratorContext, target: ModelProperty, path: string) {
+  storeRoute(ctx, target, "post", path);
+}
+export function $put(ctx: DecoratorContext, target: ModelProperty, path: string) {
+  storeRoute(ctx, target, "put", path);
+}
+// $delete conflicts with JS, use $httpDelete internally
+export function $httpDelete(ctx: DecoratorContext, target: ModelProperty, path: string) {
+  storeRoute(ctx, target, "delete", path);
+}
+export function $state(ctx: DecoratorContext, target: Model, config: Model) {
+  const map: Map<string, string> = ctx.program.stateMap(HTTP_STATE_KEY) as any;
+  map.set(target.name, config.name);
+}
+
+export const isHttpRouter = _httpRouter.has;
+
+export function getHttpRoutes(program: Program, modelName: string): HttpRouteDef[] | undefined {
+  return (program.stateMap(HTTP_ROUTE_KEY) as any).get(modelName);
+}
+
+export function getHttpState(program: Program, modelName: string): string | undefined {
+  return (program.stateMap(HTTP_STATE_KEY) as any).get(modelName);
+}
+
+// ──────────────────────────────────────────────────────────
 // $decorators map (TSP runtime binding)
 // ──────────────────────────────────────────────────────────
 
@@ -217,5 +348,27 @@ export const $decorators = {
   },
   Sync: {
     strategy: $strategy,
+  },
+  Config: {
+    source: $source,
+    envVar: $envVar,
+    secret: $secret,
+    path: $path,
+  },
+  Cli: {
+    command: $command,
+    subcommand: $subcommand,
+    cliFlag: $cliFlag,
+    cliArg: $cliArg,
+    short: $short,
+    about: $about,
+  },
+  Http: {
+    router: $router,
+    get: $get,
+    post: $post,
+    put: $put,
+    httpDelete: $httpDelete,
+    state: $state,
   },
 };

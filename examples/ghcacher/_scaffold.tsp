@@ -13,3 +13,5 @@ import "./entities/checkout.tsp";
 import "./entities/call_log.tsp";
 import "./entities/change_log.tsp";
 import "./entities/poll_state.tsp";
+import "./app/settings.tsp";
+import "./app/commands.tsp";

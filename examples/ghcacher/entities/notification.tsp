@@ -8,6 +8,7 @@ using Bind;
 
 model Notification {
   @Entity.pk id: integer;
+  @Entity.unique(Notification.gh_id)
   gh_id: string;
   @Rel.belongsTo repo: Repo;
   `subject.type`: string | null;

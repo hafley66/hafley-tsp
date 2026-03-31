@@ -2,6 +2,7 @@ import {
   createSymbol,
   Namekey,
   OutputSpace,
+  OutputSymbol,
   track,
   TrackOpTypes,
   trigger,

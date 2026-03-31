@@ -10,14 +10,20 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json && rollup -c rollup.config.mjs",
     "test": "vitest run"
   },
   "dependencies": {
+    "@alloy-js/core": "0.23.0-dev.12",
+    "@alloy-js/go": "0.3.0-dev.3",
+    "@hafley/alloy-rs": "workspace:*",
     "@hafley/typespec-decorator-def": "workspace:*",
     "@typespec/compiler": "^1.0.0"
   },
   "devDependencies": {
+    "@alloy-js/rollup-plugin": "^0.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup": "^4.60.1",
     "typescript": "^5.8.2",
     "vitest": "^3.0.0"
   },

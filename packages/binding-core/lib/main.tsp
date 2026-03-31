@@ -4,3 +4,6 @@ import "./rel.tsp";
 import "./bind.tsp";
 import "./source.tsp";
 import "./sync.tsp";
+import "./config.tsp";
+import "./cli.tsp";
+import "./http.tsp";

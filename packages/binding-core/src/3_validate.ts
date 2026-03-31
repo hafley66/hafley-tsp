@@ -5,13 +5,16 @@ import type { Program } from "@typespec/compiler";
 import { extractFacts } from "./2_facts.js";
 import { emitSQL } from "./4_emit-sql.js";
 import { emitRust } from "./5_emit-rust.js";
+import { emitGo } from "./6_emit-go.js";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 
 export async function $onValidate(program: Program) {
   const facts = extractFacts(program);
   const sql = emitSQL(facts);
-  const rust = emitRust(facts);
+  const existingRs = join(program.projectRoot ?? ".", "tsp-output", "generated.rs");
+  const rust = emitRust(facts, existingRs);
+  const go = emitGo(facts);
 
   // Print summary
   console.log(
@@ -30,7 +33,8 @@ export async function $onValidate(program: Program) {
     writeFile(join(outputDir, "facts.json"), JSON.stringify(facts, null, 2)),
     writeFile(join(outputDir, "schema.sql"), sql),
     writeFile(join(outputDir, "generated.rs"), rust),
+    writeFile(join(outputDir, "generated.go"), go),
   ]);
 
-  console.log(`  binding-core: wrote facts.json, schema.sql, generated.rs to ${outputDir}\n`);
+  console.log(`  binding-core: wrote facts.json, schema.sql, generated.rs, generated.go to ${outputDir}\n`);
 }

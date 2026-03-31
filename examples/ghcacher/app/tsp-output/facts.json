@@ -1,0 +1,141 @@
+{
+  "entities": [],
+  "fields": [],
+  "pks": [],
+  "uniques": [],
+  "indexes": [],
+  "defaults": [],
+  "manuals": [],
+  "relations": [],
+  "bindings": [],
+  "field_maps": [],
+  "auto_maps": [],
+  "sources": [],
+  "source_nested": [],
+  "sync_strategies": [],
+  "source_fields": [],
+  "config_models": [
+    {
+      "model": "AppSettings",
+      "path": "~/.config/ghcacher/config.toml"
+    }
+  ],
+  "config_fields": [
+    {
+      "model": "AppSettings",
+      "name": "github_token",
+      "type": "string",
+      "nullable": false,
+      "env": "GITHUB_TOKEN",
+      "secret": true
+    },
+    {
+      "model": "AppSettings",
+      "name": "org",
+      "type": "string",
+      "nullable": false,
+      "env": "GHCACHER_ORG",
+      "secret": false
+    },
+    {
+      "model": "AppSettings",
+      "name": "db_path",
+      "type": "string",
+      "nullable": false,
+      "env": "GHCACHER_DB",
+      "secret": false,
+      "default": "ghcacher.db"
+    },
+    {
+      "model": "AppSettings",
+      "name": "poll_interval",
+      "type": "integer",
+      "nullable": false,
+      "secret": false,
+      "default": "60"
+    },
+    {
+      "model": "AppSettings",
+      "name": "sync_notifications",
+      "type": "boolean",
+      "nullable": false,
+      "secret": false,
+      "default": "true"
+    },
+    {
+      "model": "AppSettings",
+      "name": "max_concurrency",
+      "type": "integer",
+      "nullable": false,
+      "secret": false,
+      "default": "5"
+    }
+  ],
+  "cli_commands": [
+    {
+      "model": "AppSettings",
+      "about": "GitHub organization cacher"
+    }
+  ],
+  "cli_fields": [
+    {
+      "model": "AppSettings",
+      "name": "github_token",
+      "type": "string",
+      "nullable": false,
+      "kind": "flag",
+      "about": "GitHub personal access token",
+      "env": "GITHUB_TOKEN"
+    },
+    {
+      "model": "AppSettings",
+      "name": "org",
+      "type": "string",
+      "nullable": false,
+      "kind": "flag",
+      "short": "o",
+      "about": "GitHub organization to cache",
+      "env": "GHCACHER_ORG"
+    },
+    {
+      "model": "AppSettings",
+      "name": "db_path",
+      "type": "string",
+      "nullable": false,
+      "kind": "flag",
+      "about": "SQLite database path",
+      "env": "GHCACHER_DB",
+      "default": "ghcacher.db"
+    },
+    {
+      "model": "AppSettings",
+      "name": "poll_interval",
+      "type": "integer",
+      "nullable": false,
+      "kind": "flag",
+      "short": "i",
+      "about": "Poll interval in seconds",
+      "default": "60"
+    },
+    {
+      "model": "AppSettings",
+      "name": "sync_notifications",
+      "type": "boolean",
+      "nullable": false,
+      "kind": "flag",
+      "about": "Enable notification sync",
+      "default": "true"
+    },
+    {
+      "model": "AppSettings",
+      "name": "max_concurrency",
+      "type": "integer",
+      "nullable": false,
+      "kind": "flag",
+      "about": "Max concurrent API requests",
+      "default": "5"
+    }
+  ],
+  "http_routers": [],
+  "http_routes": []
+}

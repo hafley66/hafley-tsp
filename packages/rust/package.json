@@ -2,7 +2,20 @@
   "name": "@hafley/alloy-rs",
   "version": "0.1.0",
   "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./emitter": {
+      "types": "./dist/emitter/index.d.ts",
+      "default": "./dist/emitter/index.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && rollup -c rollup.config.mjs",
     "test": "vitest run",
     "test:cargo": "CARGO_CHECK=1 vitest run",
     "test:watch": "vitest -w"
@@ -14,6 +27,7 @@
   },
   "devDependencies": {
     "@alloy-js/rollup-plugin": "^0.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "typescript": "^5.8.2",
     "vitest": "^3.0.0"
   },
