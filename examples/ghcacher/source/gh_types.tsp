@@ -13,6 +13,7 @@ model GhRef {
 }
 
 @Source.graphql
+@Source.nested(GhPullRequest, "reviews.nodes")
 model GhReview {
   id: integer;
   author: GhUser;
@@ -21,6 +22,7 @@ model GhReview {
   submittedAt: string | null;
 }
 
+@Source.nested(GhPullRequest, "labels.nodes")
 model GhLabel {
   name: string;
   color: string | null;
@@ -74,7 +76,13 @@ model GhNotificationRepository {
   name: string;
 }
 
+@Source.nested(GhPullRequest, "reviewRequests.nodes")
+model GhRequestedReviewer {
+  requestedReviewer: { login: string | null; name: string | null };
+}
+
 @Source.rest("/notifications")
+@Source.freshness("last-modified")
 model GhNotification {
   id: string;
   repository: GhNotificationRepository;
@@ -86,6 +94,7 @@ model GhNotification {
 }
 
 @Source.graphql
+@Source.nested(GhPullRequest, "comments.nodes")
 model GhPrComment {
   id: integer;
   author: GhUser;
@@ -98,6 +107,7 @@ model GhPrComment {
 }
 
 @Source.graphql
+@Source.nested(GhPullRequest, "commits.nodes[0].commit.statusCheckRollup.contexts.nodes")
 model GhStatusCheck {
   context: string;
   state: string;

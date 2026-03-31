@@ -138,6 +138,7 @@ const _sourceGraphql = flagDec(BindingCoreStateKeys.sourceGraphql as any);
 const _sourceRest = valueDec<string>(BindingCoreStateKeys.sourceRest as any);
 const _sourcePaginated = flagDec(BindingCoreStateKeys.sourcePaginated as any);
 const _sourcePollInterval = valueDec<number>(BindingCoreStateKeys.sourcePollInterval as any);
+const _sourceFreshness = valueDec<string>(BindingCoreStateKeys.sourceFreshness as any);
 
 const SOURCE_NESTED_KEY = Symbol.for("hafley:source-nested");
 
@@ -162,6 +163,9 @@ export function $nested(ctx: DecoratorContext, target: Model, parent: Model, pat
 export function $pollInterval(ctx: DecoratorContext, target: Model, seconds: number) {
   _sourcePollInterval.$decorator(ctx, target, seconds);
 }
+export function $freshness(ctx: DecoratorContext, target: Model, kind: string) {
+  _sourceFreshness.$decorator(ctx, target, kind);
+}
 
 export const isSourceGraphql = _sourceGraphql.has;
 export const getSourceRest = _sourceRest.get;
@@ -169,9 +173,15 @@ export const hasSourceRest = _sourceRest.has;
 export const isSourcePaginated = _sourcePaginated.has;
 export const getSourcePollInterval = _sourcePollInterval.get;
 export const hasSourcePollInterval = _sourcePollInterval.has;
+export const getSourceFreshness = _sourceFreshness.get;
+export const hasSourceFreshness = _sourceFreshness.has;
 
 export function getSourceNested(program: Program, modelName: string): NestedDef | undefined {
   return (program.stateMap(SOURCE_NESTED_KEY) as any).get(modelName);
+}
+
+export function getAllSourceNested(program: Program): Map<string, NestedDef> {
+  return program.stateMap(SOURCE_NESTED_KEY) as any;
 }
 
 // ──────────────────────────────────────────────────────────
@@ -345,6 +355,7 @@ export const $decorators = {
     paginated: $paginated,
     nested: $nested,
     pollInterval: $pollInterval,
+    freshness: $freshness,
   },
   Sync: {
     strategy: $strategy,

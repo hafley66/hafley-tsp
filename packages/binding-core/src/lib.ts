@@ -41,6 +41,7 @@ export const $lib = createTypeSpecLibrary({
     sourcePaginated: { description: "State for @Source.paginated decorator" },
     sourceNested: { description: "State for @Source.nested decorator" },
     sourcePollInterval: { description: "State for @Source.pollInterval decorator" },
+    sourceFreshness: { description: "State for @Source.freshness decorator" },
     syncStrategy: { description: "State for @Sync.strategy decorator" },
     // Config namespace
     configSource: { description: "State for @Config.source decorator" },

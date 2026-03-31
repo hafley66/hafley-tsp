@@ -16,6 +16,8 @@ export {
   hasSourceRest,
   isSourcePaginated,
   getSourcePollInterval,
+  getSourceFreshness,
+  hasSourceFreshness,
   getSourceNested,
   getSyncStrategy,
   hasSyncStrategy,

@@ -16,4 +16,7 @@ namespace Source {
 
   /** Default poll interval in seconds for this source. */
   extern dec pollInterval(target: Model, seconds: valueof integer);
+
+  /** Freshness mechanism: "etag", "last-modified", or "poll-only". Defaults to "etag". */
+  extern dec freshness(target: Model, kind: valueof string);
 }

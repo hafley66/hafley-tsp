@@ -18,6 +18,7 @@ import {
   getSyncStrategy, hasSyncStrategy,
   isSourceGraphql, getSourceRest, hasSourceRest, isSourcePaginated,
   getSourcePollInterval, hasSourcePollInterval, getSourceNested,
+  getSourceFreshness, hasSourceFreshness, getAllSourceNested,
   isConfigSource, hasConfigEnv, getConfigEnv, isConfigSecret,
   hasConfigPath, getConfigPath,
   isCliCommand, isCliFlag, hasCliArg, getCliArg, hasCliShort, getCliShort,
@@ -198,16 +199,75 @@ function emitExtractFn(program: Program, bindingModel: Model, relMap: Map<string
   return lines.join("\n");
 }
 
+// ── Sync trait + supporting types ────────────────────────
+
+function emitSyncTrait(): string {
+  return `/// Request descriptor for a sync operation.
+#[derive(Debug, Clone)]
+pub struct SyncRequest {
+    pub method: &'static str,
+    pub endpoint: String,
+    pub paginated: bool,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+}
+
+/// Response from a sync transport call.
+#[derive(Debug)]
+pub struct SyncResponse {
+    pub status: u16,
+    pub body: serde_json::Value,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+}
+
+impl SyncResponse {
+    pub fn is_not_modified(&self) -> bool { self.status == 304 }
+}
+
+/// Persisted poll state for an endpoint.
+#[derive(Debug, Clone, Default)]
+pub struct SyncPollState {
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+    pub poll_interval: Option<i64>,
+    pub last_polled_at: Option<String>,
+}
+
+/// Implement this trait to provide transport + persistence for sync functions.
+#[async_trait::async_trait]
+pub trait SyncClient {
+    async fn rest_call(&self, conn: &mut SqliteConnection, req: &SyncRequest) -> Result<SyncResponse>;
+    async fn graphql_call(&self, conn: &mut SqliteConnection, endpoint: &str, query: &str) -> Result<serde_json::Value>;
+    async fn get_poll_state(&self, conn: &mut SqliteConnection, endpoint: &str) -> Result<SyncPollState>;
+    async fn set_poll_state(&self, conn: &mut SqliteConnection, endpoint: &str, state: &SyncPollState) -> Result<()>;
+}`;
+}
+
 // ── Sync pipeline emitter (string) ───────────────────────
 
-function emitSyncFn(program: Program, model: Model, relMap: Map<string, RelationDef[]>): string {
+interface NestedChildInfo {
+  sourceModelName: string;
+  targetModel: Model;
+  path: string;
+  strategy: string;
+  tableName: string;
+  fields: ResolvedField[];
+  upsertArgs: string[];
+  upsertFn: string;
+  hasBinding: boolean;
+}
+
+function emitSyncFn(
+  program: Program, model: Model, relMap: Map<string, RelationDef[]>,
+  allModels: Model[], nestedMap: Map<string, import("./decorators.js").NestedDef>,
+): string {
   const fields = resolvedFields(program, model, relMap);
   const pks = fields.filter(f => f.isPk).map(f => f.name);
   const isAutoIncr = pks.length === 1 && fields.find(f => f.name === pks[0])?.typeName === "integer";
   const strategy = hasSyncStrategy(program, model) ? getSyncStrategy(program, model) : "upsert";
 
   // Find the binding that targets this entity
-  const allModels = collectModels(program.getGlobalNamespaceType());
   let sourceModel: Model | undefined;
   for (const m of allModels) {
     if (!hasBinding(program, m)) continue;
@@ -220,6 +280,7 @@ function emitSyncFn(program: Program, model: Model, relMap: Map<string, Relation
   const restPath = hasSourceRest(program, sourceModel) ? getSourceRest(program, sourceModel) : undefined;
   if (!isGql && !restPath) return "";
 
+  const freshness = hasSourceFreshness(program, sourceModel) ? getSourceFreshness(program, sourceModel) : "etag";
   const pollInterval = hasSourcePollInterval(program, sourceModel) ? getSourcePollInterval(program, sourceModel) : undefined;
   const paginated = isSourcePaginated(program, sourceModel);
 
@@ -227,36 +288,125 @@ function emitSyncFn(program: Program, model: Model, relMap: Map<string, Relation
   const fnName = `sync_${tableName}`;
   const parentRel = fields.find(f => f.rel?.kind === "belongsTo");
 
+  // Collect nested children: source models with @Source.nested pointing to our source model
+  const nestedChildren: NestedChildInfo[] = [];
+  for (const [childSourceName, nestedDef] of nestedMap) {
+    if (nestedDef.parent !== sourceModel.name) continue;
+    // Find the entity that this child source maps to via a binding
+    for (const m of allModels) {
+      if (!hasBinding(program, m)) continue;
+      const b = getBinding(program, m)!;
+      if (b.sourceModel.name !== childSourceName) continue;
+      const childTarget = b.targetModel;
+      const childFields = resolvedFields(program, childTarget, relMap);
+      const childPks = childFields.filter(f => f.isPk).map(f => f.name);
+      const childAutoIncr = childPks.length === 1 && childFields.find(f => f.name === childPks[0])?.typeName === "integer";
+      const childStrategy = hasSyncStrategy(program, childTarget) ? getSyncStrategy(program, childTarget)! : "upsert";
+      const childTableName = snakeCase(childTarget.name);
+
+      const childUpsertArgs: string[] = [];
+      for (const f of childFields) {
+        if (childAutoIncr && f.isPk) continue;
+        if (f.isManual) continue;
+        if (f.rel) {
+          childUpsertArgs.push(`${snakeCase(f.name)}_id`);
+        } else {
+          const ident = rustIdent(snakeCase(f.name).replace(/\./g, "_"));
+          const base = RUST_TYPE[f.typeName] ?? "String";
+          if (base === "String" && !f.nullable) childUpsertArgs.push(`&child_fields.${ident}`);
+          else if (base === "String" && f.nullable) childUpsertArgs.push(`child_fields.${ident}.as_deref()`);
+          else childUpsertArgs.push(`child_fields.${ident}`);
+        }
+      }
+
+      nestedChildren.push({
+        sourceModelName: childSourceName,
+        targetModel: childTarget,
+        path: nestedDef.path,
+        strategy: childStrategy,
+        tableName: childTableName,
+        fields: childFields,
+        upsertArgs: childUpsertArgs,
+        upsertFn: childStrategy === "insert-ignore" ? `insert_${childTableName}` : `upsert_${childTableName}`,
+        hasBinding: true,
+      });
+    }
+  }
+
+  // Extract path params from REST endpoint template
+  const pathParams: string[] = [];
+  if (!isGql && restPath) {
+    for (const m of restPath.matchAll(/\{(\w+)\}/g)) {
+      pathParams.push(m[1]);
+    }
+  }
+
+  // --- Function signature ---
   const lines: string[] = [];
-  lines.push(`pub async fn ${fnName}(`, `    conn: &mut SqliteConnection,`, `    gh: &dyn GitHubClient,`);
+  lines.push(`pub async fn ${fnName}(`);
+  lines.push(`    conn: &mut SqliteConnection,`);
+  lines.push(`    client: &dyn SyncClient,`);
   if (parentRel) lines.push(`    ${snakeCase(parentRel.name)}_id: i64,`);
-  if (!isGql && restPath?.includes("{owner}")) lines.push(`    owner: &str,`, `    name: &str,`);
+  for (const p of pathParams) lines.push(`    ${snakeCase(p)}: &str,`);
   lines.push(`) -> Result<()> {`);
 
+  // --- REST transport ---
   if (!isGql) {
     const endpoint = restPath ?? `/${tableName}`;
-    const endpointExpr = endpoint.includes("{owner}")
-      ? `format!("${endpoint.replace(/\{owner\}/g, "{owner}").replace(/\{name\}/g, "{name}")}")`
+    const endpointExpr = pathParams.length > 0
+      ? `format!("${endpoint}")`
       : `"${endpoint}".to_owned()`;
     lines.push(`    let endpoint = ${endpointExpr};`);
-    lines.push(`    let poll = db::get_poll_state(conn, &endpoint).await?;`, ``);
+    lines.push(`    let poll = client.get_poll_state(conn, &endpoint).await?;`);
+    lines.push(``);
+
+    // Poll interval check
     if (pollInterval) {
       lines.push(`    if let (Some(interval), Some(ref last_polled)) = (poll.poll_interval, &poll.last_polled_at) {`);
       lines.push(`        if let Ok(last) = chrono::DateTime::parse_from_rfc3339(last_polled) {`);
       lines.push(`            let elapsed = chrono::Utc::now().signed_duration_since(last).num_seconds();`);
       lines.push(`            if elapsed < interval { return Ok(()); }`);
-      lines.push(`        }`, `    }`, ``);
+      lines.push(`        }`);
+      lines.push(`    }`);
+      lines.push(``);
     }
-    lines.push(`    let mut req = GhRequest::get(&endpoint)${paginated ? ".paginated()" : ""};`);
-    lines.push(`    if let Some(ref etag) = poll.etag { req = req.with_etag(etag); }`, ``);
-    lines.push(`    let resp = gh.call(conn, &req).await?;`);
-    lines.push(`    if resp.is_not_modified() { return Ok(()); }`, ``);
-    lines.push(`    let items = match resp.body.as_array() {`, `        Some(a) => a,`, `        None => return Ok(()),`, `    };`);
+
+    // Build request with freshness
+    lines.push(`    let mut req = SyncRequest {`);
+    lines.push(`        method: "GET",`);
+    lines.push(`        endpoint: endpoint.clone(),`);
+    lines.push(`        paginated: ${paginated},`);
+    lines.push(`        etag: None,`);
+    lines.push(`        last_modified: None,`);
+    lines.push(`    };`);
+
+    if (freshness === "etag") {
+      lines.push(`    if let Some(ref etag) = poll.etag { req.etag = Some(etag.clone()); }`);
+    } else if (freshness === "last-modified") {
+      lines.push(`    if let Some(ref lm) = poll.last_modified { req.last_modified = Some(lm.clone()); }`);
+    }
+    // "poll-only": no conditional headers
+
+    lines.push(``);
+    lines.push(`    let resp = client.rest_call(conn, &req).await?;`);
+    lines.push(`    if resp.is_not_modified() { return Ok(()); }`);
+    lines.push(``);
+    lines.push(`    let items = match resp.body.as_array() {`);
+    lines.push(`        Some(a) => a,`);
+    lines.push(`        None => return Ok(()),`);
+    lines.push(`    };`);
   } else {
-    lines.push(`    gh.throttle_if_needed(conn, "graphql").await?;`);
-    lines.push(`    let items: &Vec<serde_json::Value> = todo!("wire up GraphQL query");`);
+    // --- GraphQL transport ---
+    lines.push(`    let query = ${snakeCase(sourceModel.name).toUpperCase()}_FIELDS;`);
+    lines.push(`    let endpoint = format!("graphql:${tableName}");`);
+    lines.push(`    let data = client.graphql_call(conn, &endpoint, query).await?;`);
+    lines.push(`    let items = match data.as_array() {`);
+    lines.push(`        Some(a) => a,`);
+    lines.push(`        None => return Ok(()),`);
+    lines.push(`    };`);
   }
 
+  // --- Build upsert args for parent ---
   const upsertArgs: string[] = [];
   for (const f of fields) {
     if (isAutoIncr && f.isPk) continue;
@@ -273,16 +423,88 @@ function emitSyncFn(program: Program, model: Model, relMap: Map<string, Relation
   }
 
   const upsertFn = strategy === "insert-ignore" ? `insert_${tableName}` : `upsert_${tableName}`;
-  lines.push(``, `    for item in items {`);
+  const returnsId = isAutoIncr && strategy === "upsert";
+
+  // --- Item loop ---
+  lines.push(``);
+  lines.push(`    for item in items {`);
   lines.push(`        let fields = extract_${tableName}(item);`);
-  lines.push(`        ${upsertFn}(conn, ${upsertArgs.join(", ")}).await?;`);
-  lines.push(`    }`, ``, `    Ok(())`, `}`);
+
+  if (returnsId && nestedChildren.length > 0) {
+    lines.push(`        let ${tableName}_id = ${upsertFn}(conn, ${upsertArgs.join(", ")}).await?;`);
+  } else {
+    lines.push(`        ${upsertFn}(conn, ${upsertArgs.join(", ")}).await?;`);
+  }
+
+  // --- Nested children ---
+  for (const child of nestedChildren) {
+    // Convert "commits.nodes[0].commit.foo" into chained Rust JSON access
+    // segments: ["commits"], [0], ["commit"], ["foo"]
+    const jsonAccess = child.path.split(".").map(seg => {
+      const idxMatch = seg.match(/^(\w+)\[(\d+)\]$/);
+      if (idxMatch) return `["${idxMatch[1]}"][${idxMatch[2]}]`;
+      return `["${seg}"]`;
+    }).join("");
+    const parentFkField = child.fields.find(f => f.rel?.kind === "belongsTo" && snakeCase(resolveRelTarget(f.rel!)) === tableName);
+    const parentIdExpr = parentFkField ? `${tableName}_id` : `/* TODO: parent id */`;
+
+    lines.push(``);
+    if (child.strategy === "delete-replace") {
+      lines.push(`        sqlx::query("DELETE FROM ${child.tableName} WHERE ${tableName}_id = ?")`);
+      lines.push(`            .bind(${parentIdExpr})`);
+      lines.push(`            .execute(&mut *conn)`);
+      lines.push(`            .await?;`);
+    }
+
+    lines.push(`        if let Some(children) = item${jsonAccess}.as_array() {`);
+    lines.push(`            for child in children {`);
+    lines.push(`                let child_fields = extract_${child.tableName}(child);`);
+
+    // Replace the parent FK arg with the actual parent id
+    const childArgs = child.upsertArgs.map(arg => {
+      if (parentFkField && arg === `${snakeCase(parentFkField.name)}_id`) return parentIdExpr;
+      return arg;
+    });
+
+    lines.push(`                ${child.upsertFn}(conn, ${childArgs.join(", ")}).await?;`);
+    lines.push(`            }`);
+    lines.push(`        }`);
+  }
+
+  lines.push(`    }`);
+
+  // --- Poll state persistence ---
+  if (!isGql) {
+    lines.push(``);
+    lines.push(`    client.set_poll_state(conn, &endpoint, &SyncPollState {`);
+    if (freshness === "etag") {
+      lines.push(`        etag: resp.etag.clone(),`);
+      lines.push(`        last_modified: None,`);
+    } else if (freshness === "last-modified") {
+      lines.push(`        etag: None,`);
+      lines.push(`        last_modified: resp.last_modified.clone(),`);
+    } else {
+      lines.push(`        etag: None,`);
+      lines.push(`        last_modified: None,`);
+    }
+    lines.push(`        poll_interval: ${pollInterval ? `Some(${pollInterval})` : "None"},`);
+    lines.push(`        last_polled_at: Some(chrono::Utc::now().to_rfc3339()),`);
+    lines.push(`    }).await?;`);
+  }
+
+  lines.push(``);
+  lines.push(`    Ok(())`);
+  lines.push(`}`);
   return lines.join("\n");
 }
 
 // ── GraphQL fragment emitter (string) ────────────────────
 
-function emitGraphqlFragment(program: Program, sourceModel: Model): string {
+function emitGraphqlFragment(
+  program: Program, sourceModel: Model,
+  nestedMap: Map<string, import("./decorators.js").NestedDef>,
+  allModels: Model[],
+): string {
   const sourceFields: { name: string; typeName: string }[] = [];
   for (const [, prop] of sourceModel.properties) {
     if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
@@ -291,37 +513,58 @@ function emitGraphqlFragment(program: Program, sourceModel: Model): string {
   }
   if (sourceFields.length === 0) return "";
 
-  // Collect nested model fields
-  const allModels = collectModels(program.getGlobalNamespaceType());
   const modelByName = new Map(allModels.map(m => [m.name, m]));
+
+  // Collect @Source.nested children pointing to this source model
+  const nestedChildren: { path: string; childModel: Model }[] = [];
+  for (const [childName, nestedDef] of nestedMap) {
+    if (nestedDef.parent !== sourceModel.name) continue;
+    const childModel = modelByName.get(childName);
+    if (childModel) nestedChildren.push({ path: nestedDef.path, childModel });
+  }
+
+  function emitModelFields(model: Model, indent: string): string[] {
+    const out: string[] = [];
+    for (const [, prop] of model.properties) {
+      if (prop.type.kind === "Intrinsic" && (prop.type as any).name === "never") continue;
+      const { typeName } = resolveFieldType(prop.type);
+      const sub = modelByName.get(typeName);
+      if (sub) {
+        out.push(`${indent}${prop.name} {`);
+        out.push(...emitModelFields(sub, indent + "    "));
+        out.push(`${indent}}`);
+      } else {
+        out.push(`${indent}${prop.name}`);
+      }
+    }
+    return out;
+  }
 
   const lines: string[] = [];
   lines.push(`/// GraphQL field selection for ${sourceModel.name}`);
   lines.push(`pub const ${snakeCase(sourceModel.name).toUpperCase()}_FIELDS: &str = r#"`);
-  for (const f of sourceFields) {
-    const nested = modelByName.get(f.typeName);
-    if (nested) {
-      lines.push(`    ${f.name} {`);
-      for (const [, np] of nested.properties) {
-        if (np.type.kind === "Intrinsic" && (np.type as any).name === "never") continue;
-        const { typeName: nt } = resolveFieldType(np.type);
-        const deep = modelByName.get(nt);
-        if (deep) {
-          const deepNames: string[] = [];
-          for (const [, dp] of deep.properties) {
-            if (dp.type.kind === "Intrinsic" && (dp.type as any).name === "never") continue;
-            deepNames.push(dp.name);
-          }
-          lines.push(`        ${np.name} { ${deepNames.join(" ")} }`);
-        } else {
-          lines.push(`        ${np.name}`);
-        }
-      }
-      lines.push(`    }`);
-    } else {
-      lines.push(`    ${f.name}`);
+  lines.push(...emitModelFields(sourceModel, "    "));
+
+  // Append nested sub-selections
+  for (const child of nestedChildren) {
+    // Path like "reviews.nodes" -> wrap fields in "reviews { nodes { ... } }"
+    const pathParts = child.path.split(".");
+    // The last segment is usually "nodes" -- the container. Fields go inside it.
+    // Intermediate segments are wrapper objects in the GraphQL query.
+    let openIndent = "    ";
+    for (const part of pathParts) {
+      // Strip array indexing for query structure (nodes[0] -> nodes)
+      const clean = part.replace(/\[\d+\]/, "");
+      lines.push(`${openIndent}${clean} {`);
+      openIndent += "    ";
+    }
+    lines.push(...emitModelFields(child.childModel, openIndent));
+    for (let i = pathParts.length - 1; i >= 0; i--) {
+      openIndent = openIndent.slice(4);
+      lines.push(`${openIndent}}`);
     }
   }
+
   lines.push(`"#;`);
   return lines.join("\n");
 }
@@ -456,12 +699,15 @@ export function emitRust(program: Program, existingFile?: string): OutputDirecto
   if (hasCliModels) uses.push("clap::{Parser, Subcommand}");
   if (hasHttpModels) uses.push("axum::{Router, routing::get, routing::post, response::IntoResponse}");
 
+  // Sync pipeline imports added after syncSections are computed below
+
   const upsertSections = entities.map(m => emitUpsertFn(program, fieldsByEntity.get(m.name)!, m.name)).filter(Boolean);
   const extractSections = bindings.map(m => emitExtractFn(program, m, relMap)).filter(Boolean);
 
   // GraphQL sources
   const gqlSources = allModels.filter(m => isSourceGraphql(program, m));
-  const gqlSections = gqlSources.map(m => emitGraphqlFragment(program, m)).filter(Boolean);
+  const nestedMap = getAllSourceNested(program);
+  const gqlSections = gqlSources.map(m => emitGraphqlFragment(program, m, nestedMap, allModels)).filter(Boolean);
 
   // Sync pipelines
   const syncEntities = entities.filter(m => {
@@ -471,7 +717,9 @@ export function emitRust(program: Program, existingFile?: string): OutputDirecto
     }
     return false;
   });
-  const syncSections = syncEntities.map(m => emitSyncFn(program, m, relMap)).filter(Boolean);
+  const syncSections = syncEntities.map(m => emitSyncFn(program, m, relMap, allModels, nestedMap)).filter(Boolean);
+  const hasSyncFns = syncSections.length > 0;
+  if (hasSyncFns) uses.push("async_trait::async_trait");
 
   const configHelpers = emitConfigHelpers(program, allModels);
   const mergeSections = emitConfigCliMerge(program, allModels);
@@ -546,7 +794,11 @@ export function emitRust(program: Program, existingFile?: string): OutputDirecto
               <AutoZone id="graphql-fragments">{gqlSections.join("\n\n")}</AutoZone>
             )}
 
-            {syncSections.length > 0 && (
+            {hasSyncFns && (
+              <AutoZone id="sync-trait">{emitSyncTrait()}</AutoZone>
+            )}
+
+            {hasSyncFns && (
               <AutoZone id="sync-pipelines">{syncSections.join("\n\n")}</AutoZone>
             )}
 

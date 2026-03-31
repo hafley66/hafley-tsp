@@ -3,6 +3,11 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sqlx::SqliteConnection;
 use clap::{Parser, Subcommand};
+use async_trait::async_trait;
+
+
+
+
 
 
 
@@ -936,6 +941,59 @@ pub const GH_PULL_REQUEST_FIELDS: &str = r#"
     mergedAt
     closedAt
     body
+    reviews {
+        nodes {
+            id
+            author {
+                login
+            }
+            state
+            body
+            submittedAt
+        }
+    }
+    labels {
+        nodes {
+            name
+            color
+        }
+    }
+    reviewRequests {
+        nodes {
+            requestedReviewer
+        }
+    }
+    comments {
+        nodes {
+            id
+            author {
+                login
+            }
+            body
+            path
+            line
+            in_reply_to_id
+            created_at
+            updated_at
+        }
+    }
+    commits {
+        nodes {
+            commit {
+                statusCheckRollup {
+                    contexts {
+                        nodes {
+                            context
+                            state
+                            target_url
+                            description
+                            updated_at
+                        }
+                    }
+                }
+            }
+        }
+    }
 "#;
 
 /// GraphQL field selection for GhPrComment
@@ -964,17 +1022,22 @@ pub const GH_STATUS_CHECK_FIELDS: &str = r#"
 // alloy-sync-pipelines-start
 pub async fn sync_repo(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     owner: &str,
-    name: &str,
 ) -> Result<()> {
     let endpoint = format!("/orgs/{owner}/repos");
-    let poll = db::get_poll_state(conn, &endpoint).await?;
+    let poll = client.get_poll_state(conn, &endpoint).await?;
 
-    let mut req = GhRequest::get(&endpoint).paginated();
-    if let Some(ref etag) = poll.etag { req = req.with_etag(etag); }
+    let mut req = SyncRequest {
+        method: "GET",
+        endpoint: endpoint.clone(),
+        paginated: true,
+        etag: None,
+        last_modified: None,
+    };
+    if let Some(ref etag) = poll.etag { req.etag = Some(etag.clone()); }
 
-    let resp = gh.call(conn, &req).await?;
+    let resp = client.rest_call(conn, &req).await?;
     if resp.is_not_modified() { return Ok(()); }
 
     let items = match resp.body.as_array() {
@@ -987,23 +1050,36 @@ pub async fn sync_repo(
         upsert_repo(conn, &fields.owner, &fields.name, &fields.default_branch, fields.gh_node_id.as_deref(), fields.updated_at.as_deref()).await?;
     }
 
+    client.set_poll_state(conn, &endpoint, &SyncPollState {
+        etag: resp.etag.clone(),
+        last_modified: None,
+        poll_interval: None,
+        last_polled_at: Some(chrono::Utc::now().to_rfc3339()),
+    }).await?;
+
     Ok(())
 }
 
 pub async fn sync_branch(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     repo_id: i64,
     owner: &str,
     name: &str,
 ) -> Result<()> {
     let endpoint = format!("/repos/{owner}/{name}/branches");
-    let poll = db::get_poll_state(conn, &endpoint).await?;
+    let poll = client.get_poll_state(conn, &endpoint).await?;
 
-    let mut req = GhRequest::get(&endpoint).paginated();
-    if let Some(ref etag) = poll.etag { req = req.with_etag(etag); }
+    let mut req = SyncRequest {
+        method: "GET",
+        endpoint: endpoint.clone(),
+        paginated: true,
+        etag: None,
+        last_modified: None,
+    };
+    if let Some(ref etag) = poll.etag { req.etag = Some(etag.clone()); }
 
-    let resp = gh.call(conn, &req).await?;
+    let resp = client.rest_call(conn, &req).await?;
     if resp.is_not_modified() { return Ok(()); }
 
     let items = match resp.body.as_array() {
@@ -1016,20 +1092,53 @@ pub async fn sync_branch(
         upsert_branch(conn, repo_id, &fields.name, fields.sha.as_deref(), fields.behind_default, fields.ahead_default, fields.updated_at.as_deref()).await?;
     }
 
+    client.set_poll_state(conn, &endpoint, &SyncPollState {
+        etag: resp.etag.clone(),
+        last_modified: None,
+        poll_interval: None,
+        last_polled_at: Some(chrono::Utc::now().to_rfc3339()),
+    }).await?;
+
     Ok(())
 }
 
 pub async fn sync_pull_request(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     repo_id: i64,
 ) -> Result<()> {
-    gh.throttle_if_needed(conn, "graphql").await?;
-    let items: &Vec<serde_json::Value> = todo!("wire up GraphQL query");
+    let query = GH_PULL_REQUEST_FIELDS;
+    let endpoint = format!("graphql:pull_request");
+    let data = client.graphql_call(conn, &endpoint, query).await?;
+    let items = match data.as_array() {
+        Some(a) => a,
+        None => return Ok(()),
+    };
 
     for item in items {
         let fields = extract_pull_request(item);
-        upsert_pull_request(conn, repo_id, fields.number, fields.gh_node_id.as_deref(), &fields.state, &fields.title, fields.author_login.as_deref(), fields.head_ref.as_deref(), fields.head_sha.as_deref(), fields.base_ref.as_deref(), fields.mergeable.as_deref(), fields.is_draft, fields.additions, fields.deletions, fields.changed_files, &fields.created_at, &fields.updated_at, fields.merged_at.as_deref(), fields.closed_at.as_deref(), fields.body.as_deref()).await?;
+        let pull_request_id = upsert_pull_request(conn, repo_id, fields.number, fields.gh_node_id.as_deref(), &fields.state, &fields.title, fields.author_login.as_deref(), fields.head_ref.as_deref(), fields.head_sha.as_deref(), fields.base_ref.as_deref(), fields.mergeable.as_deref(), fields.is_draft, fields.additions, fields.deletions, fields.changed_files, &fields.created_at, &fields.updated_at, fields.merged_at.as_deref(), fields.closed_at.as_deref(), fields.body.as_deref()).await?;
+
+        if let Some(children) = item["reviews"]["nodes"].as_array() {
+            for child in children {
+                let child_fields = extract_pr_review(child);
+                upsert_pr_review(conn, pull_request_id, child_fields.gh_id, child_fields.author_login.as_deref(), &child_fields.state, child_fields.body.as_deref(), child_fields.submitted_at.as_deref()).await?;
+            }
+        }
+
+        if let Some(children) = item["comments"]["nodes"].as_array() {
+            for child in children {
+                let child_fields = extract_pr_comment(child);
+                upsert_pr_comment(conn, pull_request_id, child_fields.gh_id, child_fields.author_login.as_deref(), &child_fields.body, child_fields.path.as_deref(), child_fields.line, child_fields.in_reply_to_id, &child_fields.created_at, &child_fields.updated_at).await?;
+            }
+        }
+
+        if let Some(children) = item["commits"]["nodes"][0]["commit"]["statusCheckRollup"]["contexts"]["nodes"].as_array() {
+            for child in children {
+                let child_fields = extract_pr_status_check(child);
+                upsert_pr_status_check(conn, pull_request_id, &child_fields.context, &child_fields.state, child_fields.target_url.as_deref(), child_fields.description.as_deref(), child_fields.updated_at.as_deref()).await?;
+            }
+        }
     }
 
     Ok(())
@@ -1037,11 +1146,16 @@ pub async fn sync_pull_request(
 
 pub async fn sync_pr_review(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     pr_id: i64,
 ) -> Result<()> {
-    gh.throttle_if_needed(conn, "graphql").await?;
-    let items: &Vec<serde_json::Value> = todo!("wire up GraphQL query");
+    let query = GH_REVIEW_FIELDS;
+    let endpoint = format!("graphql:pr_review");
+    let data = client.graphql_call(conn, &endpoint, query).await?;
+    let items = match data.as_array() {
+        Some(a) => a,
+        None => return Ok(()),
+    };
 
     for item in items {
         let fields = extract_pr_review(item);
@@ -1053,11 +1167,16 @@ pub async fn sync_pr_review(
 
 pub async fn sync_pr_comment(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     pr_id: i64,
 ) -> Result<()> {
-    gh.throttle_if_needed(conn, "graphql").await?;
-    let items: &Vec<serde_json::Value> = todo!("wire up GraphQL query");
+    let query = GH_PR_COMMENT_FIELDS;
+    let endpoint = format!("graphql:pr_comment");
+    let data = client.graphql_call(conn, &endpoint, query).await?;
+    let items = match data.as_array() {
+        Some(a) => a,
+        None => return Ok(()),
+    };
 
     for item in items {
         let fields = extract_pr_comment(item);
@@ -1069,11 +1188,16 @@ pub async fn sync_pr_comment(
 
 pub async fn sync_pr_status_check(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     pr_id: i64,
 ) -> Result<()> {
-    gh.throttle_if_needed(conn, "graphql").await?;
-    let items: &Vec<serde_json::Value> = todo!("wire up GraphQL query");
+    let query = GH_STATUS_CHECK_FIELDS;
+    let endpoint = format!("graphql:pr_status_check");
+    let data = client.graphql_call(conn, &endpoint, query).await?;
+    let items = match data.as_array() {
+        Some(a) => a,
+        None => return Ok(()),
+    };
 
     for item in items {
         let fields = extract_pr_status_check(item);
@@ -1085,13 +1209,13 @@ pub async fn sync_pr_status_check(
 
 pub async fn sync_repo_event(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     repo_id: i64,
     owner: &str,
     name: &str,
 ) -> Result<()> {
     let endpoint = format!("/repos/{owner}/{name}/events");
-    let poll = db::get_poll_state(conn, &endpoint).await?;
+    let poll = client.get_poll_state(conn, &endpoint).await?;
 
     if let (Some(interval), Some(ref last_polled)) = (poll.poll_interval, &poll.last_polled_at) {
         if let Ok(last) = chrono::DateTime::parse_from_rfc3339(last_polled) {
@@ -1100,10 +1224,16 @@ pub async fn sync_repo_event(
         }
     }
 
-    let mut req = GhRequest::get(&endpoint).paginated();
-    if let Some(ref etag) = poll.etag { req = req.with_etag(etag); }
+    let mut req = SyncRequest {
+        method: "GET",
+        endpoint: endpoint.clone(),
+        paginated: true,
+        etag: None,
+        last_modified: None,
+    };
+    if let Some(ref etag) = poll.etag { req.etag = Some(etag.clone()); }
 
-    let resp = gh.call(conn, &req).await?;
+    let resp = client.rest_call(conn, &req).await?;
     if resp.is_not_modified() { return Ok(()); }
 
     let items = match resp.body.as_array() {
@@ -1116,21 +1246,34 @@ pub async fn sync_repo_event(
         insert_repo_event(conn, repo_id, &fields.gh_id, &fields.r#type, fields.actor_login.as_deref(), &fields.payload_json, &fields.created_at).await?;
     }
 
+    client.set_poll_state(conn, &endpoint, &SyncPollState {
+        etag: resp.etag.clone(),
+        last_modified: None,
+        poll_interval: Some(60),
+        last_polled_at: Some(chrono::Utc::now().to_rfc3339()),
+    }).await?;
+
     Ok(())
 }
 
 pub async fn sync_notification(
     conn: &mut SqliteConnection,
-    gh: &dyn GitHubClient,
+    client: &dyn SyncClient,
     repo_id: i64,
 ) -> Result<()> {
     let endpoint = "/notifications".to_owned();
-    let poll = db::get_poll_state(conn, &endpoint).await?;
+    let poll = client.get_poll_state(conn, &endpoint).await?;
 
-    let mut req = GhRequest::get(&endpoint);
-    if let Some(ref etag) = poll.etag { req = req.with_etag(etag); }
+    let mut req = SyncRequest {
+        method: "GET",
+        endpoint: endpoint.clone(),
+        paginated: false,
+        etag: None,
+        last_modified: None,
+    };
+    if let Some(ref lm) = poll.last_modified { req.last_modified = Some(lm.clone()); }
 
-    let resp = gh.call(conn, &req).await?;
+    let resp = client.rest_call(conn, &req).await?;
     if resp.is_not_modified() { return Ok(()); }
 
     let items = match resp.body.as_array() {
@@ -1142,6 +1285,13 @@ pub async fn sync_notification(
         let fields = extract_notification(item);
         upsert_notification(conn, &fields.gh_id, repo_id, fields.subject_type.as_deref(), fields.subject_title.as_deref(), fields.subject_url.as_deref(), &fields.reason, fields.unread, &fields.updated_at, fields.last_read_at.as_deref()).await?;
     }
+
+    client.set_poll_state(conn, &endpoint, &SyncPollState {
+        etag: None,
+        last_modified: resp.last_modified.clone(),
+        poll_interval: None,
+        last_polled_at: Some(chrono::Utc::now().to_rfc3339()),
+    }).await?;
 
     Ok(())
 }
@@ -1256,5 +1406,48 @@ impl AppSettings {
     }
 }
 // alloy-config-cli-merge-end
+
+// alloy-sync-trait-start
+/// Request descriptor for a sync operation.
+#[derive(Debug, Clone)]
+pub struct SyncRequest {
+    pub method: &'static str,
+    pub endpoint: String,
+    pub paginated: bool,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+}
+
+/// Response from a sync transport call.
+#[derive(Debug)]
+pub struct SyncResponse {
+    pub status: u16,
+    pub body: serde_json::Value,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+}
+
+impl SyncResponse {
+    pub fn is_not_modified(&self) -> bool { self.status == 304 }
+}
+
+/// Persisted poll state for an endpoint.
+#[derive(Debug, Clone, Default)]
+pub struct SyncPollState {
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+    pub poll_interval: Option<i64>,
+    pub last_polled_at: Option<String>,
+}
+
+/// Implement this trait to provide transport + persistence for sync functions.
+#[async_trait::async_trait]
+pub trait SyncClient {
+    async fn rest_call(&self, conn: &mut SqliteConnection, req: &SyncRequest) -> Result<SyncResponse>;
+    async fn graphql_call(&self, conn: &mut SqliteConnection, endpoint: &str, query: &str) -> Result<serde_json::Value>;
+    async fn get_poll_state(&self, conn: &mut SqliteConnection, endpoint: &str) -> Result<SyncPollState>;
+    async fn set_poll_state(&self, conn: &mut SqliteConnection, endpoint: &str, state: &SyncPollState) -> Result<()>;
+}
+// alloy-sync-trait-end
 
 // Custom code below this line is preserved across re-generation.
