@@ -1,7 +1,7 @@
 // Rust emitter -- walks the TSP program graph directly via decorator accessors.
 // Uses alloy-rs JSX for structs, string concat for functions.
 
-import { Output, render, List, type OutputDirectory, type OutputFile } from "@alloy-js/core";
+import { Output, render, List, type OutputDirectory } from "@alloy-js/core";
 import {
   StructDeclaration, StructField, EnumDeclaration, TupleVariant,
   ReplaceFile, AutoZone, ManualZone, CrateDirectory, VisibilityContext,
@@ -441,7 +441,7 @@ const BASE_USES = [
   "sqlx::SqliteConnection",
 ];
 
-export function emitRust(program: Program, existingFile?: string): string {
+export function emitRust(program: Program, existingFile?: string): OutputDirectory {
   const allModels = collectModels(program.getGlobalNamespaceType());
   const relMap = getAllRelations(program);
   const entities = allModels.filter(m => isEntityModel(program, m));
@@ -651,14 +651,5 @@ export function emitRust(program: Program, existingFile?: string): string {
     </Output>
   );
 
-  const output = render(tree);
-  return findFileContent(output, "generated.rs");
-}
-
-function findFileContent(dir: OutputDirectory, name: string): string {
-  for (const item of dir.contents) {
-    if (item.kind === "file" && item.path === name) return (item as any).contents ?? "";
-    if (item.kind === "directory") { const found = findFileContent(item, name); if (found) return found; }
-  }
-  return "";
+  return render(tree);
 }

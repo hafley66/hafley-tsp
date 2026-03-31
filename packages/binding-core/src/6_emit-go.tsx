@@ -183,7 +183,7 @@ function emitExtractFn(program: Program, bindingModel: any, relMap: Map<string, 
 
 // ── Main entry point ─────────────────────────────────────
 
-export function emitGo(program: Program): string {
+export function emitGo(program: Program): OutputDirectory {
   const allModels = collectModels(program.getGlobalNamespaceType());
   const relMap = getAllRelations(program);
   const entities = allModels.filter(m => isEntityModel(program, m));
@@ -199,7 +199,7 @@ export function emitGo(program: Program): string {
   const tree = (
     <Output>
       <ModuleDirectory name="github.com/example/app">
-      <SourceDirectory path="db">
+      <SourceDirectory path="." name="db">
       <SourceFile path="generated.go">
 
         {"import (\n"}
@@ -267,22 +267,5 @@ export function emitGo(program: Program): string {
     </Output>
   );
 
-  const output = render(tree);
-  return findFileContent(output, "generated.go") || findFileContentDeep(output);
-}
-
-function findFileContentDeep(dir: OutputDirectory): string {
-  for (const item of dir.contents) {
-    if (item.kind === "file" && item.path.endsWith(".go")) return (item as any).contents ?? "";
-    if (item.kind === "directory") { const found = findFileContentDeep(item); if (found) return found; }
-  }
-  return "";
-}
-
-function findFileContent(dir: OutputDirectory, name: string): string {
-  for (const item of dir.contents) {
-    if (item.kind === "file" && item.path === name) return (item as any).contents ?? "";
-    if (item.kind === "directory") { const found = findFileContent(item, name); if (found) return found; }
-  }
-  return "";
+  return render(tree);
 }
