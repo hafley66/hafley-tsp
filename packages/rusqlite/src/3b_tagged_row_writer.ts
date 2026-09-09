@@ -292,19 +292,56 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
         values.push(rustValue(column.type, expression, column.optional || column.nullable, jsonScalars, local));
       }
     }
+    const binds = values.map((value) => `        statement.raw_bind_parameter(parameter, ${value})?;\n        parameter += 1;`);
     return [
       `impl models::${ident(entity.model.name)} {`,
-      "    pub fn insert(&self, conn: &rusqlite::Connection, source: &Source<'_>) -> Result<usize, InsertError> {",
+      "    fn bind(&self, statement: &mut rusqlite::Statement<'_>, mut parameter: usize, source: &Source<'_>) -> Result<usize, InsertError> {",
       ...locals,
-      `        Ok(conn.prepare_cached(${JSON.stringify(sql)})?.execute(rusqlite::params![${values.join(", ")}])?)`,
+      ...binds,
+      "        Ok(parameter)",
+      "    }",
+      "    pub fn insert(&self, conn: &rusqlite::Connection, source: &Source<'_>) -> Result<usize, InsertError> {",
+      `        let mut statement = conn.prepare_cached(${JSON.stringify(sql)})?;`,
+      "        self.bind(&mut statement, 1, source)?;",
+      "        Ok(statement.raw_execute()?)",
       "    }",
       "}",
     ].join("\n");
   });
+  const groups = entities.map((entity) => `    let mut ${ident(entity.tag)}: Vec<(usize, &models::${ident(entity.model.name)})> = Vec::new();`);
+  const groupArms = entities.map((entity) => `            Fact::${ident(entity.model.name)}(value) => ${ident(entity.tag)}.push((index, value)),`);
+  const capacities = entities.map((entity) => {
+    const count = options.sourceFields.length + 1 + entity.columns.length;
+    const columns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...entity.columns.map((column) => column.name)];
+    const prefix = `INSERT INTO ${quoteIdentifier(entity.tag)} (${columns.map(quoteIdentifier).join(", ")}) VALUES `;
+    const tuple = `(${columns.map(() => "?").join(", ")})`;
+    return `    let ${ident(entity.tag)}_capacity = if ${ident(entity.tag)}.is_empty() { 1 } else { statement_capacity(conn, ${count}, ${JSON.stringify(prefix)}, ${JSON.stringify(tuple)})? };`;
+  });
+  const batches = entities.map((entity) => {
+    const columns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...entity.columns.map((column) => column.name)];
+    const prefix = `INSERT INTO ${quoteIdentifier(entity.tag)} (${columns.map(quoteIdentifier).join(", ")}) VALUES `;
+    const tuple = `(${columns.map(() => "?").join(", ")})`;
+    return [
+      `    for chunk in ${ident(entity.tag)}.chunks(${ident(entity.tag)}_capacity) {`,
+      `        let sql = multi_row_sql(${JSON.stringify(prefix)}, ${JSON.stringify(tuple)}, chunk.len());`,
+      "        let mut statement = conn.prepare_cached(&sql)?;",
+      "        let mut parameter = 1;",
+      "        for (index, row) in chunk {",
+      `            let row_source = Source { ${options.sourceFields.map((field) => `${ident(field.rustName)}: source.${ident(field.rustName)}${field === ordinal ? " + *index as i64" : ""}`).join(", ")} };`,
+      "            parameter = row.bind(&mut statement, parameter, &row_source)?;",
+      "        }",
+      "        inserted += statement.raw_execute()?;",
+      "    }",
+    ].join("\n");
+  });
+  const smallest = entities.reduce((best, entity) => entity.columns.length < best.columns.length ? entity : best);
+  const smallestColumns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...smallest.columns.map((column) => column.name)];
+  const smallestPrefix = `INSERT INTO ${quoteIdentifier(smallest.tag)} (${smallestColumns.map(quoteIdentifier).join(", ")}) VALUES `;
+  const smallestTuple = `(${smallestColumns.map(() => "?").join(", ")})`;
   return [
     "// Generated typed SQLite rows and writers. Do not edit.",
     "#[derive(Debug)]",
-    "pub enum InsertError { Sql(rusqlite::Error), Json(serde_json::Error), OrdinalOverflow }",
+    "pub enum InsertError { Sql(rusqlite::Error), Json(serde_json::Error), OrdinalOverflow, SQLiteLimit(&'static str) }",
     "impl std::fmt::Display for InsertError { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, \"{self:?}\") } }",
     "impl std::error::Error for InsertError {}",
     "impl From<rusqlite::Error> for InsertError { fn from(value: rusqlite::Error) -> Self { Self::Sql(value) } }",
@@ -337,15 +374,38 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     "    }",
     "}",
     `pub const TABLE_COUNT: usize = ${entities.length};`,
+    "fn statement_capacity(conn: &rusqlite::Connection, columns: usize, prefix: &str, tuple: &str) -> Result<usize, InsertError> {",
+    "    let variables = usize::try_from(conn.limit(rusqlite::limits::Limit::SQLITE_LIMIT_VARIABLE_NUMBER)?).map_err(|_| InsertError::SQLiteLimit(\"variable\"))?;",
+    "    let sql_length = usize::try_from(conn.limit(rusqlite::limits::Limit::SQLITE_LIMIT_SQL_LENGTH)?).map_err(|_| InsertError::SQLiteLimit(\"sql length\"))?;",
+    "    let by_variables = variables / columns;",
+    "    let available = sql_length.checked_sub(prefix.len()).ok_or(InsertError::SQLiteLimit(\"sql length\"))?;",
+    "    let by_sql = available.checked_add(2).ok_or(InsertError::SQLiteLimit(\"sql length\"))? / (tuple.len() + 2);",
+    "    let capacity = by_variables.min(by_sql);",
+    "    if capacity == 0 { return Err(InsertError::SQLiteLimit(\"one row does not fit\")); }",
+    "    Ok(capacity)",
+    "}",
+    "fn multi_row_sql(prefix: &str, tuple: &str, rows: usize) -> String {",
+    "    let mut sql = String::with_capacity(prefix.len() + rows * (tuple.len() + 2));",
+    "    sql.push_str(prefix);",
+    "    for index in 0..rows { if index > 0 { sql.push_str(\", \"); } sql.push_str(tuple); }",
+    "    sql",
+    "}",
+    "pub fn max_batch_rows(conn: &rusqlite::Connection) -> Result<usize, InsertError> {",
+    `    statement_capacity(conn, ${smallestColumns.length}, ${JSON.stringify(smallestPrefix)}, ${JSON.stringify(smallestTuple)})`,
+    "}",
     "pub fn insert_all(conn: &rusqlite::Connection, source: &Source<'_>, rows: &[Fact]) -> Result<usize, InsertError> {",
     "    if rows.is_empty() { return Ok(0); }",
     `    source.${ident(ordinal.rustName)}.checked_add(i64::try_from(rows.len() - 1).map_err(|_| InsertError::OrdinalOverflow)?)`,
     "        .ok_or(InsertError::OrdinalOverflow)?;",
-    "    let mut inserted = 0;",
+    ...groups,
     "    for (index, row) in rows.iter().enumerate() {",
-    `        let row_source = Source { ${options.sourceFields.map((field) => `${ident(field.rustName)}: source.${ident(field.rustName)}${field === ordinal ? " + index as i64" : ""}`).join(", ")} };`,
-    "        inserted += row.insert(conn, &row_source)?;",
+    "        match row {",
+    ...groupArms,
+    "        }",
     "    }",
+    ...capacities,
+    "    let mut inserted = 0;",
+    ...batches,
     "    Ok(inserted)",
     "}",
     ...inserts,

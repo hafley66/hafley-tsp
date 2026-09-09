@@ -144,7 +144,10 @@ test("tagged row writer derives its source and ordinal names from options", asyn
   assert.match(rust, /pub struct Source<'a>[\s\S]*pub offset: i64,[\s\S]*pub scope: Option<&'a str>/);
   assert.match(rust, /pub const TABLE_COUNT: usize = 2;/);
   assert.match(rust, /source\.offset\.checked_add/);
-  assert.match(rust, /let row_source = Source \{ offset: source\.offset \+ index as i64, scope: source\.scope \}/);
+  assert.match(rust, /let mut alpha: Vec<\(usize, &models::Alpha\)>/);
+  assert.match(rust, /statement_capacity\(conn, 5,[\s\S]*alpha\.chunks\(alpha_capacity\)/);
+  assert.match(rust, /let row_source = Source \{ offset: source\.offset \+ \*index as i64, scope: source\.scope \}/);
+  assert.match(rust, /inserted \+= statement\.raw_execute\(\)\?/);
   assert.match(rust, /impl models::Alpha[\s\S]*INSERT INTO \\"alpha\\"/);
   assert.doesNotMatch(rust, /input_path|content_id|source\.row/);
 
