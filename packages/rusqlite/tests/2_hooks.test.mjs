@@ -9,7 +9,7 @@ import { compile, formatDiagnostic, NodeHost } from "@typespec/compiler";
 import { internStorage, sqliteDialect } from "@hafley/typespec-sql";
 import { emitSqlxRust } from "../../sqlx/dist/src/index.js";
 import {
-  emitInternRusqlite, emitRusqliteRust, emitRusqliteValueWriters, rusqliteRustIdent,
+  emitInternRusqlite, emitRusqliteRust, emitRusqliteTaggedRowWriter, emitRusqliteValueWriters, rusqliteRustIdent,
   rusqliteRustType, rusqliteStorage,
 } from "../dist/src/index.js";
 
@@ -121,4 +121,43 @@ pub fn insert_values(
     () => emitRusqliteValueWriters(compiled, { dialect: { ...sqliteDialect, name: "postgres" } }),
     /supports? only the sqlite dialect/,
   );
+});
+
+test("tagged row writer derives its source and ordinal names from options", async () => {
+  const compiled = await program(`
+    namespace Events;
+    model Stored { @Entity.pk sequence: int64; origin: string | null; }
+    enum Flavor { Sweet: "sweet", Dry: "dry" }
+    model Alpha { ...Stored; kind: "alpha"; value: string; flavor: Flavor; }
+    model Beta { ...Stored; kind: "beta"; count: uint32; }
+  `, [join(sqlRoot, "lib/main.tsp")]);
+  clean(compiled);
+  const rust = emitRusqliteTaggedRowWriter(compiled, {
+    namespace: "Events",
+    discriminator: "kind",
+    ordinalSourceField: "sequence",
+    sourceFields: [
+      { property: "sequence", rustName: "offset" },
+      { property: "origin", rustName: "scope" },
+    ],
+  });
+  assert.match(rust, /pub struct Source<'a>[\s\S]*pub offset: i64,[\s\S]*pub scope: Option<&'a str>/);
+  assert.match(rust, /pub const TABLE_COUNT: usize = 2;/);
+  assert.match(rust, /source\.offset\.checked_add/);
+  assert.match(rust, /let row_source = Source \{ offset: source\.offset \+ index as i64, scope: source\.scope \}/);
+  assert.match(rust, /impl models::Alpha[\s\S]*INSERT INTO \\"alpha\\"/);
+  assert.doesNotMatch(rust, /input_path|content_id|source\.row/);
+
+  const interned = await program(`
+    namespace Events {
+      @Entity.intern scalar Token extends string;
+      model Stored { @Entity.pk sequence: int64; }
+      model Alpha { ...Stored; kind: "alpha"; token: Token; }
+    }
+  `, [join(sqlRoot, "lib/main.tsp")]);
+  clean(interned);
+  assert.throws(() => emitRusqliteTaggedRowWriter(interned, {
+    namespace: "Events", discriminator: "kind", ordinalSourceField: "sequence",
+    sourceFields: [{ property: "sequence", rustName: "offset" }],
+  }), /do not support interned storage/);
 });

@@ -14,4 +14,9 @@ export {
   type RusqliteStorageParts,
 } from "./3_storage.js";
 export { emitRusqliteValueWriters, type RusqliteValueWriterOptions } from "./3a_value_writer.js";
+export {
+  emitRusqliteTaggedRowWriter,
+  type RusqliteTaggedRowWriterOptions,
+  type RusqliteTaggedSourceField,
+} from "./3b_tagged_row_writer.js";
 export { emitRusqliteRust, emitRusqliteRustFromStorage } from "./4_emit.js";

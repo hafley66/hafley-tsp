@@ -28,14 +28,25 @@ rusqliteStorage(program: Program, options?: RusqliteStorageOptions): RusqliteSto
 emitRusqliteRust(program: Program, existingFile?: string, options?: Omit<RusqliteStorageOptions, "existingFile">): OutputDirectory
 emitRusqliteRustFromStorage(storage: RusqliteStorageParts, existingFile?: string): OutputDirectory
 emitRusqliteValueWriters(program: Program, options?: RusqliteValueWriterOptions): string
+emitRusqliteTaggedRowWriter(program: Program, options: RusqliteTaggedRowWriterOptions): string
 emitInternRusqlite(storage: InternStorage, rustType, ident, dialect?: SqlDialect, includeTrait?: boolean): string
 ```
+
+`emitRusqliteTaggedRowWriter` emits strict serde models for a family selected
+by a configured string-literal discriminant, static typed inserts, and a
+caller-owned batch loop. Configured source columns are supplied separately from
+the deserialized payload. One configured ordinal source column advances across
+the batch. The output exposes `Fact`, `Source`, `TABLE_COUNT`, per-model
+`insert`, and `insert_all`. Its generated error type and JSON codecs require
+`serde_json`. Relations and interned storage are rejected
+by this API and remain handled by their dedicated emitters.
 
 `emitRusqliteValueWriters` emits one static-SQL dispatcher accepting caller-
 validated `rusqlite::types::Value` slices. It does not open a transaction, so
 the caller owns the enclosing atomic write scope. The caller may supply JSON
-as TEXT and preserve `uint64` as INTEGER-or-decimal-TEXT; the typed writer API
-rejects `uint64` inputs. Compile through SQL core declarations for this API.
+as TEXT and preserve `uint64` as INTEGER-or-decimal-TEXT. The tagged-row writer
+generates that exact unsigned codec. Compile through SQL core declarations
+for these APIs.
 
 Generated writers have this connection boundary:
 
@@ -55,8 +66,8 @@ The trait is generated for `rusqlite::Connection`, `Transaction<'_>`, and
 The caller retains ownership of an outer transaction or savepoint. The caller
 must enable foreign keys and configure `busy_timeout` on each connection.
 
-The adapter supports `sqliteDialect` and was executed against rusqlite 0.40.2.
-It rejects `uint64` inputs because rusqlite does not provide default `ToSql`
+The ordinary storage adapter supports `sqliteDialect` and was executed against
+rusqlite 0.40.2. It rejects `uint64` inputs because rusqlite does not provide default `ToSql`
 support for them without its optional `fallible_uint` feature. Unknown SQL scalar
 names retain SQL core's `TEXT` fallback. PostgreSQL is not included.
 
