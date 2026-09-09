@@ -27,8 +27,15 @@ JavaScript callers can compose output without the automatic hook:
 rusqliteStorage(program: Program, options?: RusqliteStorageOptions): RusqliteStorageParts
 emitRusqliteRust(program: Program, existingFile?: string, options?: Omit<RusqliteStorageOptions, "existingFile">): OutputDirectory
 emitRusqliteRustFromStorage(storage: RusqliteStorageParts, existingFile?: string): OutputDirectory
+emitRusqliteValueWriters(program: Program, options?: RusqliteValueWriterOptions): string
 emitInternRusqlite(storage: InternStorage, rustType, ident, dialect?: SqlDialect, includeTrait?: boolean): string
 ```
+
+`emitRusqliteValueWriters` emits one static-SQL dispatcher accepting caller-
+validated `rusqlite::types::Value` slices. It does not open a transaction, so
+the caller owns the enclosing atomic write scope. The caller may supply JSON
+as TEXT and preserve `uint64` as INTEGER-or-decimal-TEXT; the typed writer API
+rejects `uint64` inputs. Compile through SQL core declarations for this API.
 
 Generated writers have this connection boundary:
 

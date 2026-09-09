@@ -9,10 +9,12 @@ import { compile, formatDiagnostic, NodeHost } from "@typespec/compiler";
 import { internStorage, sqliteDialect } from "@hafley/typespec-sql";
 import { emitSqlxRust } from "../../sqlx/dist/src/index.js";
 import {
-  emitInternRusqlite, emitRusqliteRust, rusqliteRustIdent, rusqliteRustType, rusqliteStorage,
+  emitInternRusqlite, emitRusqliteRust, emitRusqliteValueWriters, rusqliteRustIdent,
+  rusqliteRustType, rusqliteStorage,
 } from "../dist/src/index.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
+const sqlRoot = fileURLToPath(new URL("../../sql", import.meta.url));
 const sqlxRoot = fileURLToPath(new URL("../../sqlx", import.meta.url));
 const bindingRoot = fileURLToPath(new URL("../../binding-core", import.meta.url));
 const scratch = await mkdtemp(join(tmpdir(), "typespec-rusqlite-hooks-"));
@@ -92,4 +94,31 @@ test("public emission APIs retain manual zones", async () => {
   await writeFile(generatedPath, `${await readFile(generatedPath, "utf8")}\npub fn public_manual() {}\n`);
   await writeOutput(emitRusqliteRust(compiled, generatedPath), directory);
   assert.match(await readFile(generatedPath, "utf8"), /pub fn public_manual\(\) \{\}/);
+});
+
+test("value writers emit quoted static inserts without transaction ownership", async () => {
+  const compiled = await program(
+    "model E { @Entity.pk id: int64; `type`: string; value: uint64; }",
+    [join(sqlRoot, "lib/main.tsp")],
+  );
+  clean(compiled);
+  assert.equal(
+    emitRusqliteValueWriters(compiled),
+    `// Generated positional SQLite writers. Do not edit.
+pub fn insert_values(
+    conn: &rusqlite::Connection,
+    table: &str,
+    values: &[rusqlite::types::Value],
+) -> rusqlite::Result<usize> {
+    match table {
+        "e" => conn.prepare_cached("INSERT INTO \\"e\\" (\\"id\\", \\"type\\", \\"value\\") VALUES (?, ?, ?)")?.execute(rusqlite::params_from_iter(values)),
+        _ => Err(rusqlite::Error::InvalidParameterName(table.to_owned())),
+    }
+}
+`,
+  );
+  assert.throws(
+    () => emitRusqliteValueWriters(compiled, { dialect: { ...sqliteDialect, name: "postgres" } }),
+    /supports? only the sqlite dialect/,
+  );
 });
