@@ -1,0 +1,2 @@
+physical-columns=id,caller_id,callee_id,label,path_id,alias_id
+readable-link=1|foo|bar|after|foo|NULL

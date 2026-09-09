@@ -3,7 +3,7 @@
 
 import { Output, render, List, SourceFile, type OutputDirectory } from "@alloy-js/core";
 import { internStorage } from "./2a_intern.js";
-import { emitInternRust, internAutoFile } from "./4a_emit_intern.js";
+import { RUST_TYPE, SqlxRowStructs, rustIdent, rustType, sqlxStorage } from "@hafley/typespec-sqlx";
 import {
   StructDeclaration, StructField, EnumDeclaration, TupleVariant,
   ReplaceFile, AutoZone, ManualZone, CrateDirectory, VisibilityContext,
@@ -11,11 +11,11 @@ import {
 
 import type { Model, Program } from "@typespec/compiler";
 import {
-  resolvedFields, resolveFieldType, collectModels, isEntityModel, snakeCase,
+  resolvedFields, resolveFieldType, collectModels, snakeCase,
   resolveRelTarget, extractChain, type ResolvedField,
 } from "./2_facts.js";
 import {
-  isPk, isManual, getUnique, getDefault, hasDefault,
+  isPk, isManual, getDefault, hasDefault,
   getBinding, hasBinding, getAllRelations,
   getSyncStrategy, hasSyncStrategy,
   isSourceGraphql, getSourceRest, hasSourceRest, isSourcePaginated,
@@ -28,112 +28,6 @@ import {
   isHttpRouter, getHttpRoutes, getHttpState,
   type RelationDef,
 } from "./decorators.js";
-
-// ── Type mapping ──────────────────────────────────────────
-
-const RUST_TYPE: Record<string, string> = {
-  string: "String", integer: "i64",
-  int8: "i8", int16: "i16", int32: "i32", int64: "i64",
-  uint8: "u8", uint16: "u16", uint32: "u32", uint64: "u64",
-  float: "f64", float32: "f32", float64: "f64",
-  boolean: "bool", bytes: "Vec<u8>",
-};
-
-function rustType(t: string, nullable: boolean): string {
-  const base = RUST_TYPE[t] ?? "String";
-  return nullable ? `Option<${base}>` : base;
-}
-
-const RUST_RESERVED = new Set([
-  "as", "async", "await", "break", "const", "continue", "crate", "dyn",
-  "else", "enum", "extern", "false", "fn", "for", "if", "impl", "in",
-  "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return",
-  "self", "Self", "static", "struct", "super", "trait", "true", "type",
-  "unsafe", "use", "where", "while", "abstract", "become", "box", "do",
-  "final", "macro", "override", "priv", "try", "typeof", "unsized",
-  "virtual", "yield",
-]);
-
-function rustIdent(name: string): string { return RUST_RESERVED.has(name) ? `r#${name}` : name; }
-
-// ── Per-field helpers ─────────────────────────────────────
-
-function rowName(f: ResolvedField): string {
-  const col = snakeCase(f.name).replace(/\./g, "_");
-  return rustIdent(f.rel ? `${col}_id` : col);
-}
-
-function rowType(f: ResolvedField): string {
-  return f.rel ? (f.nullable ? "Option<i64>" : "i64") : rustType(f.typeName, f.nullable);
-}
-
-function sqlCol(f: ResolvedField): string {
-  return f.rel ? `${snakeCase(f.name)}_id` : snakeCase(f.name);
-}
-
-// ── Upsert function emitter (string) ─────────────────────
-
-function emitUpsertFn(program: Program, fields: ResolvedField[], modelName: string): string {
-  const pks = fields.filter(f => f.isPk).map(f => f.name);
-  const isAutoIncr = pks.length === 1 && fields.find(f => f.name === pks[0])?.typeName === "integer";
-  const strategy = hasSyncStrategy(program, fields[0].prop.model!) ? getSyncStrategy(program, fields[0].prop.model!) : "upsert";
-  const tableName = snakeCase(modelName);
-
-  const upsertFields = fields.filter(f => !(isAutoIncr && f.isPk) && !f.isManual);
-  const colNames = upsertFields.map(sqlCol);
-  const placeholders = upsertFields.map(() => "?").join(", ");
-  const fnName = strategy === "insert-ignore" ? `insert_${tableName}` : `upsert_${tableName}`;
-
-  const params = upsertFields.map(f => {
-    const paramName = rustIdent(f.rel ? `${snakeCase(f.name)}_id` : snakeCase(f.name).replace(/\./g, "_"));
-    const ty = f.rel ? (f.nullable ? "Option<i64>" : "i64") : rustType(f.typeName, f.nullable);
-    const paramTy = ty === "String" ? "&str" : ty === "Option<String>" ? "Option<&str>" : ty;
-    return `${paramName}: ${paramTy}`;
-  });
-
-  const returnsId = isAutoIncr && strategy === "upsert";
-  const lines: string[] = [];
-  lines.push(`pub async fn ${fnName}(`, `    conn: &mut SqliteConnection,`);
-  for (const p of params) lines.push(`    ${p},`);
-  lines.push(`) -> Result<${returnsId ? "i64" : "()"}> {`);
-
-  if (strategy === "insert-ignore" || strategy === "delete-replace") {
-    lines.push(`    sqlx::query(`, `        "INSERT OR IGNORE INTO ${tableName}`);
-    lines.push(`         (${colNames.join(", ")})`, `         VALUES (${placeholders})"`, `    )`);
-  } else {
-    const uniques: string[][] = [];
-    for (const f of fields) { for (const u of (getUnique(program, f.prop) ?? [])) uniques.push(u.fields); }
-
-    const conflictCols = (uniques.length > 0 ? uniques[0] : pks).map(n => {
-      const f = fields.find(fv => fv.name === n);
-      return f?.rel ? `${snakeCase(n)}_id` : snakeCase(n);
-    });
-    const updateCols = colNames.filter(c => !conflictCols.includes(c) && !pks.map(p => snakeCase(p)).includes(c));
-
-    if (returnsId) lines.push(`    let id: i64 = sqlx::query_scalar(`);
-    else lines.push(`    sqlx::query(`);
-
-    lines.push(`        "INSERT INTO ${tableName}`, `         (${colNames.join(", ")})`, `         VALUES (${placeholders})`);
-    if (conflictCols.length > 0 && updateCols.length > 0) {
-      lines.push(`         ON CONFLICT(${conflictCols.join(", ")}) DO UPDATE SET`);
-      lines.push(`             ${updateCols.map(c => `${c} = excluded.${c}`).join(",\n             ")}`);
-    } else if (conflictCols.length > 0) {
-      lines.push(`         ON CONFLICT(${conflictCols.join(", ")}) DO NOTHING`);
-    }
-    lines.push(returnsId ? `         RETURNING id"` : `        "`);
-    lines.push(`    )`);
-  }
-
-  for (const f of upsertFields) {
-    const paramName = rustIdent(f.rel ? `${snakeCase(f.name)}_id` : snakeCase(f.name).replace(/\./g, "_"));
-    lines.push(`    .bind(${paramName})`);
-  }
-
-  if (strategy === "upsert" && returnsId) lines.push(`    .fetch_one(conn)`, `    .await?;`, `    Ok(id)`);
-  else lines.push(`    .execute(conn)`, `    .await?;`, `    Ok(())`);
-  lines.push(`}`);
-  return lines.join("\n");
-}
 
 // ── JSON extraction emitter (string) ─────────────────────
 
@@ -688,12 +582,17 @@ const BASE_USES = [
 
 export function emitRust(program: Program, existingFile?: string): OutputDirectory {
   const interned = internStorage(program);
-  const internFile = interned.entities.length ? internAutoFile(program, interned, emitInternRust(interned, rustType, rustIdent), existingFile) : undefined;
+  const storage = sqlxStorage(program, {
+    interned,
+    existingFile,
+    strategyForModel: (model) => hasSyncStrategy(program, model) ? getSyncStrategy(program, model) as "upsert" | "insert-ignore" | "delete-replace" : "upsert",
+  });
+  const internFile = storage.internFile;
   const allModels = collectModels(program.getGlobalNamespaceType());
   const relMap = getAllRelations(program);
-  const entities = allModels.filter(m => isEntityModel(program, m) && !interned.entities.some(e => e.model === m));
+  const entities = storage.entities;
   const bindings = allModels.filter(m => hasBinding(program, m));
-  const fieldsByEntity = new Map(entities.map(m => [m.name, resolvedFields(program, m, relMap)]));
+  const fieldsByEntity = storage.fieldsByEntity;
 
   const hasCliModels = allModels.some(m => isCliCommand(program, m));
   const hasHttpModels = allModels.some(m => isHttpRouter(program, m));
@@ -705,7 +604,7 @@ export function emitRust(program: Program, existingFile?: string): OutputDirecto
 
   // Sync pipeline imports added after syncSections are computed below
 
-  const upsertSections = entities.map(m => emitUpsertFn(program, fieldsByEntity.get(m.name)!, m.name)).filter(Boolean);
+  const upsertSections = storage.upsertSections;
   const extractSections = bindings.map(m => emitExtractFn(program, m, relMap)).filter(Boolean);
 
   // GraphQL sources
@@ -753,17 +652,7 @@ export function emitRust(program: Program, existingFile?: string): OutputDirecto
             </AutoZone>
 
             <AutoZone id="row-structs">
-              {entities.map((model, i) => {
-                const fields = fieldsByEntity.get(model.name)!;
-                return <>
-                  {i > 0 && "\n\n"}
-                  <StructDeclaration name={model.name} derive={["Debug", "Clone", "Serialize", "Deserialize"]}>
-                    <List hardline>
-                      {fields.map(f => <StructField name={rowName(f)} type={rowType(f)} />)}
-                    </List>
-                  </StructDeclaration>
-                </>;
-              })}
+              <SqlxRowStructs storage={storage} />
             </AutoZone>
 
             <AutoZone id="extraction-structs">

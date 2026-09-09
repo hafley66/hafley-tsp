@@ -101,10 +101,11 @@ test("generated Rust compiles and executes against SQLite", { timeout: 300_000 }
   assert.equal((await stat(join(dir, "intern_auto.rs"))).mtimeMs, before.mtimeMs);
   await writeFile(join(dir, "schema_auto.sql"), emitSQL(p));
   await writeFile(join(dir, "src/lib.rs"), await readFile(join(root, "tests/1_intern.rs")));
+  await writeFile(join(dir, "intern_golden.txt"), await readFile(join(root, "tests/1_intern_golden.txt")));
   await writeFile(join(dir, "Cargo.toml"), `[package]\nname="intern-emitter-test"\nversion="0.0.0"\nedition="2021"\n[workspace]\n[dependencies]\nanyhow="1"\nserde={version="1",features=["derive"]}\nsqlx={version="=0.8.6",default-features=false,features=["runtime-tokio","sqlite"]}\ntokio={version="1",features=["macros","rt-multi-thread"]}\n[profile.dev]\ndebug=0\nincremental=false\n`);
   const result = await new Promise((done, reject) => {
     const child = spawn("cargo", ["test", "--offline", "--quiet", "--manifest-path", join(dir, "Cargo.toml")], {
-      stdio: "inherit", env: { ...process.env, INTERN_TEST_DATABASE: join(dir, "test.db"), CARGO_TARGET_DIR: resolve(root, "target/intern-tests") },
+      stdio: "inherit", env: { ...process.env, INTERN_TEST_DATABASE: join(dir, "test.db"), CARGO_TARGET_DIR: process.env.BINDING_CORE_CARGO_TARGET ?? resolve(root, "target/intern-tests") },
     });
     child.on("error", reject);
     child.on("close", done);

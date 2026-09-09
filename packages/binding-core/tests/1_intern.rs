@@ -18,6 +18,11 @@ async fn generated_writers_roundtrip_rollback_and_concurrency() -> anyhow::Resul
     assert_eq!((row.get::<i64,_>(0), row.get::<i64,_>(1), row.get::<i64,_>(2), row.get::<i64,_>(3), row.get::<Option<i64>,_>(4)), (1, 1, 2, 1, None));
     let row = sqlx::query("SELECT caller, callee, label, path, alias FROM Link_text").fetch_one(&mut db).await?;
     assert_eq!((row.get::<String,_>(0), row.get::<String,_>(1), row.get::<String,_>(2), row.get::<String,_>(3), row.get::<Option<String>,_>(4)), ("foo".into(), "bar".into(), "after".into(), "foo".into(), None));
+    let columns = sqlx::query("SELECT name FROM pragma_table_info('Link') ORDER BY cid").fetch_all(&mut db).await?
+        .into_iter().map(|row| row.get::<String,_>(0)).collect::<Vec<_>>();
+    let row = sqlx::query("SELECT id, caller, callee, label, path, alias FROM Link_text").fetch_one(&mut db).await?;
+    let normalized = format!("physical-columns={}\nreadable-link={}|{}|{}|{}|{}|{}", columns.join(","), row.get::<i64,_>(0), row.get::<String,_>(1), row.get::<String,_>(2), row.get::<String,_>(3), row.get::<String,_>(4), row.get::<Option<String>,_>(5).unwrap_or_else(|| "NULL".into()));
+    assert_eq!(normalized, include_str!("../intern_golden.txt").trim_end());
     let pair = upsert_Pair(&mut db, "foo", "bar").await?;
     assert_eq!(pair, upsert_Pair(&mut db, "foo", "bar").await?);
     upsert_Bare(&mut db, "foo").await?;

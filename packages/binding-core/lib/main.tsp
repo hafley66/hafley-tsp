@@ -1,6 +1,5 @@
 import "../dist/src/tsp-index.js";
-import "./entity.tsp";
-import "./rel.tsp";
+import "@hafley/typespec-sql";
 import "./bind.tsp";
 import "./source.tsp";
 import "./sync.tsp";

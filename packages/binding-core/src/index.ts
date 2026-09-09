@@ -1,7 +1,9 @@
 export { $lib } from "./lib.js";
 export { BindingCoreStateKeys, reportDiagnostic, createDiagnostic } from "./lib.js";
+import { $decorators as sqlDecorators } from "@hafley/typespec-sql";
+import { $decorators as bindingDecorators } from "./decorators.js";
+export const $decorators: typeof sqlDecorators & typeof bindingDecorators = { ...sqlDecorators, ...bindingDecorators };
 export {
-  $decorators,
   isPk,
   getInternScalar,
   isManual,
@@ -53,7 +55,7 @@ export {
   snakeCase, resolveRelTarget, extractChain,
   type ResolvedField,
 } from "./2_facts.js";
-export { emitSQL } from "./4_emit-sql.js";
+export { emitSQL, sqliteDialect, type SqlDialect } from "./4_emit-sql.js";
 export { internStorage, type InternStorage, type InternDomain, type InternEntity, type InternField } from "./2a_intern.js";
 export { emitRust } from "./5_emit-rust.js";
 export { emitGo } from "./6_emit-go.js";

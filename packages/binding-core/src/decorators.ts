@@ -1,69 +1,10 @@
-import type { DecoratorContext, Model, ModelProperty, Program, Scalar, Type } from "@typespec/compiler";
+import type { DecoratorContext, Model, ModelProperty, Program } from "@typespec/compiler";
 import { BindingCoreStateKeys, reportDiagnostic } from "./lib.js";
 import { flagDec, listDec, objectDec, valueDec } from "@hafley/typespec-decorator-def/factory";
-
-// ──────────────────────────────────────────────────────────
-// Entity namespace
-// ──────────────────────────────────────────────────────────
-
-const _pk = flagDec(BindingCoreStateKeys.pk as any);
-const _intern = flagDec(BindingCoreStateKeys.intern as any);
-
-export function $intern(ctx: DecoratorContext, target: Scalar) {
-  let base = target;
-  while (base.baseScalar) base = base.baseScalar;
-  if (base.name !== "string" || base.namespace?.name !== "TypeSpec") {
-    reportDiagnostic(ctx.program, { code: "invalid-intern", target,
-      format: { reason: "@Entity.intern requires a string-backed scalar" } });
-    return;
-  }
-  _intern.$decorator(ctx, target);
-}
-
-/** Derived unannotated scalars share their nearest annotated ancestor's pool. */
-export function getInternScalar(program: Program, type: Type): Scalar | undefined {
-  if (type.kind === "Union") {
-    const values = [...type.variants.values()].map(v => v.type)
-      .filter(t => !(t.kind === "Intrinsic" && t.name === "null"));
-    return values.length === 1 ? getInternScalar(program, values[0]) : undefined;
-  }
-  if (type.kind !== "Scalar") return undefined;
-  for (let scalar: Scalar | undefined = type; scalar; scalar = scalar.baseScalar) {
-    if (_intern.has(program, scalar)) return scalar;
-  }
-  return undefined;
-}
-const _manual = flagDec(BindingCoreStateKeys.manual as any);
-
-const _unique = listDec<{ anchor: string; fields: string[] }>(
-  BindingCoreStateKeys.unique as any,
-  (target: any, ...fields: any[]) => ({
-    anchor: target.name ?? "?",
-    fields: fields.map((f: any) => f.name ?? String(f)),
-  }),
-);
-
-const _index = listDec<{ anchor: string; fields: string[] }>(
-  BindingCoreStateKeys.index as any,
-  (target: any, ...fields: any[]) => ({
-    anchor: target.name ?? "?",
-    fields: fields.map((f: any) => f.name ?? String(f)),
-  }),
-);
-
-const _default = valueDec<string>(BindingCoreStateKeys.default as any);
-
-// ──────────────────────────────────────────────────────────
-// Rel namespace -- stores by model name STRING (phase stable)
-// ──────────────────────────────────────────────────────────
-
-const REL_KEY = Symbol.for("hafley:relations");
-
-export interface RelationDef {
-  property: string;
-  kind: "belongsTo" | "hasMany" | "hasOne" | "manyToMany";
-  targetType: Type | undefined;
-}
+import {
+  getInternScalar, isPk, isManual, getUnique, getIndex, getDefault, hasDefault,
+  getRelations, getAllRelations, type RelationDef,
+} from "@hafley/typespec-sql";
 
 function getParentModelName(target: ModelProperty): string {
   let node: any = (target as any).node;
@@ -72,13 +13,6 @@ function getParentModelName(target: ModelProperty): string {
     node = node.parent;
   }
   return target.name || "?";
-}
-
-function storeRelation(ctx: DecoratorContext, target: ModelProperty, kind: RelationDef["kind"]) {
-  const map: Map<string, RelationDef[]> = ctx.program.stateMap(REL_KEY) as any;
-  const modelName = getParentModelName(target);
-  if (!map.has(modelName)) map.set(modelName, []);
-  map.get(modelName)!.push({ property: target.name, kind, targetType: target.type });
 }
 
 // ──────────────────────────────────────────────────────────
@@ -98,39 +32,6 @@ const _binding = objectDec<BindingDef>(
   }),
 );
 
-// ──────────────────────────────────────────────────────────
-// $decorator exports (namespaced)
-// ──────────────────────────────────────────────────────────
-
-export function $pk(ctx: DecoratorContext, target: ModelProperty) {
-  _pk.$decorator(ctx, target);
-}
-export function $unique(ctx: DecoratorContext, target: ModelProperty, ...fields: Type[]) {
-  _unique.$decorator(ctx, target, ...fields);
-}
-export function $manual(ctx: DecoratorContext, target: ModelProperty) {
-  _manual.$decorator(ctx, target);
-}
-export function $index(ctx: DecoratorContext, target: ModelProperty, ...fields: Type[]) {
-  _index.$decorator(ctx, target, ...fields);
-}
-export function $default(ctx: DecoratorContext, target: ModelProperty, value: string) {
-  _default.$decorator(ctx, target, value);
-}
-
-export function $belongsTo(ctx: DecoratorContext, target: ModelProperty) {
-  storeRelation(ctx, target, "belongsTo");
-}
-export function $hasMany(ctx: DecoratorContext, target: ModelProperty) {
-  storeRelation(ctx, target, "hasMany");
-}
-export function $hasOne(ctx: DecoratorContext, target: ModelProperty) {
-  storeRelation(ctx, target, "hasOne");
-}
-export function $manyToMany(ctx: DecoratorContext, target: ModelProperty) {
-  storeRelation(ctx, target, "manyToMany");
-}
-
 export function $from(ctx: DecoratorContext, target: Model, sourceModel: Model, targetModel: Model) {
   _binding.$decorator(ctx, target, sourceModel, targetModel);
 }
@@ -139,22 +40,8 @@ export function $from(ctx: DecoratorContext, target: Model, sourceModel: Model, 
 // Accessors
 // ──────────────────────────────────────────────────────────
 
-export const isPk = _pk.has;
-export const isManual = _manual.has;
-export const getUnique = _unique.get;
-export const getIndex = _index.get;
-export const getDefault = _default.get;
-export const hasDefault = _default.has;
 export const getBinding = _binding.get;
 export const hasBinding = _binding.has;
-
-export function getRelations(program: Program, modelName: string): RelationDef[] | undefined {
-  return (program.stateMap(REL_KEY) as any).get(modelName);
-}
-
-export function getAllRelations(program: Program): Map<string, RelationDef[]> {
-  return program.stateMap(REL_KEY) as any;
-}
 
 // ──────────────────────────────────────────────────────────
 // Source namespace
@@ -359,20 +246,6 @@ export function getHttpState(program: Program, modelName: string): string | unde
 // ──────────────────────────────────────────────────────────
 
 export const $decorators = {
-  Entity: {
-    intern: $intern,
-    pk: $pk,
-    unique: $unique,
-    manual: $manual,
-    index: $index,
-    default: $default,
-  },
-  Rel: {
-    belongsTo: $belongsTo,
-    hasMany: $hasMany,
-    hasOne: $hasOne,
-    manyToMany: $manyToMany,
-  },
   Bind: {
     from: $from,
   },
@@ -409,4 +282,9 @@ export const $decorators = {
     httpDelete: $httpDelete,
     state: $state,
   },
+};
+
+export {
+  getInternScalar, isPk, isManual, getUnique, getIndex, getDefault, hasDefault,
+  getRelations, getAllRelations, type RelationDef,
 };

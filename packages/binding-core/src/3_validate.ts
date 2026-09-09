@@ -5,7 +5,7 @@ import type { Program } from "@typespec/compiler";
 import { writeOutput } from "@alloy-js/core";
 import { collectModels, isEntityModel } from "./2_facts.js";
 import { hasBinding, getAllRelations, isSourceGraphql, hasSourceRest } from "./decorators.js";
-import { emitSQL } from "./4_emit-sql.js";
+import { emitSQLFromStorage } from "@hafley/typespec-sql";
 import { emitRust } from "./5_emit-rust.js";
 import { emitGo } from "./6_emit-go.js";
 import { writeFile, mkdir } from "fs/promises";
@@ -13,8 +13,18 @@ import { join } from "path";
 import { internStorage } from "./2a_intern.js";
 import { reportDiagnostic } from "./lib.js";
 import { internAutoFile } from "./4a_emit_intern.js";
+import { loadedAutoEmitters } from "@hafley/typespec-sqlx";
 
 export async function $onValidate(program: Program) {
+  const owners = loadedAutoEmitters(program);
+  if (owners.length > 1) {
+    reportDiagnostic(program, {
+      code: "conflicting-auto-emitters",
+      target: program.getGlobalNamespaceType(),
+      format: { owners: owners.join(", ") },
+    });
+    return;
+  }
   if (program.hasError()) return;
   let interned;
   try { interned = internStorage(program); }
@@ -42,7 +52,7 @@ export async function $onValidate(program: Program) {
   const outputDir = join(program.projectRoot ?? ".", "tsp-output");
   await mkdir(outputDir, { recursive: true });
 
-  const sql = emitSQL(program);
+  const sql = emitSQLFromStorage(program, interned);
   const sqlFile = interned.entities.length ? "schema_auto.sql" : "schema.sql";
   const existingRs = join(outputDir, "generated.rs");
   const sqlContent = interned.entities.length ? internAutoFile(program, interned, sql, existingRs, sqlFile, "--") : sql;

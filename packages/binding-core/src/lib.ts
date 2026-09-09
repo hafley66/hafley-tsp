@@ -1,4 +1,5 @@
 import { createTypeSpecLibrary, paramMessage } from "@typespec/compiler";
+import { SqlStateKeys } from "@hafley/typespec-sql";
 
 export const $lib = createTypeSpecLibrary({
   name: "@hafley/typespec-binding-core",
@@ -25,6 +26,12 @@ export const $lib = createTypeSpecLibrary({
         default: paramMessage`Binding chain for "${"field"}" is invalid: ${"reason"}`,
       },
     },
+    "conflicting-auto-emitters": {
+      severity: "error",
+      messages: {
+        default: paramMessage`Conflicting automatic emitters imported: ${"owners"}`,
+      },
+    },
     "duplicate-pk": {
       severity: "error",
       messages: {
@@ -33,13 +40,6 @@ export const $lib = createTypeSpecLibrary({
     },
   },
   state: {
-    intern: { description: "String scalar interning domains" },
-    pk: { description: "State for @Entity.pk decorator" },
-    unique: { description: "State for @Entity.unique decorator" },
-    manual: { description: "State for @Entity.manual decorator" },
-    index: { description: "State for @Entity.index decorator" },
-    default: { description: "State for @Entity.default decorator" },
-    relation: { description: "State for @Rel.* decorators" },
     binding: { description: "State for @Bind.from decorator" },
     sourceGraphql: { description: "State for @Source.graphql decorator" },
     sourceRest: { description: "State for @Source.rest decorator" },
@@ -67,4 +67,15 @@ export const $lib = createTypeSpecLibrary({
   },
 });
 
-export const { reportDiagnostic, createDiagnostic, stateKeys: BindingCoreStateKeys } = $lib;
+export const { reportDiagnostic, createDiagnostic, stateKeys } = $lib;
+
+export const BindingCoreStateKeys = {
+  ...stateKeys,
+  intern: SqlStateKeys.intern,
+  pk: SqlStateKeys.pk,
+  unique: SqlStateKeys.unique,
+  manual: SqlStateKeys.manual,
+  index: SqlStateKeys.index,
+  default: SqlStateKeys.default,
+  relation: SqlStateKeys.relation,
+};

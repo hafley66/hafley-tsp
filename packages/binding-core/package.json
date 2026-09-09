@@ -18,6 +18,8 @@
     "@alloy-js/go": "0.3.0-dev.3",
     "@hafley/alloy-rs": "workspace:*",
     "@hafley/typespec-decorator-def": "workspace:*",
+    "@hafley/typespec-sql": "workspace:*",
+    "@hafley/typespec-sqlx": "workspace:*",
     "@typespec/compiler": "^1.0.0"
   },
   "devDependencies": {
