@@ -10,10 +10,21 @@ import { emitRust } from "./5_emit-rust.js";
 import { emitGo } from "./6_emit-go.js";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { internStorage } from "./2a_intern.js";
+import { reportDiagnostic } from "./lib.js";
+import { internAutoFile } from "./4a_emit_intern.js";
 
 export async function $onValidate(program: Program) {
+  if (program.hasError()) return;
+  let interned;
+  try { interned = internStorage(program); }
+  catch (error) {
+    reportDiagnostic(program, { code: "invalid-intern", target: program.getGlobalNamespaceType(), format: { reason: String(error) } });
+    return;
+  }
+  if (program.compilerOptions.noEmit) return;
   const allModels = collectModels(program.getGlobalNamespaceType());
-  const entities = allModels.filter(m => isEntityModel(program, m));
+  const entities = allModels.filter(m => isEntityModel(program, m) || interned.entities.some(e => e.model === m));
   const relMap = getAllRelations(program);
   const bindings = allModels.filter(m => hasBinding(program, m));
   const sources = allModels.filter(m => isSourceGraphql(program, m) || hasSourceRest(program, m));
@@ -25,22 +36,24 @@ export async function $onValidate(program: Program) {
       `${fieldCount} fields, ` +
       `${relCount} relations, ` +
       `${bindings.length} bindings, ` +
-      `${sources.length} sources`,
+      `${sources.length} sources, ${interned.domains.length} intern dictionaries`,
   );
 
   const outputDir = join(program.projectRoot ?? ".", "tsp-output");
   await mkdir(outputDir, { recursive: true });
 
   const sql = emitSQL(program);
+  const sqlFile = interned.entities.length ? "schema_auto.sql" : "schema.sql";
   const existingRs = join(outputDir, "generated.rs");
+  const sqlContent = interned.entities.length ? internAutoFile(program, interned, sql, existingRs, sqlFile, "--") : sql;
   const rustOutput = emitRust(program, existingRs);
-  const goOutput = emitGo(program);
+  const goOutput = interned.entities.length ? undefined : emitGo(program);
 
   await Promise.all([
-    writeFile(join(outputDir, "schema.sql"), sql),
+    ...(sqlContent === undefined ? [] : [writeFile(join(outputDir, sqlFile), sqlContent)]),
     writeOutput(rustOutput, outputDir),
-    writeOutput(goOutput, outputDir),
+    ...(goOutput ? [writeOutput(goOutput, outputDir)] : []),
   ]);
 
-  console.log(`  binding-core: wrote schema.sql, generated.rs, generated.go to ${outputDir}\n`);
+  console.log(`  binding-core: wrote ${sqlFile}, generated.rs, ${goOutput ? "generated.go" : "intern_auto.rs (Go interning unsupported)"} to ${outputDir}\n`);
 }

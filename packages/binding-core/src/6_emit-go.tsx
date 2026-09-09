@@ -8,6 +8,7 @@ import {
 } from "@alloy-js/go";
 
 import type { Program } from "@typespec/compiler";
+import { internStorage } from "./2a_intern.js";
 import {
   resolvedFields, resolveFieldType, collectModels, isEntityModel, snakeCase,
   extractChain, type ResolvedField,
@@ -184,6 +185,7 @@ function emitExtractFn(program: Program, bindingModel: any, relMap: Map<string, 
 // ── Main entry point ─────────────────────────────────────
 
 export function emitGo(program: Program): OutputDirectory {
+  if (internStorage(program).entities.length) throw new Error("@Entity.intern Go writer generation is not supported; use SQL/Rust emission");
   const allModels = collectModels(program.getGlobalNamespaceType());
   const relMap = getAllRelations(program);
   const entities = allModels.filter(m => isEntityModel(program, m));

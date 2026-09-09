@@ -1,4 +1,4 @@
-import type { DecoratorContext, Model, ModelProperty, Program, Type } from "@typespec/compiler";
+import type { DecoratorContext, Model, ModelProperty, Program, Scalar, Type } from "@typespec/compiler";
 import { BindingCoreStateKeys, reportDiagnostic } from "./lib.js";
 import { flagDec, listDec, objectDec, valueDec } from "@hafley/typespec-decorator-def/factory";
 
@@ -7,6 +7,32 @@ import { flagDec, listDec, objectDec, valueDec } from "@hafley/typespec-decorato
 // ──────────────────────────────────────────────────────────
 
 const _pk = flagDec(BindingCoreStateKeys.pk as any);
+const _intern = flagDec(BindingCoreStateKeys.intern as any);
+
+export function $intern(ctx: DecoratorContext, target: Scalar) {
+  let base = target;
+  while (base.baseScalar) base = base.baseScalar;
+  if (base.name !== "string" || base.namespace?.name !== "TypeSpec") {
+    reportDiagnostic(ctx.program, { code: "invalid-intern", target,
+      format: { reason: "@Entity.intern requires a string-backed scalar" } });
+    return;
+  }
+  _intern.$decorator(ctx, target);
+}
+
+/** Derived unannotated scalars share their nearest annotated ancestor's pool. */
+export function getInternScalar(program: Program, type: Type): Scalar | undefined {
+  if (type.kind === "Union") {
+    const values = [...type.variants.values()].map(v => v.type)
+      .filter(t => !(t.kind === "Intrinsic" && t.name === "null"));
+    return values.length === 1 ? getInternScalar(program, values[0]) : undefined;
+  }
+  if (type.kind !== "Scalar") return undefined;
+  for (let scalar: Scalar | undefined = type; scalar; scalar = scalar.baseScalar) {
+    if (_intern.has(program, scalar)) return scalar;
+  }
+  return undefined;
+}
 const _manual = flagDec(BindingCoreStateKeys.manual as any);
 
 const _unique = listDec<{ anchor: string; fields: string[] }>(
@@ -334,6 +360,7 @@ export function getHttpState(program: Program, modelName: string): string | unde
 
 export const $decorators = {
   Entity: {
+    intern: $intern,
     pk: $pk,
     unique: $unique,
     manual: $manual,

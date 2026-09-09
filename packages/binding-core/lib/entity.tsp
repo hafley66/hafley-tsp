@@ -1,6 +1,9 @@
 using TypeSpec.Reflection;
 
 namespace Entity {
+  /** Intern exact string values in a dictionary owned by this scalar type. */
+  extern dec intern(target: Scalar);
+
   /**
    * Mark a field as the primary key. Auto-increment integer in SQLite.
    */

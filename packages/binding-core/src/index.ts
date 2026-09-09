@@ -3,6 +3,7 @@ export { BindingCoreStateKeys, reportDiagnostic, createDiagnostic } from "./lib.
 export {
   $decorators,
   isPk,
+  getInternScalar,
   isManual,
   getUnique,
   getIndex,
@@ -53,5 +54,6 @@ export {
   type ResolvedField,
 } from "./2_facts.js";
 export { emitSQL } from "./4_emit-sql.js";
+export { internStorage, type InternStorage, type InternDomain, type InternEntity, type InternField } from "./2a_intern.js";
 export { emitRust } from "./5_emit-rust.js";
 export { emitGo } from "./6_emit-go.js";

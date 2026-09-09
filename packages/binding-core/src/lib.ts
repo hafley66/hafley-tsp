@@ -3,6 +3,10 @@ import { createTypeSpecLibrary, paramMessage } from "@typespec/compiler";
 export const $lib = createTypeSpecLibrary({
   name: "@hafley/typespec-binding-core",
   diagnostics: {
+    "invalid-intern": {
+      severity: "error",
+      messages: { default: paramMessage`Invalid interning declaration: ${"reason"}` },
+    },
     "dot-path-must-be-nullable": {
       severity: "error",
       messages: {
@@ -29,6 +33,7 @@ export const $lib = createTypeSpecLibrary({
     },
   },
   state: {
+    intern: { description: "String scalar interning domains" },
     pk: { description: "State for @Entity.pk decorator" },
     unique: { description: "State for @Entity.unique decorator" },
     manual: { description: "State for @Entity.manual decorator" },

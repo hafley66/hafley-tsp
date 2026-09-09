@@ -46,6 +46,7 @@ export default {
     "path",
     "node:fs",
     "node:path",
+    "node:crypto",
   ],
   plugins: [
     nodeResolve({ extensions: [".ts", ".tsx", ".js", ".jsx"] }),

@@ -6,6 +6,7 @@ import {
   type ResolvedField,
 } from "./2_facts.js";
 import { isPk, getUnique, getIndex, getAllRelations } from "./decorators.js";
+import { internStorage, quoteSql as q, type InternStorage } from "./2a_intern.js";
 
 const TYPE_MAP: Record<string, string> = {
   string: "TEXT", integer: "INTEGER",
@@ -24,9 +25,10 @@ function colName(f: ResolvedField): string {
 }
 
 export function emitSQL(program: Program): string {
+  const interned = internStorage(program);
   const allModels = collectModels(program.getGlobalNamespaceType());
   const relMap = getAllRelations(program);
-  const entities = allModels.filter(m => isEntityModel(program, m));
+  const entities = allModels.filter(m => isEntityModel(program, m) && !interned.entities.some(e => e.model === m));
 
   // Pre-collect PKs for FK target resolution
   const pksByEntity = new Map<string, string[]>();
@@ -93,5 +95,34 @@ export function emitSQL(program: Program): string {
     }
   }
 
-  return lines.join("\n") + "\n";
+  return lines.join("\n") + "\n" + emitInternSQL(interned);
+}
+
+function emitInternSQL(storage: InternStorage): string {
+  const lines: string[] = [];
+  for (const domain of storage.domains) {
+    lines.push(`CREATE TABLE IF NOT EXISTS ${q(domain.table)} (`,
+      `    id INTEGER PRIMARY KEY,`, `    value TEXT NOT NULL UNIQUE`, `);\n`);
+  }
+  for (const entity of storage.entities) {
+    const columns = entity.fields.map(f => {
+      if (f.domain) return `    ${q(f.column)} INTEGER${f.nullable ? "" : " NOT NULL"} REFERENCES ${q(f.domain.table)}(id)`;
+      if (f.reference) return `    ${q(f.column)} INTEGER${f.nullable ? "" : " NOT NULL"} REFERENCES ${q(f.reference.table)}(${q(f.reference.column)})`;
+      return `    ${q(f.column)} ${sqlType(f.typeName)}${f.isPk ? " PRIMARY KEY" : f.nullable ? "" : " NOT NULL"}${f.default === undefined ? "" : ` DEFAULT ${f.default}`}`;
+    });
+    for (const key of entity.unique) columns.push(`    UNIQUE (${key.map(q).join(", ")})`);
+    lines.push(`CREATE TABLE IF NOT EXISTS ${q(entity.table)} (`, columns.join(",\n"), `);\n`);
+    for (const [i, fields] of entity.indexes.entries()) {
+      lines.push(`CREATE INDEX IF NOT EXISTS ${q(`${entity.table}_index_${i}`)} ON ${q(entity.table)} (${fields.map(q).join(", ")});`);
+    }
+    const joins: string[] = [];
+    const readable = entity.fields.map((f, i) => {
+      if (!f.domain) return `e.${q(f.column)} AS ${q(f.name)}`;
+      joins.push(`LEFT JOIN ${q(f.domain.table)} AS d${i} ON d${i}.id = e.${q(f.column)}`);
+      return `d${i}.value AS ${q(f.name)}`;
+    });
+    lines.push(`CREATE VIEW IF NOT EXISTS ${q(entity.view)} AS`,
+      `SELECT ${readable.join(", ")} FROM ${q(entity.table)} AS e`, ...joins, `;\n`);
+  }
+  return lines.join("\n");
 }

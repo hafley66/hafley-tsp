@@ -1,7 +1,9 @@
 // Rust emitter -- walks the TSP program graph directly via decorator accessors.
 // Uses alloy-rs JSX for structs, string concat for functions.
 
-import { Output, render, List, type OutputDirectory } from "@alloy-js/core";
+import { Output, render, List, SourceFile, type OutputDirectory } from "@alloy-js/core";
+import { internStorage } from "./2a_intern.js";
+import { emitInternRust, internAutoFile } from "./4a_emit_intern.js";
 import {
   StructDeclaration, StructField, EnumDeclaration, TupleVariant,
   ReplaceFile, AutoZone, ManualZone, CrateDirectory, VisibilityContext,
@@ -685,9 +687,11 @@ const BASE_USES = [
 ];
 
 export function emitRust(program: Program, existingFile?: string): OutputDirectory {
+  const interned = internStorage(program);
+  const internFile = interned.entities.length ? internAutoFile(program, interned, emitInternRust(interned, rustType, rustIdent), existingFile) : undefined;
   const allModels = collectModels(program.getGlobalNamespaceType());
   const relMap = getAllRelations(program);
-  const entities = allModels.filter(m => isEntityModel(program, m));
+  const entities = allModels.filter(m => isEntityModel(program, m) && !interned.entities.some(e => e.model === m));
   const bindings = allModels.filter(m => hasBinding(program, m));
   const fieldsByEntity = new Map(entities.map(m => [m.name, resolvedFields(program, m, relMap)]));
 
@@ -740,10 +744,12 @@ export function emitRust(program: Program, existingFile?: string): OutputDirecto
     <Output>
       <VisibilityContext.Provider value="pub">
         <CrateDirectory>
+          {internFile !== undefined && <SourceFile path="intern_auto.rs" filetype="rust">{internFile}</SourceFile>}
           <ReplaceFile path="generated.rs" existingFile={existingFile}>
 
             <AutoZone id="imports">
               {uses.map(u => `use ${u};\n`).join("")}
+              {interned.entities.length > 0 && "pub mod intern_auto;\npub use intern_auto::*;\n"}
             </AutoZone>
 
             <AutoZone id="row-structs">
