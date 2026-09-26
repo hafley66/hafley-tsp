@@ -19,3 +19,4 @@ export * from "./components/3_files/0_SourceFile.js";
 export * from "./components/3_files/1_CrateDirectory.js";
 export * from "./components/3_files/2_ModDirectory.js";
 export { VisibilityContext } from "./scopes/06_contexts.js";
+export { $onEmit } from "./emitter/06_on-emit.js";

@@ -8,7 +8,11 @@ import type {
   Scalar,
   Type,
   Namespace,
+  Value,
+  Program,
 } from "@typespec/compiler";
+import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
+import { getClapArg, getClapModel } from "../../../decorator-def/src/clap.js";
 
 import type {
   TypeDef,
@@ -20,23 +24,61 @@ import type {
   MapType,
   ModelRef,
   EnumRef,
+  ParamValue,
 } from "../emitter/00_types.js";
 
-// Resolve a Scalar's root name by walking baseScalar until we hit a builtin.
-// e.g. `scalar uuid extends string` -> "string"
+export type DocOf = (type: Type) => string | undefined;
+
+export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
+  const extra = getClapArg(program, prop);
+  const encoded = resolveEncodedName(program, prop, "application/x-clap");
+  const minValue = getMinValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMinValue(program, prop.type) : undefined);
+  const maxValue = getMaxValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMaxValue(program, prop.type) : undefined);
+  const minItems = getMinItems(program, prop);
+  const cli = {
+    ...(encoded !== prop.name ? { long: encoded } : {}),
+    ...extra,
+    ...(minValue !== undefined ? { minValue } : {}),
+    ...(maxValue !== undefined ? { maxValue } : {}),
+    ...(minItems !== undefined && minItems >= 1 ? { required: true } : {}),
+  };
+  return Object.keys(cli).length ? cli : undefined;
+}
+
+// Resolve a Scalar by walking baseScalar: `scalar uuid extends string` -> "string".
+// A real program stops at the first TypeSpec stdlib scalar (uint32 stays uint32).
 function resolveScalarName(scalar: Scalar): string {
   let current = scalar;
-  while (current.baseScalar) {
+  while (current.baseScalar && current.namespace?.name !== "TypeSpec") {
     current = current.baseScalar;
   }
   return current.name;
 }
 
+// A scalar declared outside the TypeSpec stdlib keeps its own name as `alias`.
+function scalarAlias(scalar: Scalar): string | undefined {
+  const ns = scalar.namespace;
+  return ns && ns.name !== "TypeSpec" && scalar.baseScalar ? scalar.name : undefined;
+}
+
+export function paramValue(value: Value | undefined): ParamValue | undefined {
+  switch (value?.valueKind) {
+    case "StringValue": return value.value;
+    case "BooleanValue": return value.value;
+    case "NumericValue": return value.value.asNumber() ?? undefined;
+    case "EnumValue": return value.value.name;
+    default: return undefined;
+  }
+}
+
 // Map a TypeSpec Type to our neutral type representation.
-function mapPropertyType(type: Type): ModelProperty["type"] {
+export function mapPropertyType(type: Type): ModelProperty["type"] {
   switch (type.kind) {
-    case "Scalar":
-      return { kind: "scalar", name: resolveScalarName(type as Scalar) } satisfies ScalarType;
+    case "Scalar": {
+      const alias = scalarAlias(type as Scalar);
+      const name = resolveScalarName(type as Scalar);
+      return (alias ? { kind: "scalar", name, alias } : { kind: "scalar", name }) satisfies ScalarType;
+    }
 
     case "Enum":
       return { kind: "enum", name: (type as TspEnum).name } satisfies EnumRef;
@@ -71,16 +113,23 @@ function mapPropertyType(type: Type): ModelProperty["type"] {
   }
 }
 
-function convertModel(model: Model): ModelDef {
+function convertModel(model: Model, docOf?: DocOf, program?: Program): ModelDef {
   const properties: ModelProperty[] = [];
   for (const [, prop] of model.properties) {
+    const doc = docOf?.(prop);
+    const value = paramValue(prop.defaultValue);
+    const cli = program ? cliOf(program, prop) : undefined;
     properties.push({
       name: prop.name,
       type: mapPropertyType(prop.type),
       optional: prop.optional || undefined,
+      ...(doc !== undefined ? { doc } : {}),
+      ...(value !== undefined ? { default: value } : {}),
+      ...(cli ? { cli } : {}),
     });
   }
-  return { kind: "model", name: model.name, properties };
+  const clap = program ? getClapModel(program, model) : undefined;
+  return { kind: "model", name: model.name, properties, ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf, requiredOneOfName: clap.requiredOneOfName } : {}) };
 }
 
 function convertEnum(tspEnum: TspEnum): EnumDef {
@@ -94,6 +143,8 @@ function convertEnum(tspEnum: TspEnum): EnumDef {
 // Collect all models and enums from a namespace, optionally recursing into sub-namespaces.
 export interface ConvertOptions {
   recursive?: boolean;
+  docOf?: DocOf;
+  program?: Program;
 }
 
 export function namespaceToTypeDefs(
@@ -105,7 +156,7 @@ export function namespaceToTypeDefs(
   for (const [, model] of ns.models) {
     // Skip anonymous/template models
     if (!model.name || model.name === "") continue;
-    defs.push(convertModel(model));
+    defs.push(convertModel(model, options.docOf, options.program));
   }
 
   for (const [, tspEnum] of ns.enums) {
@@ -125,18 +176,19 @@ export function namespaceToTypeDefs(
 // Filters out TypeSpec stdlib types (TypeSpec.* namespace).
 export function programToTypeDefs(
   program: { getGlobalNamespaceType(): Namespace },
+  docOf?: DocOf,
 ): TypeDef[] {
   const globalNs = program.getGlobalNamespaceType();
   const defs: TypeDef[] = [];
 
-  // Collect from user-defined namespaces (skip "TypeSpec" stdlib namespace)
+  // Decorator declarations are metadata, not domain types.
   for (const [name, childNs] of globalNs.namespaces) {
-    if (name === "TypeSpec") continue;
-    defs.push(...namespaceToTypeDefs(childNs, { recursive: true }));
+    if (name === "TypeSpec" || name === "DecoratorDef" || name === "Clap" || name === "Daemon") continue;
+    defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
   }
 
   // Also collect top-level (un-namespaced) types
-  defs.push(...namespaceToTypeDefs(globalNs));
+  defs.push(...namespaceToTypeDefs(globalNs, { docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
 
   return defs;
 }

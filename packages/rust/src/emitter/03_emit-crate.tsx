@@ -2,13 +2,24 @@ import { Output, render, refkey } from "@alloy-js/core";
 import { CrateDirectory } from "../components/3_files/1_CrateDirectory.js";
 import { ModDirectory } from "../components/3_files/2_ModDirectory.js";
 import { SourceFile } from "../components/3_files/0_SourceFile.js";
+import { CliAutoFile, HttpAutoFile, OpsAutoFile, OpsStubFile, type OpsKeys } from "../components/4_codegen/7_OpsTransports.js";
 import { VisibilityContext } from "../scopes/06_contexts.js";
 import { emitTypeDef } from "./02_emit-model.js";
+import { domainExtras, planOps, type ModelExtras } from "./04_ops-plan.js";
+import { DaemonFiles } from "./07_daemon-files.js";
 import type { RefkeyRegistry } from "./01_type-map.js";
-import type { TypeDef } from "./00_types.js";
+import type { ServiceDef, TypeDef } from "./00_types.js";
+
+export interface OpsEmitOptions {
+  service: ServiceDef;
+  bin?: string;
+  cli?: boolean;
+  http?: boolean;
+}
 
 export interface CrateEmitOptions {
   modelsModule?: string;
+  ops?: OpsEmitOptions;
 }
 
 export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
@@ -20,7 +31,13 @@ export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
     registry.set(t.name, refkey());
   }
 
-  const emitted = types.map(t => emitTypeDef(t, registry, registry.get(t.name)));
+  const ops = options.ops;
+  const extras: Map<string, ModelExtras> = ops ? domainExtras(types, ops.service) : new Map();
+  const emitted = types.map(t => emitTypeDef(t, registry, registry.get(t.name), extras.get(t.name), !!ops?.service.daemon));
+
+  const keys: OpsKeys = { opError: refkey(), opResult: refkey(), root: refkey(), cmd: refkey() };
+  const plans = ops ? planOps(ops.service, registry, refkey) : [];
+  const implPath = "crate::ops";
 
   const tree = (
     <Output>
@@ -29,6 +46,13 @@ export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
           <ModDirectory name={modelsModule}>
             {emitted.map(e => e.jsx)}
           </ModDirectory>
+          {ops && <OpsAutoFile plans={plans} keys={keys} daemon={!!ops.service.daemon} />}
+          {ops && <OpsStubFile plans={plans} keys={keys} daemon={!!ops.service.daemon} />}
+          {ops && ops.cli !== false && (
+            <CliAutoFile plans={plans} keys={keys} bin={ops.bin ?? ops.service.name.toLowerCase()} service={ops.service} registry={registry} implPath={implPath} />
+          )}
+          {ops && ops.service.daemon && <DaemonFiles service={ops.service} plans={plans} types={types} bin={ops.bin ?? ops.service.name.toLowerCase()} />}
+          {ops && !ops.service.daemon && ops.http !== false && <HttpAutoFile plans={plans} keys={keys} registry={registry} implPath={implPath} />}
           <SourceFile path="lib.rs" />
         </CrateDirectory>
       </VisibilityContext.Provider>
