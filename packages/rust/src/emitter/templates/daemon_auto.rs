@@ -5,6 +5,19 @@ use serde::{Deserialize, Serialize};
 pub const IDLE_SECS: u64 = __IDLE_SECS__;
 pub const HANDSHAKE: bool = __HANDSHAKE__;
 
+pub fn idle_secs() -> u64 {
+    std::env::var("__IDLE_ENV__").ok().and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value > 0).unwrap_or(IDLE_SECS)
+}
+
+pub fn handshake_enabled() -> bool {
+    match std::env::var("__HANDSHAKE_ENV__").as_deref() {
+        Ok("1" | "true") => true,
+        Ok("0" | "false") => false,
+        _ => HANDSHAKE,
+    }
+}
+
 pub fn executable_stamp(path: &Path) -> Result<String, std::io::Error> {
     let metadata = std::fs::metadata(path)?;
     let modified = metadata.modified()?.duration_since(std::time::UNIX_EPOCH)

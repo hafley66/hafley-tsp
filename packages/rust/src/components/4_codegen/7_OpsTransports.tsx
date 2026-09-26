@@ -42,6 +42,10 @@ function afterHelpExpr(value: string): string {
   return `concat!(${parts.join(", ")})`;
 }
 
+function serdeDefaultName(plan: OpPlan, field: OpPlan["fields"][number]): string {
+  return `__serde_default_${plan.fn}_${field.field}`;
+}
+
 // The stub's return: one value, or an Iterator of items ending at None (complete).
 function stubReturns(keys: OpsKeys, p: OpPlan, daemon = false): Children {
   if (daemon) {
@@ -72,11 +76,12 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: bo
           <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", ...(props.daemon ? ["serde::Deserialize"] : []), ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
-                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...f.cliAttrs, ...(props.daemon && f.role === "flatten" ? ["serde(flatten)"] : []), ...(props.daemon && f.param.cli?.skip ? ["serde(skip)"] : []), ...(props.daemon && (f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean") ? ["serde(default)"] : [])]} />)}
+                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...f.cliAttrs, ...(props.daemon && f.role === "flatten" ? ["serde(flatten)"] : []), ...(props.daemon && f.param.cli?.skip ? ["serde(skip)"] : []), ...(props.daemon && f.param.default !== undefined ? [`serde(default = ${JSON.stringify(serdeDefaultName(p, f))})`] : props.daemon && (f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean") ? ["serde(default)"] : [])]} />)}
               </List>
             ) : undefined}
           </StructDeclaration>
         )),
+        ...(props.daemon ? props.plans.flatMap(p => p.fields.filter(f => f.param.default !== undefined).map(f => `fn ${serdeDefaultName(p, f)}() -> ${f.cliType.code} { serde_json::from_value(serde_json::json!(${JSON.stringify(f.param.default)})).expect("TypeSpec default matches Rust field") }`)) : []),
       ]} />
     </SourceFile>
   );
@@ -101,7 +106,7 @@ pub fn with_request_root<T>(root: std::path::PathBuf, run: impl FnOnce() -> T) -
 }
 
 pub fn request_root() -> std::path::PathBuf {
-    REQUEST_ROOT.with(|slot| slot.borrow().clone()).unwrap_or_else(|| std::path::PathBuf::from("."))
+    REQUEST_ROOT.with(|slot| slot.borrow().clone()).unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")))
 }`] : []),
         ...props.plans.map(p => {
         const params: FunctionParam[] = [{ name: "args", type: <>&amp;{p.argsKey}</> }];
@@ -133,6 +138,10 @@ function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean): Children {
 export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string; service: ServiceDef; registry: RefkeyRegistry; implPath: string }) {
   const about = props.service.doc !== undefined ? `, about = ${JSON.stringify(props.service.doc)}` : "";
   const root = props.service.rootArgs ? props.registry.get(props.service.rootArgs) : undefined;
+  const rootPlan = props.service.daemon && props.service.rootArgs
+    ? props.plans.find(plan => plan.fields.some(field => field.param.type.kind === "model" && field.param.type.name === props.service.rootArgs))
+    : undefined;
+  const commandPlans = props.plans.filter(plan => plan !== rootPlan);
   const command = [
     `name = ${JSON.stringify(props.bin)}`,
     "version",
@@ -158,7 +167,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
           </StructDeclaration>,
           <EnumDeclaration name="Cmd" refkey={props.keys.cmd} derive={["clap::Subcommand", "Debug"]}>
             <List hardline>
-              {props.plans.map(p => (
+              {commandPlans.map(p => (
                 <>
                   {(p.op.doc !== undefined || p.op.afterHelp) ? <><Attributes attrs={[
                     ...(p.op.doc !== undefined ? [`doc = ${JSON.stringify(p.op.doc)}`] : []),

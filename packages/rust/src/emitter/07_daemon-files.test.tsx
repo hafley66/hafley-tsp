@@ -43,6 +43,19 @@ it("assigns daemon routes during validation and emits both transports from the s
     pub const IDLE_SECS: u64 = 37;
     pub const HANDSHAKE: bool = false;
 
+    pub fn idle_secs() -> u64 {
+        std::env::var("PROBE_IDLE_SECS").ok().and_then(|value| value.parse::<u64>().ok())
+            .filter(|value| *value > 0).unwrap_or(IDLE_SECS)
+    }
+
+    pub fn handshake_enabled() -> bool {
+        match std::env::var("PROBE_HANDSHAKE").as_deref() {
+            Ok("1" | "true") => true,
+            Ok("0" | "false") => false,
+            _ => HANDSHAKE,
+        }
+    }
+
     pub fn executable_stamp(path: &Path) -> Result<String, std::io::Error> {
         let metadata = std::fs::metadata(path)?;
         let modified = metadata.modified()?.duration_since(std::time::UNIX_EPOCH)

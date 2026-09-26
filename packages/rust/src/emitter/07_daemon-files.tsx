@@ -32,6 +32,8 @@ function daemonFile(service: ServiceDef, plans: OpPlan[], types: TypeDef[], bin:
     .replace("__SERVICE__", service.name)
     .replace("__IDLE_SECS__", String(service.daemon!.idleSecs))
     .replace("__HANDSHAKE__", String(service.daemon!.handshake))
+    .replace("__IDLE_ENV__", `${bin.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_IDLE_SECS`)
+    .replace("__HANDSHAKE_ENV__", `${bin.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_HANDSHAKE`)
     .replace("        // __PATH_ARMS__", paths);
 }
 
@@ -40,7 +42,7 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   if (service.rootArgs && !root) throw new Error(`root args ${service.rootArgs} have no operation`);
   const arms = [
     ...(root ? [`None => (${JSON.stringify(root.op.name)}, serde_json::to_value(&cli.file)?),`] : []),
-    ...plans.map(plan => `${root ? "Some(" : ""}Cmd::${plan.variant}${plan.fields.length ? "(args)" : ""}${root ? ")" : ""} => (${JSON.stringify(plan.op.name)}, ${plan.fields.length ? "serde_json::to_value(args)?" : "serde_json::json!({})"}),`),
+    ...plans.filter(plan => plan !== root).map(plan => `${root ? "Some(" : ""}Cmd::${plan.variant}${plan.fields.length ? "(args)" : ""}${root ? ")" : ""} => (${JSON.stringify(plan.op.name)}, ${plan.fields.length ? "serde_json::to_value(args)?" : "serde_json::json!({})"}),`),
   ].map(line => `        ${line}`).join("\n");
   const inputs = plans.filter(plan => plan.input).map(plan => JSON.stringify(plan.op.name));
   const inputMatch = inputs.length ? `matches!(verb, ${inputs.join(" | ")})` : "false";
@@ -57,12 +59,13 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
     .replace("__INPUT_MATCH__", inputMatch);
 }
 
-function inputHandler(plan: OpPlan): string {
+function inputHandler(plan: OpPlan, bin: string): string {
   const response = plan.returnsStream ? "jsonl_response(out).await" : "raw_response(out).await";
+  const header = `x-${bin}-request`;
   return `async fn ${plan.fn}(headers: HeaderMap, body: Body) -> Response {
-    let encoded = match headers.get("__REQUEST_HEADER__").and_then(|header| header.to_str().ok()) {
+    let encoded = match headers.get(${JSON.stringify(header)}).and_then(|header| header.to_str().ok()) {
         Some(encoded) => encoded,
-        None => return bad_request("missing __REQUEST_HEADER__".into()),
+        None => return bad_request(${JSON.stringify(`missing ${header}`)}.into()),
     };
     let json = match base64::engine::general_purpose::STANDARD.decode(encoded) {
         Ok(json) => json,
@@ -84,7 +87,7 @@ function serverFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   const handlers = plans.filter(plan => !plan.input).map(plan =>
     `${plan.returnsStream ? "stream_handler" : "raw_handler"}!(${plan.fn}, ${JSON.stringify(plan.op.name)}, ${plan.argsName}, ${plan.fn});`
   ).join("\n");
-  const inputHandlers = plans.filter(plan => plan.input).map(inputHandler).join("\n\n");
+  const inputHandlers = plans.filter(plan => plan.input).map(plan => inputHandler(plan, bin)).join("\n\n");
   const routes = plans.map(plan => `        .route(${JSON.stringify(plan.op.path)}, ${plan.op.verb}(${plan.fn}))`).join("\n");
   return template("server_auto")
     .replace("__SERVICE__", service.name)
