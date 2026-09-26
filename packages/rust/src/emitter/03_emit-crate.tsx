@@ -33,7 +33,7 @@ export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
 
   const ops = options.ops;
   const extras: Map<string, ModelExtras> = ops ? domainExtras(types, ops.service) : new Map();
-  const emitted = types.map(t => emitTypeDef(t, registry, registry.get(t.name), extras.get(t.name)));
+  const emitted = types.map(t => emitTypeDef(t, registry, registry.get(t.name), extras.get(t.name), !!ops?.service.daemon));
 
   const keys: OpsKeys = { opError: refkey(), opResult: refkey(), root: refkey(), cmd: refkey() };
   const plans = ops ? planOps(ops.service, registry, refkey) : [];
@@ -51,7 +51,7 @@ export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
           {ops && ops.cli !== false && (
             <CliAutoFile plans={plans} keys={keys} bin={ops.bin ?? ops.service.name.toLowerCase()} service={ops.service} registry={registry} implPath={implPath} />
           )}
-          {ops && ops.service.daemon && <DaemonFiles service={ops.service} plans={plans} types={types} />}
+          {ops && ops.service.daemon && <DaemonFiles service={ops.service} plans={plans} types={types} bin={ops.bin ?? ops.service.name.toLowerCase()} />}
           {ops && !ops.service.daemon && ops.http !== false && <HttpAutoFile plans={plans} keys={keys} registry={registry} implPath={implPath} />}
           <SourceFile path="lib.rs" />
         </CrateDirectory>

@@ -69,10 +69,10 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: bo
           Result{"<"}T, {props.keys.opError}{">"}
         </TypeAlias>,
         ...props.plans.map(p => (
-          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", "serde::Deserialize", ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
+          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", ...(props.daemon ? ["serde::Deserialize"] : []), ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
-                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...f.cliAttrs, ...(f.role === "flatten" ? ["serde(flatten)"] : []), ...(f.param.cli?.skip ? ["serde(skip)"] : []), ...(f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean" ? ["serde(default)"] : [])]} />)}
+                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...f.cliAttrs, ...(props.daemon && f.role === "flatten" ? ["serde(flatten)"] : []), ...(props.daemon && f.param.cli?.skip ? ["serde(skip)"] : []), ...(props.daemon && (f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean") ? ["serde(default)"] : [])]} />)}
               </List>
             ) : undefined}
           </StructDeclaration>

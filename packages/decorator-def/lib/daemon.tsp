@@ -1,3 +1,5 @@
+using TypeSpec.Reflection;
+
 namespace Daemon;
 
 model DaemonOptions {

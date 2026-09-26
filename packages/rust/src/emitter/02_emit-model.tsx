@@ -16,7 +16,7 @@ export interface EmittedType {
   jsx: any;
 }
 
-export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras): EmittedType {
+export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras, daemon = false): EmittedType {
   const key = rk ?? refkey();
   const fileExternalUses = [...MODEL_EXTERNAL_USES];
 
@@ -26,11 +26,10 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
     fileExternalUses.push(...rt.externalUses);
     return { name: prop.name, typeCode: rt.code, attrs: [
       ...(extras?.fieldAttrs.get(prop.name) ?? []),
-      ...(prop.type.kind === "model" ? ["serde(flatten)"] : []),
-      ...(prop.cli?.skip ? ["serde(skip)"] : []),
-      ...(prop.type.kind === "array" || prop.type.kind === "scalar" && prop.type.name === "boolean" ? ["serde(default)"] : []),
-      ...(prop.cli?.positional && prop.type.kind === "array" ? ["serde(default)"] : []),
-    ] };
+      ...(daemon && extras?.fieldAttrs.get(prop.name)?.includes("command(flatten)") ? ["serde(flatten)"] : []),
+      ...(daemon && prop.cli?.skip ? ["serde(skip)"] : []),
+      ...(daemon && (prop.type.kind === "array" || prop.type.kind === "scalar" && prop.type.name === "boolean") ? ["serde(default)"] : []),
+          ] };
   });
 
   const uniqueUses = [...new Set(fileExternalUses)];
@@ -81,8 +80,8 @@ export function emitEnum(def: EnumDef, registry: RefkeyRegistry, rk?: Refkey, ex
   return { name: def.name, refkey: key, jsx };
 }
 
-export function emitTypeDef(def: TypeDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras): EmittedType {
-  return def.kind === "model" ? emitModel(def, registry, rk, extras) : emitEnum(def, registry, rk, extras);
+export function emitTypeDef(def: TypeDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras, daemon = false): EmittedType {
+  return def.kind === "model" ? emitModel(def, registry, rk, extras, daemon) : emitEnum(def, registry, rk, extras);
 }
 
 export function toSnakeCase(name: string): string {

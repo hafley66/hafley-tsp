@@ -1,4 +1,4 @@
-// Generated from Ryi's @daemon service and path-valued operation parameters.
+// Generated from __SERVICE__'s @daemon service and path-valued operation parameters.
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
@@ -6,7 +6,6 @@ pub const IDLE_SECS: u64 = __IDLE_SECS__;
 pub const HANDSHAKE: bool = __HANDSHAKE__;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Request {
     pub request_root: PathBuf,
     pub args: serde_json::Value,
@@ -21,7 +20,7 @@ impl Request {
 
     pub fn decode<T: serde::de::DeserializeOwned>(mut self, verb: &str) -> Result<T, String> {
         if !self.request_root.is_absolute() {
-            return Err("requestRoot must be absolute".into());
+            return Err("request_root must be absolute".into());
         }
         resolve_paths(verb, &self.request_root, &mut self.args);
         serde_json::from_value(self.args).map_err(|error| error.to_string())
@@ -64,9 +63,9 @@ pub fn cache_dir() -> Result<PathBuf, std::io::Error> {
     if !base.is_absolute() {
         return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "cache home must be absolute"));
     }
-    Ok(base.join("ryi"))
+    Ok(base.join("__BIN__"))
 }
 
 pub fn socket_path() -> Result<PathBuf, std::io::Error> {
-    Ok(cache_dir()?.join("ryi.sock"))
+    Ok(cache_dir()?.join("__BIN__.sock"))
 }
