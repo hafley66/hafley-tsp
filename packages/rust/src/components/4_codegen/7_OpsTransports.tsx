@@ -86,7 +86,24 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: bo
 export function OpsStubFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: boolean }) {
   return (
     <SourceFile path="ops.rs" externalUses={uses(props.plans.flatMap(p => [p.returns, p.input?.cliType]), [])}>
-      <Items items={props.plans.map(p => {
+      <Items items={[
+        ...(props.daemon ? [`thread_local! {
+    static REQUEST_ROOT: std::cell::RefCell<Option<std::path::PathBuf>> = const { std::cell::RefCell::new(None) };
+}
+
+pub fn with_request_root<T>(root: std::path::PathBuf, run: impl FnOnce() -> T) -> T {
+    REQUEST_ROOT.with(|slot| {
+        let previous = slot.replace(Some(root));
+        let result = run();
+        slot.replace(previous);
+        result
+    })
+}
+
+pub fn request_root() -> std::path::PathBuf {
+    REQUEST_ROOT.with(|slot| slot.borrow().clone()).unwrap_or_else(|| std::path::PathBuf::from("."))
+}`] : []),
+        ...props.plans.map(p => {
         const params: FunctionParam[] = [{ name: "args", type: <>&amp;{p.argsKey}</> }];
         if (p.input) params.push({ name: "input", type: <>impl Iterator{"<"}Item = {itemResult(props.keys, p.input.cliType)}{">"}</> });
         const unused = p.input ? "let _ = args;\nlet _ = input;\n" : "let _ = args;\n";
@@ -95,7 +112,8 @@ export function OpsStubFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: bo
             {unused + (p.returnsStream ? "std::iter::from_fn(|| todo!())" : "todo!()")}
           </FunctionDeclaration>
         );
-      })} />
+      }),
+      ]} />
     </SourceFile>
   );
 }
@@ -136,7 +154,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
           >
             <StructField name="cmd" type={root ? <>Option{"<"}{props.keys.cmd}{">"}</> : props.keys.cmd} attrs={["command(subcommand)"]} />
             {root && <StructField name="file" type={root} attrs={["command(flatten)"]} />}
-            {props.service.daemon && <StructField name="fresh" type="bool" attrs={["arg(long, global = true)"]} />}
+            {props.service.daemon && <StructField name="fresh" type="bool" attrs={["doc = \"Run without the resident daemon (server mode is already fresh)\"", "arg(long, global = true)"]} />}
           </StructDeclaration>,
           <EnumDeclaration name="Cmd" refkey={props.keys.cmd} derive={["clap::Subcommand", "Debug"]}>
             <List hardline>

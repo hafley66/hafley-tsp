@@ -33,7 +33,7 @@ it("assigns daemon routes during validation and emits both transports from the s
     }
   `);
   const dir = mkdtempSync(join(tmpdir(), "daemon-emitter-"));
-  const written = writeCrate(emitCrate(types, { ops: { service, bin: "ryi" } }), dir);
+  const written = writeCrate(emitCrate(types, { ops: { service, bin: "probe" } }), dir);
   expect(written.sort().join(" ")).toMatchInlineSnapshot(`"cli_auto.rs client_auto.rs daemon_auto.rs lib.rs models/inputs.rs models/mod.rs models/root_args.rs ops.rs ops_auto.rs server_auto.rs"`);
   expect(readFileSync(join(dir, "daemon_auto.rs"), "utf8").trim()).toMatchInlineSnapshot(`
     "// Generated from DaemonFixture's @daemon service and path-valued operation parameters.
@@ -43,6 +43,13 @@ it("assigns daemon routes during validation and emits both transports from the s
     pub const IDLE_SECS: u64 = 37;
     pub const HANDSHAKE: bool = false;
 
+    pub fn executable_stamp(path: &Path) -> Result<String, std::io::Error> {
+        let metadata = std::fs::metadata(path)?;
+        let modified = metadata.modified()?.duration_since(std::time::UNIX_EPOCH)
+            .map_err(std::io::Error::other)?;
+        Ok(format!("{}:{}:{}", metadata.len(), modified.as_secs(), modified.subsec_nanos()))
+    }
+
     #[derive(Debug, Serialize, Deserialize)]
     pub struct Request {
         pub request_root: PathBuf,
@@ -50,10 +57,8 @@ it("assigns daemon routes during validation and emits both transports from the s
     }
 
     impl Request {
-        pub fn new<T: Serialize>(verb: &str, request_root: PathBuf, args: &T) -> Result<Self, serde_json::Error> {
-            let mut args = serde_json::to_value(args)?;
-            resolve_paths(verb, &request_root, &mut args);
-            Ok(Self { request_root, args })
+        pub fn new<T: Serialize>(request_root: PathBuf, args: &T) -> Result<Self, serde_json::Error> {
+            Ok(Self { request_root, args: serde_json::to_value(args)? })
         }
 
         pub fn decode<T: serde::de::DeserializeOwned>(mut self, verb: &str) -> Result<T, String> {
@@ -102,11 +107,11 @@ it("assigns daemon routes during validation and emits both transports from the s
         if !base.is_absolute() {
             return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "cache home must be absolute"));
         }
-        Ok(base.join("ryi"))
+        Ok(base.join("probe"))
     }
 
     pub fn socket_path() -> Result<PathBuf, std::io::Error> {
-        Ok(cache_dir()?.join("ryi.sock"))
+        Ok(cache_dir()?.join("probe.sock"))
     }"
   `);
 });

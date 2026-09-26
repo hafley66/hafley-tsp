@@ -20,7 +20,7 @@ function returnType(program: Program, op: Operation): Pick<OperationDef, "return
   return item ? { returns: mapPropertyType(item), returnsStream: true } : { returns: mapPropertyType(t) };
 }
 
-function operationDef(program: Program, http: HttpOperation): OperationDef {
+function operationDef(program: Program, http: HttpOperation, daemon: boolean): OperationDef {
   const sources = new Map<Type, { source: ParamSource; name?: string }>();
   for (const p of http.parameters.parameters) {
     if (p.type === "path" || p.type === "query" || p.type === "header") sources.set(p.param, { source: p.type, ...(p.type === "header" ? { name: p.name } : {}) });
@@ -62,7 +62,7 @@ function operationDef(program: Program, http: HttpOperation): OperationDef {
     ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf } : {}),
     ...(clap?.requiredOneOfName ? { requiredOneOfName: clap.requiredOneOfName } : {}),
     verb: http.verb,
-    path: http.uriTemplate,
+    path: daemon ? http.path : http.uriTemplate,
     params,
     ...returnType(program, http.operation),
   };
@@ -79,16 +79,17 @@ export function programToOps(program: Program): ProgramOps {
   if (!service) throw new Error("programToOps: no @service namespace with http operations");
   const doc = getDoc(program, service.namespace);
   const root = getClapRoot(program, service.namespace);
+  const daemon = getDaemon(program, service.namespace);
   return {
     types: programToTypeDefs(program, t => getDoc(program, t)),
     service: {
       name: service.namespace.name,
-      ...(getDaemon(program, service.namespace) ? { daemon: getDaemon(program, service.namespace) } : {}),
+      ...(daemon ? { daemon } : {}),
       ...(doc !== undefined ? { doc } : {}),
       ...(root?.args ? { rootArgs: root.args.name } : {}),
       ...(root?.afterHelp ? { afterHelp: root.afterHelp } : {}),
       ...(root?.argsConflictsWithSubcommands ? { argsConflictsWithSubcommands: true } : {}),
-      operations: service.operations.map((op: HttpOperation) => operationDef(program, op)),
+      operations: service.operations.map((op: HttpOperation) => operationDef(program, op, !!daemon)),
     },
   };
 }

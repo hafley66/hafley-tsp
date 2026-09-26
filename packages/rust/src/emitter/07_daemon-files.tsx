@@ -25,17 +25,13 @@ function pathFields(op: OpPlan, types: TypeDef[]): string[] {
   return [...names];
 }
 
-function buildEnv(bin: string): string {
-  return `${bin.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase()}_BUILD_GIT_HASH`;
-}
-
 function daemonFile(service: ServiceDef, plans: OpPlan[], types: TypeDef[], bin: string): string {
   const paths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => &[${pathFields(plan, types).map(name => JSON.stringify(name)).join(", ")}],`).join("\n");
   return template("daemon_auto")
     .replaceAll("__BIN__", bin)
     .replace("__SERVICE__", service.name)
-    .replace("__IDLE_SECS__", String(service.daemon?.idleSecs ?? 600))
-    .replace("__HANDSHAKE__", String(service.daemon?.handshake ?? true))
+    .replace("__IDLE_SECS__", String(service.daemon!.idleSecs))
+    .replace("__HANDSHAKE__", String(service.daemon!.handshake))
     .replace("        // __PATH_ARMS__", paths);
 }
 
@@ -50,13 +46,14 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   const inputMatch = inputs.length ? `matches!(verb, ${inputs.join(" | ")})` : "false";
   const methods = plans.filter(plan => plan.op.verb !== "post")
     .map(plan => `        ${JSON.stringify(plan.op.name)} => Method::${plan.op.verb.toUpperCase()},`).join("\n");
+  const paths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => ${JSON.stringify(plan.op.path)},`).join("\n");
   return template("client_auto")
     .replaceAll("__BIN__", bin)
     .replaceAll("__SERVER_BIN__", `${bin}-server`)
-    .replaceAll("__BUILD_ENV__", buildEnv(bin))
     .replaceAll("__CLI_TYPE__", pascalCase(bin))
     .replace("        // __COMMAND_ARMS__", arms)
     .replace("        // __METHOD_ARMS__", methods)
+    .replace("        // __PATH_ARMS__", paths)
     .replace("__INPUT_MATCH__", inputMatch);
 }
 
@@ -92,7 +89,6 @@ function serverFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   return template("server_auto")
     .replace("__SERVICE__", service.name)
     .replaceAll("__BIN__", bin)
-    .replaceAll("__BUILD_ENV__", buildEnv(bin))
     .replaceAll("__REQUEST_HEADER__", `x-${bin}-request`)
     .replace("// __HANDLERS__", handlers)
     .replace("// __INPUT_HANDLERS__", inputHandlers)

@@ -5,6 +5,13 @@ use serde::{Deserialize, Serialize};
 pub const IDLE_SECS: u64 = __IDLE_SECS__;
 pub const HANDSHAKE: bool = __HANDSHAKE__;
 
+pub fn executable_stamp(path: &Path) -> Result<String, std::io::Error> {
+    let metadata = std::fs::metadata(path)?;
+    let modified = metadata.modified()?.duration_since(std::time::UNIX_EPOCH)
+        .map_err(std::io::Error::other)?;
+    Ok(format!("{}:{}:{}", metadata.len(), modified.as_secs(), modified.subsec_nanos()))
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Request {
     pub request_root: PathBuf,
@@ -12,10 +19,8 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn new<T: Serialize>(verb: &str, request_root: PathBuf, args: &T) -> Result<Self, serde_json::Error> {
-        let mut args = serde_json::to_value(args)?;
-        resolve_paths(verb, &request_root, &mut args);
-        Ok(Self { request_root, args })
+    pub fn new<T: Serialize>(request_root: PathBuf, args: &T) -> Result<Self, serde_json::Error> {
+        Ok(Self { request_root, args: serde_json::to_value(args)? })
     }
 
     pub fn decode<T: serde::de::DeserializeOwned>(mut self, verb: &str) -> Result<T, String> {
