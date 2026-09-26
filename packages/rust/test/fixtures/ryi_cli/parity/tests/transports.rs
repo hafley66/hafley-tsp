@@ -54,6 +54,14 @@ async fn http(app: axum::Router, uri: &str, content_type: &str, body: &str) -> S
         }
     }
     let text = String::from_utf8(data).unwrap();
+    if ct == "application/x-ndjson" {
+        let rows: Vec<serde_json::Value> = text.lines().map(|line| serde_json::from_str(line).unwrap()).collect();
+        assert!(rows.last().unwrap().get("complete").is_some(), "{uri}: completion row");
+        if uri.contains("boom") {
+            assert_eq!(rows[rows.len() - 2], serde_json::json!({"error": "boom mid-stream"}));
+            assert_eq!(rows.last().unwrap(), &serde_json::json!({"complete": false, "rows": 1}));
+        }
+    }
     let first = text.lines().next().map(|l| &l[..l.len().min(40)]).unwrap_or("");
     format!("http {uri:28} status={status} ct={ct} layer={layer} lines={} first={first} | {end}", text.lines().count())
 }
@@ -85,17 +93,17 @@ async fn cli_and_axum_share_ops_streams_and_errors() {
     assert_eq!(
         table,
         "\
-cli  fast a b                     lines=2 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
-cli  fast a boom b                lines=1 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | error: boom mid-stream
-cli  fast                         lines=0 first= | complete
+cli  fast a b                     lines=3 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
+cli  fast a boom b                lines=3 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | error: boom mid-stream
+cli  fast                         lines=1 first={\"complete\":true,\"rows\":0} | complete
 cli  ingest /dev/stdin            lines=1 first={\"rows\":2,\"tables\":1} | complete
 cli  ingest /dev/stdin            lines=0 first= | error: expected ident at line 1 column 2
 cli  cleave src/a.rs#X src/b.rs --commit lines=1 first={\"files\":[\"src/b.rs\"],\"edits\":1,\"committ | complete
-bin  fast a b                     lines=2 exit=0 stderr=
-bin  fast a boom b                lines=1 exit=1 stderr=error: boom mid-stream
-http /fast?paths=a&paths=b        status=200 ct=application/jsonl layer= lines=2 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
-http /fast?paths=a&paths=boom&paths=b status=200 ct=application/jsonl layer= lines=1 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | error: boom mid-stream
-http /fast                        status=200 ct=application/jsonl layer= lines=0 first= | complete
+bin  fast a b                     lines=3 exit=0 stderr=
+bin  fast a boom b                lines=3 exit=1 stderr=error: boom mid-stream
+http /fast?paths=a&paths=b        status=200 ct=application/x-ndjson layer= lines=3 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
+http /fast?paths=a&paths=boom&paths=b status=200 ct=application/x-ndjson layer= lines=3 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
+http /fast                        status=200 ct=application/x-ndjson layer= lines=1 first={\"complete\":true,\"rows\":0} | complete
 http /ingest                      status=200 ct=application/json layer= lines=1 first={\"rows\":2,\"tables\":1} | complete
 http /ingest                      status=500 ct=text/plain; charset=utf-8 layer= lines=1 first=expected ident at line 1 column 2 | complete
 http /cleave?target=x&dest=y&commit=true status=200 ct=application/json layer=on lines=1 first={\"files\":[\"y\"],\"edits\":1,\"committed\":tru | complete"

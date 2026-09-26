@@ -45,19 +45,29 @@ impl IntoResponse for OpError {
 fn jsonl_response(produce: impl FnOnce(&mut dyn FnMut(OpResult<Vec<u8>>) -> bool) + Send + 'static) -> Response {
     let (tx, rx) = tokio::sync::mpsc::channel::<Result<Bytes, std::io::Error>>(64);
     tokio::task::spawn_blocking(move || {
+        let mut rows = 0u64;
+        let mut failed = false;
+        let mut connected = true;
         produce(&mut |line| {
-            let chunk = line
-                .map(|mut bytes| {
-                    bytes.push(b'\n');
-                    Bytes::from(bytes)
-                })
-                .map_err(|e| std::io::Error::other(e.0));
-            let failed = chunk.is_err();
-            tx.blocking_send(chunk).is_ok() && !failed
-        })
+            let mut bytes = match line {
+                Ok(bytes) => { rows += 1; bytes }
+                Err(error) => {
+                    failed = true;
+                    serde_json::to_vec(&serde_json::json!({"error": error.0})).expect("error row serializes")
+                }
+            };
+            bytes.push(b'\n');
+            connected = tx.blocking_send(Ok(Bytes::from(bytes))).is_ok();
+            connected && !failed
+        });
+        if connected {
+            let mut complete = serde_json::to_vec(&serde_json::json!({"complete": !failed, "rows": rows})).expect("completion row serializes");
+            complete.push(b'\n');
+            let _ = tx.blocking_send(Ok(Bytes::from(complete)));
+        }
     });
     let stream = futures_util::stream::unfold(rx, |mut rx| async move { rx.recv().await.map(|chunk| (chunk, rx)) });
-    ([(CONTENT_TYPE, "application/jsonl")], Body::from_stream(stream)).into_response()
+    ([(CONTENT_TYPE, "application/x-ndjson")], Body::from_stream(stream)).into_response()
 }
 
 fn jsonl_input<T: DeserializeOwned + Send + 'static>(body: Body) -> impl Iterator<Item = OpResult<T>> + Send {
