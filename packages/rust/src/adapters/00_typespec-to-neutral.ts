@@ -11,7 +11,7 @@ import type {
   Value,
   Program,
 } from "@typespec/compiler";
-import { getMinValue, getMaxValue, resolveEncodedName } from "@typespec/compiler";
+import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
 import { getClapArg, getClapModel } from "../../../decorator-def/src/clap.js";
 
 import type {
@@ -34,11 +34,13 @@ export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["
   const encoded = resolveEncodedName(program, prop, "application/x-clap");
   const minValue = getMinValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMinValue(program, prop.type) : undefined);
   const maxValue = getMaxValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMaxValue(program, prop.type) : undefined);
+  const minItems = getMinItems(program, prop);
   const cli = {
     ...(encoded !== prop.name ? { long: encoded } : {}),
     ...extra,
     ...(minValue !== undefined ? { minValue } : {}),
     ...(maxValue !== undefined ? { maxValue } : {}),
+    ...(minItems !== undefined && minItems >= 1 ? { required: true } : {}),
   };
   return Object.keys(cli).length ? cli : undefined;
 }
@@ -179,9 +181,9 @@ export function programToTypeDefs(
   const globalNs = program.getGlobalNamespaceType();
   const defs: TypeDef[] = [];
 
-  // Collect from user-defined namespaces (skip "TypeSpec" stdlib namespace)
+  // Decorator declarations are metadata, not domain types.
   for (const [name, childNs] of globalNs.namespaces) {
-    if (name === "TypeSpec") continue;
+    if (name === "TypeSpec" || name === "DecoratorDef" || name === "Clap") continue;
     defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
   }
 

@@ -40,6 +40,7 @@ const service: ServiceDef = {
       { name: "uses", type: str, source: "query", optional: true },
       { name: "timeout", type: uint, source: "query", default: 30, cli: { minValue: 1 } },
       { name: "trace", type: str, source: "header", headerName: "X-Trace", optional: true, cli: { skip: true } },
+      { name: "tags", type: { kind: "array", element: str }, source: "header", headerName: "X-Tag", cli: { skip: true } },
     ],
   }],
 };
@@ -62,8 +63,9 @@ describe("clap and HTTP field metadata", () => {
       ops.includes("conflicts_with = \"uses\""),
       ops.includes("value_parser = clap::value_parser!(u64).range(1..)"),
       http.includes("headers.get(\"X-Trace\")"),
+      http.includes("headers.get_all(\"X-Tag\")"),
       http.includes("headers: HeaderMap"),
-    ]).toEqual(Array(11).fill(true));
+    ]).toEqual(Array(12).fill(true));
   });
 
   it.skipIf(!process.env.CARGO_CHECK)("compiles the emitted clap and axum crate", () => {

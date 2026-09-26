@@ -75,6 +75,7 @@ export interface FieldPlan {
 
 function roleOf(param: OperationParam): CliRole {
   if (param.stream) return "stream";
+  if (param.cli?.positional) return "positional";
   if (param.source === "path") return "positional";
   if (param.source === "body" && param.type.kind === "model") return "flatten";
   return "flag";
@@ -93,9 +94,11 @@ function argOptions(prop: ModelProperty): string[] {
     ...defaultAttr(prop.default),
     ...(prop.cli?.valueName ? [`value_name = ${JSON.stringify(prop.cli.valueName)}`] : []),
     ...(prop.cli?.requires ? [`requires = ${JSON.stringify(prop.cli.requires)}`] : []),
+    ...(prop.cli?.requiresAll ? [`requires_all = [${prop.cli.requiresAll.map(n => JSON.stringify(n)).join(", ")}]`] : []),
     ...(prop.cli?.conflictsWith?.length === 1 ? [`conflicts_with = ${JSON.stringify(prop.cli.conflictsWith[0])}`] : []),
     ...(prop.cli?.conflictsWith && prop.cli.conflictsWith.length > 1 ? [`conflicts_with_all = [${prop.cli.conflictsWith.map(n => JSON.stringify(n)).join(", ")}]`] : []),
     ...(prop.cli?.valueDelimiter ? [`value_delimiter = ${JSON.stringify(prop.cli.valueDelimiter)}`] : []),
+    ...(prop.cli?.required ? ["required = true"] : []),
   ];
   if (prop.cli?.minValue !== undefined || prop.cli?.maxValue !== undefined) {
     const type = prop.type.kind === "scalar" ? prop.type.name : "u64";
@@ -225,6 +228,11 @@ export function httpField(plan: FieldPlan, registry: RefkeyRegistry): HttpField 
   }
   if (p.source === "header") {
     const base = mapType(p.type, registry);
+    if (p.type.kind === "array") {
+      const element = mapType(p.type.element, registry).code;
+      const expr = `headers.get_all(${JSON.stringify(p.headerName ?? p.name)}).iter().map(|v| v.to_str().map_err(|e| OpError(e.to_string()))?.parse::<${element}>().map_err(|e| OpError(e.to_string()))).collect::<Result<Vec<${element}>, OpError>>()?`;
+      return { field: f, structType: undefined, wildcard: false, expr };
+    }
     const read = `headers.get(${JSON.stringify(p.headerName ?? p.name)}).and_then(|v| v.to_str().ok()).map(|v| v.parse::<${base.code}>()).transpose().map_err(|e| OpError(e.to_string()))?`;
     const expr = p.default !== undefined
       ? `${read}.unwrap_or(${rustLiteral(p.default, p.type)})`

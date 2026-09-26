@@ -14,12 +14,14 @@ export interface ModelProperty {
     long?: string;
     valueName?: string;
     requires?: string;
+    requiresAll?: string[];
     conflictsWith?: string[];
     valueDelimiter?: string;
     positional?: boolean;
     skip?: boolean;
     minValue?: number;
     maxValue?: number;
+    required?: boolean;
   };
 }
 
