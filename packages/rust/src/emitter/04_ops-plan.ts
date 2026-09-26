@@ -106,6 +106,8 @@ function argOptions(prop: ModelProperty): string[] {
     ...(prop.cli?.conflictsWith && prop.cli.conflictsWith.length > 1 ? [`conflicts_with_all = [${prop.cli.conflictsWith.map(n => JSON.stringify(n)).join(", ")}]`] : []),
     ...(prop.cli?.valueDelimiter ? [`value_delimiter = ${rustChar(prop.cli.valueDelimiter)}`] : []),
     ...(prop.cli?.required ? ["required = true"] : []),
+    ...(prop.cli?.hidden ? ["hide = true"] : []),
+    ...(prop.cli?.global ? ["global = true"] : []),
   ];
   if (prop.cli?.minValue !== undefined || prop.cli?.maxValue !== undefined) {
     const type = prop.type.kind === "scalar" ? prop.type.name : "u64";

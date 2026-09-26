@@ -19,6 +19,8 @@ export interface ModelProperty {
     valueDelimiter?: string;
     positional?: boolean;
     skip?: boolean;
+    hidden?: boolean;
+    global?: boolean;
     minValue?: number;
     maxValue?: number;
     required?: boolean;
