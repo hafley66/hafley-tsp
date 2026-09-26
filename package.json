@@ -9,5 +9,10 @@
   },
   "scripts": {
     "graph": "node --import tsx/esm tools/tsp-dot.ts"
+  },
+  "pnpm": {
+    "overrides": {
+      "@typespec/asset-emitter": "0.79.1"
+    }
   }
 }
