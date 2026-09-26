@@ -55,6 +55,9 @@ describe("ops -> clap + axum", () => {
     const written = writeCrate(emitCrate(ops.types, { ops: { service: ops.service, bin: "ryi" } }), join(PARITY, "src"));
     expect(written.join(" ")).toMatchInlineSnapshot(`"models/mod.rs models/inputs.rs models/type_edge.rs models/fact_summary.rs models/call_edge.rs models/edit_plan.rs models/type_edge_kind.rs ops_auto.rs cli_auto.rs http_auto.rs lib.rs"`);
     expect(readFileSync(join(PARITY, "src/ops.rs"), "utf8").startsWith("// User-owned")).toBe(true);
+    const http = readFileSync(join(PARITY, "src/http_auto.rs"), "utf8");
+    expect(http).toContain('headers.get("X-Trace")');
+    expect(http).toContain("headers: HeaderMap");
   });
 
   it("OpenAPI carries the JSONL content type on the stream ops", async () => {
@@ -82,9 +85,10 @@ describe("ops -> clap + axum", () => {
   });
 
   it.skipIf(!process.env.CARGO_CHECK)("generated crate: clap parity with ryi's 0_cli.rs, CLI + axum streams", () => {
-    const out = execSync("cargo test 2>&1", { cwd: PARITY, encoding: "utf8" });
+    const out = execSync("cargo test 2>&1", { cwd: PARITY, encoding: "utf8", env: { ...process.env, SPREFA_BUILD_GIT_HASH: "test-hash", SPREFA_BUILD_DATETIME: "test-datetime" } });
     expect(out.split("\n").filter(l => l.startsWith("test ") && !l.includes("result")).sort().join("\n")).toMatchInlineSnapshot(`
       "test cli_and_axum_share_ops_streams_and_errors ... ok
+      test generated_cli_acceptance_matches_handwritten ... ok
       test generated_cli_matches_handwritten ... ok"
     `);
   });
