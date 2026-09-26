@@ -20,6 +20,7 @@ function file(node: any, path: string): string {
 
 const str = { kind: "scalar" as const, name: "string" };
 const uint = { kind: "scalar" as const, name: "uint64" };
+const path = { kind: "scalar" as const, name: "path", alias: "path" };
 const types: TypeDef[] = [
   {
     kind: "model", name: "Inputs", properties: [
@@ -39,6 +40,7 @@ const service: ServiceDef = {
       { name: "callers", type: str, source: "query", optional: true, cli: { valueName: "NAME", requires: "root", conflictsWith: ["uses"] } },
       { name: "uses", type: str, source: "query", optional: true },
       { name: "timeout", type: uint, source: "query", default: 30, cli: { minValue: 1 } },
+      { name: "output", type: path, source: "query", default: "-" },
       { name: "trace", type: str, source: "header", headerName: "X-Trace", optional: true, cli: { skip: true } },
       { name: "tags", type: { kind: "array", element: str }, source: "header", headerName: "X-Tag", cli: { skip: true } },
     ],
@@ -65,7 +67,8 @@ describe("clap and HTTP field metadata", () => {
       http.includes("headers.get(\"X-Trace\")"),
       http.includes("headers.get_all(\"X-Tag\")"),
       http.includes("headers: HeaderMap"),
-    ]).toEqual(Array(12).fill(true));
+      http.includes('query.output.unwrap_or(PathBuf::from("-"))'),
+    ]).toEqual(Array(13).fill(true));
   });
 
   it.skipIf(!process.env.CARGO_CHECK)("compiles the emitted clap and axum crate", () => {

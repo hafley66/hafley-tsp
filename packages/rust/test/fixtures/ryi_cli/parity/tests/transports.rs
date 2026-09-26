@@ -68,14 +68,14 @@ async fn cli_and_axum_share_ops_streams_and_errors() {
         cli(&["ryi", "fast", "a", "b"], ""),
         cli(&["ryi", "fast", "a", "boom", "b"], ""),
         cli(&["ryi", "fast"], ""),
-        cli(&["ryi", "ingest"], &format!("{EDGE}\n{EDGE}\n")),
-        cli(&["ryi", "ingest"], &format!("{EDGE}\nnot json\n{EDGE}\n")),
+        cli(&["ryi", "ingest", "/dev/stdin"], &format!("{EDGE}\n{EDGE}\n")),
+        cli(&["ryi", "ingest", "/dev/stdin"], &format!("{EDGE}\nnot json\n{EDGE}\n")),
         cli(&["ryi", "cleave", "src/a.rs#X", "src/b.rs", "--commit"], ""),
         bin(&["fast", "a", "b"]),
         bin(&["fast", "a", "boom", "b"]),
-        http(router(), "/fast/a/b", "application/json", "{}").await,
-        http(router(), "/fast/a/boom/b", "application/json", "{}").await,
-        http(router(), "/fast", "application/json", "{}").await,
+        http(router(), "/fast/a/b", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
+        http(router(), "/fast/a/boom/b", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
+        http(router(), "/fast", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
         http(router(), "/ingest", "application/jsonl", &format!("{EDGE}\n{EDGE}")).await,
         http(router(), "/ingest", "application/jsonl", &format!("{EDGE}\nnot json\n")).await,
         http(tagged, "/cleave/x/y?commit=true", "application/json", "").await,
@@ -88,8 +88,8 @@ async fn cli_and_axum_share_ops_streams_and_errors() {
 cli  fast a b                     lines=2 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
 cli  fast a boom b                lines=1 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | error: boom mid-stream
 cli  fast                         lines=0 first= | complete
-cli  ingest                       lines=1 first={\"rows\":2,\"tables\":1} | complete
-cli  ingest                       lines=0 first= | error: expected ident at line 1 column 2
+cli  ingest /dev/stdin            lines=1 first={\"rows\":2,\"tables\":1} | complete
+cli  ingest /dev/stdin            lines=0 first= | error: expected ident at line 1 column 2
 cli  cleave src/a.rs#X src/b.rs --commit lines=1 first={\"files\":[\"src/b.rs\"],\"edits\":1,\"committ | complete
 bin  fast a b                     lines=2 exit=0 stderr=
 bin  fast a boom b                lines=1 exit=1 stderr=error: boom mid-stream

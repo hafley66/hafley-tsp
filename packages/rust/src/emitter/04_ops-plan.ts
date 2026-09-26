@@ -45,7 +45,9 @@ function isBool(t: ModelProperty["type"]): boolean {
 
 function rustLiteral(value: ParamValue, t: ModelProperty["type"]): string {
   if (typeof value === "string") {
-    return t.kind === "enum" ? `${t.name}::${pascalCase(value)}` : `String::from(${JSON.stringify(value)})`;
+    if (t.kind === "enum") return `${t.name}::${pascalCase(value)}`;
+    if (t.kind === "scalar" && (t.alias === "path" || t.name === "path")) return `PathBuf::from(${JSON.stringify(value)})`;
+    return `String::from(${JSON.stringify(value)})`;
   }
   return String(value);
 }
