@@ -23,11 +23,15 @@
   "dependencies": {
     "@alloy-js/core": "0.23.0-dev.12",
     "@typespec/compiler": "^1.0.0",
+    "@typespec/http": "~1.10.0",
+    "@typespec/streams": "~0.80.0",
     "pathe": "^2.0.3"
   },
   "devDependencies": {
     "@alloy-js/rollup-plugin": "^0.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
+    "@typespec/openapi": "~1.10.0",
+    "@typespec/openapi3": "~1.10.0",
     "typescript": "^5.8.2",
     "vitest": "^3.0.0"
   },

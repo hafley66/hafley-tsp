@@ -31,6 +31,7 @@ const SCALAR_MAP: Record<string, RustType> = {
   plainTime:   { code: "NaiveTime", externalUses: ["chrono::NaiveTime"] },
   duration:       { code: "Duration", externalUses: ["std::time::Duration"] },
   url:            { code: "String", externalUses: [] },
+  path:           { code: "PathBuf", externalUses: ["std::path::PathBuf"] },
   uuid:           { code: "Uuid", externalUses: ["uuid::Uuid"] },
   decimal:        { code: "Decimal", externalUses: ["rust_decimal::Decimal"] },
   decimal128:     { code: "Decimal", externalUses: ["rust_decimal::Decimal"] },
@@ -72,7 +73,7 @@ export function mapType(type: ModelProperty["type"], registry: RefkeyRegistry): 
 }
 
 function mapScalar(type: ScalarType): RustType {
-  const mapped = SCALAR_MAP[type.name];
+  const mapped = (type.alias && SCALAR_MAP[type.alias]) || SCALAR_MAP[type.name];
   if (mapped) return mapped;
   return { code: type.name, externalUses: [] };
 }

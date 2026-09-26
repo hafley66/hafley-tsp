@@ -4,6 +4,7 @@ import { EnumDeclaration, UnitVariant } from "../components/1_declarations/1_Enu
 import { SourceFile } from "../components/3_files/0_SourceFile.js";
 import { mapType, wrapOptional, type RefkeyRegistry } from "./01_type-map.js";
 import type { ModelDef, EnumDef, TypeDef } from "./00_types.js";
+import type { ModelExtras } from "./04_ops-plan.js";
 
 const MODEL_DERIVES = ["Debug", "Clone", "Serialize", "Deserialize"];
 const MODEL_EXTERNAL_USES = ["serde::Deserialize", "serde::Serialize"];
@@ -15,7 +16,7 @@ export interface EmittedType {
   jsx: any;
 }
 
-export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey): EmittedType {
+export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras): EmittedType {
   const key = rk ?? refkey();
   const fileExternalUses = [...MODEL_EXTERNAL_USES];
 
@@ -23,7 +24,7 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
     let rt = mapType(prop.type, registry);
     if (prop.optional) rt = wrapOptional(rt);
     fileExternalUses.push(...rt.externalUses);
-    return { name: prop.name, typeCode: rt.code };
+    return { name: prop.name, typeCode: rt.code, attrs: extras?.fieldAttrs.get(prop.name) };
   });
 
   const uniqueUses = [...new Set(fileExternalUses)];
@@ -34,11 +35,11 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
       <StructDeclaration
         name={model.name}
         refkey={key}
-        derive={MODEL_DERIVES}
+        derive={[...MODEL_DERIVES, ...(extras?.derives ?? [])]}
       >
         <List hardline>
           {fields.map(f => (
-            <StructField name={f.name} type={f.typeCode} />
+            <StructField name={f.name} type={f.typeCode} attrs={f.attrs} />
           ))}
         </List>
       </StructDeclaration>
@@ -48,7 +49,7 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
   return { name: model.name, refkey: key, jsx };
 }
 
-export function emitEnum(def: EnumDef, registry: RefkeyRegistry, rk?: Refkey): EmittedType {
+export function emitEnum(def: EnumDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras): EmittedType {
   const key = rk ?? refkey();
   const fileExternalUses = [...MODEL_EXTERNAL_USES];
   const uniqueUses = [...new Set(fileExternalUses)];
@@ -59,7 +60,7 @@ export function emitEnum(def: EnumDef, registry: RefkeyRegistry, rk?: Refkey): E
       <EnumDeclaration
         name={def.name}
         refkey={key}
-        derive={ENUM_DERIVES}
+        derive={[...ENUM_DERIVES, ...(extras?.derives ?? [])]}
       >
         <List hardline>
           {def.members.map(m => (
@@ -73,8 +74,8 @@ export function emitEnum(def: EnumDef, registry: RefkeyRegistry, rk?: Refkey): E
   return { name: def.name, refkey: key, jsx };
 }
 
-export function emitTypeDef(def: TypeDef, registry: RefkeyRegistry, rk?: Refkey): EmittedType {
-  return def.kind === "model" ? emitModel(def, registry, rk) : emitEnum(def, registry, rk);
+export function emitTypeDef(def: TypeDef, registry: RefkeyRegistry, rk?: Refkey, extras?: ModelExtras): EmittedType {
+  return def.kind === "model" ? emitModel(def, registry, rk, extras) : emitEnum(def, registry, rk, extras);
 }
 
 export function toSnakeCase(name: string): string {
