@@ -73,12 +73,12 @@ async fn cli_and_axum_share_ops_streams_and_errors() {
         cli(&["ryi", "cleave", "src/a.rs#X", "src/b.rs", "--commit"], ""),
         bin(&["fast", "a", "b"]),
         bin(&["fast", "a", "boom", "b"]),
-        http(router(), "/fast/a/b", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
-        http(router(), "/fast/a/boom/b", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
+        http(router(), "/fast?paths=a&paths=b", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
+        http(router(), "/fast?paths=a&paths=boom&paths=b", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
         http(router(), "/fast", "application/json", r#"{"paths":[],"patterns":[],"entry":[]}"#).await,
         http(router(), "/ingest", "application/jsonl", &format!("{EDGE}\n{EDGE}")).await,
         http(router(), "/ingest", "application/jsonl", &format!("{EDGE}\nnot json\n")).await,
-        http(tagged, "/cleave/x/y?commit=true", "application/json", "").await,
+        http(tagged, "/cleave?target=x&dest=y&commit=true", "application/json", "").await,
     ];
     let table = rows.join("\n");
     println!("{table}");
@@ -93,11 +93,11 @@ cli  ingest /dev/stdin            lines=0 first= | error: expected ident at line
 cli  cleave src/a.rs#X src/b.rs --commit lines=1 first={\"files\":[\"src/b.rs\"],\"edits\":1,\"committ | complete
 bin  fast a b                     lines=2 exit=0 stderr=
 bin  fast a boom b                lines=1 exit=1 stderr=error: boom mid-stream
-http /fast/a/b                    status=200 ct=application/jsonl layer= lines=2 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
-http /fast/a/boom/b               status=200 ct=application/jsonl layer= lines=1 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | error: boom mid-stream
+http /fast?paths=a&paths=b        status=200 ct=application/jsonl layer= lines=2 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
+http /fast?paths=a&paths=boom&paths=b status=200 ct=application/jsonl layer= lines=1 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | error: boom mid-stream
 http /fast                        status=200 ct=application/jsonl layer= lines=0 first= | complete
 http /ingest                      status=200 ct=application/json layer= lines=1 first={\"rows\":2,\"tables\":1} | complete
 http /ingest                      status=500 ct=text/plain; charset=utf-8 layer= lines=1 first=expected ident at line 1 column 2 | complete
-http /cleave/x/y?commit=true      status=200 ct=application/json layer=on lines=1 first={\"files\":[\"y\"],\"edits\":1,\"committed\":tru | complete"
+http /cleave?target=x&dest=y&commit=true status=200 ct=application/json layer=on lines=1 first={\"files\":[\"y\"],\"edits\":1,\"committed\":tru | complete"
     );
 }

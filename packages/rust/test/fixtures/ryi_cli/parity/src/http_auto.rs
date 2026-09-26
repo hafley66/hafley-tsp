@@ -90,21 +90,17 @@ fn jsonl_input<T: DeserializeOwned + Send + 'static>(body: Body) -> impl Iterato
     std::iter::from_fn(move || rx.blocking_recv())
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct FastPath {
-  pub paths: Option<String>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct FastQuery {
+  #[serde(default)]
+  pub paths: Vec<String>,
   pub sqlite: Option<PathBuf>,
   pub lines: Option<bool>,
 }
 
-pub async fn fast(path: Option<Path<FastPath>>, Query(query): Query<FastQuery>, Json(body): Json<Inputs>) -> Response {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn fast(Query(query): Query<FastQuery>, Json(body): Json<Inputs>) -> Response {
   let args = FastArgs {
-      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
+      paths: query.paths,
       inputs: body,
       sqlite: query.sqlite,
       lines: query.lines.unwrap_or(false),
@@ -118,13 +114,10 @@ pub async fn fast(path: Option<Path<FastPath>>, Query(query): Query<FastQuery>, 
   })
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct SlowPath {
-  pub paths: Option<String>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct SlowQuery {
+  #[serde(default)]
+  pub paths: Vec<String>,
   pub sqlite: Option<PathBuf>,
   pub lines: Option<bool>,
   pub scip_index: Option<PathBuf>,
@@ -132,10 +125,9 @@ pub struct SlowQuery {
   pub scip_timeout: Option<u64>,
 }
 
-pub async fn slow(path: Option<Path<SlowPath>>, Query(query): Query<SlowQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn slow(Query(query): Query<SlowQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
   let args = SlowArgs {
-      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
+      paths: query.paths,
       inputs: body,
       sqlite: query.sqlite,
       lines: query.lines.unwrap_or(false),
@@ -147,13 +139,10 @@ pub async fn slow(path: Option<Path<SlowPath>>, Query(query): Query<SlowQuery>, 
   Ok(Json(out))
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct ScipPath {
-  pub paths: Option<String>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct ScipQuery {
+  #[serde(default)]
+  pub paths: Vec<String>,
   pub sqlite: Option<PathBuf>,
   pub lines: Option<bool>,
   pub scip_index: Option<PathBuf>,
@@ -166,10 +155,9 @@ pub struct ScipQuery {
   pub scip_build: Option<bool>,
 }
 
-pub async fn scip(path: Option<Path<ScipPath>>, Query(query): Query<ScipQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn scip(Query(query): Query<ScipQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
   let args = ScipArgs {
-      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
+      paths: query.paths,
       inputs: body,
       sqlite: query.sqlite,
       lines: query.lines.unwrap_or(false),
@@ -186,13 +174,10 @@ pub async fn scip(path: Option<Path<ScipPath>>, Query(query): Query<ScipQuery>, 
   Ok(Json(out))
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct GraphPath {
-  pub paths: Option<String>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct GraphQuery {
+  #[serde(default)]
+  pub paths: Vec<String>,
   pub callers: Option<String>,
   pub uses: Option<String>,
   pub from: Option<String>,
@@ -210,10 +195,9 @@ pub struct GraphQuery {
   pub go_checker: Option<bool>,
 }
 
-pub async fn graph(path: Option<Path<GraphPath>>, Query(query): Query<GraphQuery>, Json(body): Json<Inputs>) -> OpResult<Json<Vec<CallEdge>>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn graph(Query(query): Query<GraphQuery>, Json(body): Json<Inputs>) -> OpResult<Json<Vec<CallEdge>>> {
   let args = GraphArgs {
-      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
+      paths: query.paths,
       inputs: body,
       callers: query.callers,
       uses: query.uses,
@@ -235,14 +219,10 @@ pub async fn graph(path: Option<Path<GraphPath>>, Query(query): Query<GraphQuery
   Ok(Json(out))
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct CleavePath {
-  pub target: Option<String>,
-  pub dest: Option<PathBuf>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct CleaveQuery {
+  pub target: Option<String>,
+  pub dest: Option<PathBuf>,
   pub list: Option<PathBuf>,
   pub root: Option<PathBuf>,
   pub state: Option<PathBuf>,
@@ -253,11 +233,10 @@ pub struct CleaveQuery {
   pub json: Option<bool>,
 }
 
-pub async fn cleave(path: Option<Path<CleavePath>>, Query(query): Query<CleaveQuery>) -> OpResult<Json<EditPlan>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn cleave(Query(query): Query<CleaveQuery>) -> OpResult<Json<EditPlan>> {
   let args = CleaveArgs {
-      target: path.target,
-      dest: path.dest,
+      target: query.target,
+      dest: query.dest,
       list: query.list,
       root: query.root,
       state: query.state,
@@ -271,14 +250,10 @@ pub async fn cleave(path: Option<Path<CleavePath>>, Query(query): Query<CleaveQu
   Ok(Json(out))
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct MovePath {
-  pub old: Option<PathBuf>,
-  pub new: Option<PathBuf>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct MoveQuery {
+  pub old: Option<PathBuf>,
+  pub new: Option<PathBuf>,
   pub list: Option<PathBuf>,
   #[serde(default)]
   pub root: Vec<PathBuf>,
@@ -291,11 +266,10 @@ pub struct MoveQuery {
   pub text_refs: Option<bool>,
 }
 
-pub async fn r#move(path: Option<Path<MovePath>>, Query(query): Query<MoveQuery>) -> OpResult<Json<EditPlan>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn r#move(Query(query): Query<MoveQuery>) -> OpResult<Json<EditPlan>> {
   let args = MoveArgs {
-      old: path.old,
-      new: path.new,
+      old: query.old,
+      new: query.new,
       list: query.list,
       root: query.root,
       verify_cwd: query.verify_cwd,
@@ -310,14 +284,10 @@ pub async fn r#move(path: Option<Path<MovePath>>, Query(query): Query<MoveQuery>
   Ok(Json(out))
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct RenamePath {
-  pub target: Option<String>,
-  pub new: Option<String>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct RenameQuery {
+  pub target: Option<String>,
+  pub new: Option<String>,
   pub list: Option<PathBuf>,
   pub root: Option<PathBuf>,
   pub state: Option<PathBuf>,
@@ -329,11 +299,10 @@ pub struct RenameQuery {
   pub json: Option<bool>,
 }
 
-pub async fn rename(path: Option<Path<RenamePath>>, Query(query): Query<RenameQuery>) -> OpResult<Json<EditPlan>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn rename(Query(query): Query<RenameQuery>) -> OpResult<Json<EditPlan>> {
   let args = RenameArgs {
-      target: path.target,
-      new: path.new,
+      target: query.target,
+      new: query.new,
       list: query.list,
       root: query.root,
       state: query.state,
@@ -348,23 +317,19 @@ pub async fn rename(path: Option<Path<RenamePath>>, Query(query): Query<RenameQu
   Ok(Json(out))
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct QueryPath {
-  pub paths: Option<String>,
-}
-
 #[derive(Deserialize, Debug)]
 pub struct QueryQuery {
+  #[serde(default)]
+  pub paths: Vec<String>,
   pub lang: Option<String>,
   pub query: String,
   pub digest: Option<String>,
   pub sqlite: Option<PathBuf>,
 }
 
-pub async fn query(path: Option<Path<QueryPath>>, Query(query): Query<QueryQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
+pub async fn query(Query(query): Query<QueryQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
   let args = QueryArgs {
-      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
+      paths: query.paths,
       inputs: body,
       lang: query.lang,
       query: query.query,
@@ -492,21 +457,13 @@ pub async fn trail(Path(path): Path<TrailPath>) -> OpResult<Json<FactSummary>> {
 pub fn router() -> axum::Router {
   axum::Router::new()
       .route("/fast", post(fast))
-      .route("/fast/{*paths}", post(fast))
       .route("/slow", post(slow))
-      .route("/slow/{*paths}", post(slow))
       .route("/scip", post(scip))
-      .route("/scip/{*paths}", post(scip))
       .route("/graph", post(graph))
-      .route("/graph/{*paths}", post(graph))
       .route("/cleave", post(cleave))
-      .route("/cleave/{target}/{dest}", post(cleave))
       .route("/move", post(r#move))
-      .route("/move/{old}/{new}", post(r#move))
       .route("/rename", post(rename))
-      .route("/rename/{target}/{new}", post(rename))
       .route("/query", post(query))
-      .route("/query/{*paths}", post(query))
       .route("/region/{target}/{id}", post(region))
       .route("/watch", post(watch))
       .route("/diff", post(diff))

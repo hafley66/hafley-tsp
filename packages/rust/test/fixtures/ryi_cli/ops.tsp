@@ -19,7 +19,7 @@ namespace Ryi;
 @post
 op fast(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @skip @path paths?: string[],
+  @skip @query paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
@@ -35,7 +35,7 @@ op fast(
 @post
 op slow(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @skip @path paths?: string[],
+  @skip @query paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
@@ -60,7 +60,7 @@ op slow(
 @post
 op scip(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @skip @path paths?: string[],
+  @skip @query paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
@@ -101,7 +101,7 @@ op scip(
 @requiredOneOf(#["callers", "uses", "from", "call_path", "type_path", "flow_path"], "arm")
 op graph(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @skip @path paths?: string[],
+  @skip @query paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
@@ -156,10 +156,10 @@ op graph(
 @post
 op cleave(
   /** SRC#ITEM (omit with --list) */
-  @path target?: string,
+  @positional @query target?: string,
 
   /** Destination file, created if missing (omit with --list) */
-  @path dest?: path,
+  @positional @query dest?: path,
 
   /** TSV of SRC#ITEM<TAB>DEST rows, applied in order as one stage */
   @conflictsWith(#["target", "dest", "json"]) @query list?: path,
@@ -191,10 +191,10 @@ op cleave(
 @post
 op `move`(
   /** File to move (omit with --list) */
-  @path old?: path,
+  @positional @query old?: path,
 
   /** Destination */
-  @path new?: path,
+  @positional @query new?: path,
 
   /** TSV of old<TAB>new rows */
   @query list?: path,
@@ -230,10 +230,10 @@ op `move`(
 @afterHelp("Exit codes: 2 plan error, 3 ambiguous (pass --at), 4 not found, 5 inexact, 6 dynamic, 7 plan has abstains")
 op rename(
   /** FILE#OLD (omit with --list) */
-  @path target?: string,
+  @positional @query target?: string,
 
   /** New name */
-  @path new?: string,
+  @positional @query new?: string,
 
   /** TSV of anchor<TAB>old<TAB>new rows */
   @query list?: path,
@@ -268,7 +268,7 @@ op rename(
 @post
 op query(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @skip @path paths?: string[],
+  @skip @query paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
