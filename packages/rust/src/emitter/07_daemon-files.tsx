@@ -60,7 +60,7 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
 }
 
 function inputHandler(plan: OpPlan, bin: string): string {
-  const response = plan.returnsStream ? "jsonl_response(out).await" : "raw_response(out).await";
+  const response = plan.returnsStream ? "jsonl_response(out, diagnostics).await" : "raw_response(out, &diagnostics).await";
   const header = `x-${bin}-request`;
   return `async fn ${plan.fn}(headers: HeaderMap, body: Body) -> Response {
     let encoded = match headers.get(${JSON.stringify(header)}).and_then(|header| header.to_str().ok()) {
@@ -76,9 +76,12 @@ function inputHandler(plan: OpPlan, bin: string): string {
         Err(error) => return bad_request(error.to_string()),
     };
     let root = request.request_root.clone();
+    tracing::Span::current().record("request_root", &tracing::field::display(root.display()));
     let args: ${plan.argsName} = match request.decode(${JSON.stringify(plan.op.name)}) { Ok(args) => args, Err(error) => return bad_request(error) };
     let input = jsonl_input(body);
-    let out = tokio::task::spawn_blocking(move || crate::ops::with_request_root(root, || crate::ops::${plan.fn}(&args, input))).await;
+    let diagnostics = Arc::new(Mutex::new(Vec::new()));
+    let captured = diagnostics.clone();
+    let out = tokio::task::spawn_blocking(move || crate::ops::with_request_context(root, Some(captured), || crate::ops::${plan.fn}(&args, input))).await;
     match out { Ok(out) => ${response}, Err(error) => error_response(OpError(error.to_string(), 1)) }
 }`;
 }
@@ -89,12 +92,14 @@ function serverFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   ).join("\n");
   const inputHandlers = plans.filter(plan => plan.input).map(plan => inputHandler(plan, bin)).join("\n\n");
   const routes = plans.map(plan => `        .route(${JSON.stringify(plan.op.path)}, ${plan.op.verb}(${plan.fn}))`).join("\n");
+  const verbArms = plans.map(plan => `        ${JSON.stringify(plan.op.path)} => ${JSON.stringify(plan.op.name)},`).join("\n");
   return template("server_auto")
     .replace("__SERVICE__", service.name)
     .replaceAll("__BIN__", bin)
     .replaceAll("__REQUEST_HEADER__", `x-${bin}-request`)
     .replace("// __HANDLERS__", handlers)
     .replace("// __INPUT_HANDLERS__", inputHandlers)
+    .replace("        // __VERB_ARMS__", verbArms)
     .replace("        // __ROUTES__", routes);
 }
 

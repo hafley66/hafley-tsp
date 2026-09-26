@@ -49,6 +49,13 @@ fn empty_body() -> ClientBody {
     Full::new(Bytes::new()).map_err(|never| match never {}).boxed_unsync()
 }
 
+fn append_diagnostics(bytes: &mut Vec<u8>, headers: &hyper::HeaderMap) -> Result<(), ClientError> {
+    if let Some(value) = headers.get("x-__BIN__-stderr") {
+        bytes.extend(base64::engine::general_purpose::STANDARD.decode(value.as_bytes())?);
+    }
+    Ok(())
+}
+
 async fn handshake(socket: &Path, stamp: &str) -> Result<StatusCode, ClientError> {
     let request = Request::builder().method(Method::GET).uri("http://__BIN__/__handshake")
         .header("x-__BIN__-build", stamp).body(empty_body())?;
@@ -102,15 +109,15 @@ fn command(cli: &__CLI_TYPE__) -> Result<(&'static str, serde_json::Value), Clie
 }
 
 async fn run() -> Result<i32, ClientError> {
-    let original_argv: Vec<std::ffi::OsString> = std::env::args_os().skip(1).filter(|arg| arg != "--fresh").collect();
+    let original_argv: Vec<std::ffi::OsString> = std::env::args_os().skip(1).filter(|arg| arg != "--daemon-client").collect();
     let mut argv: Vec<std::ffi::OsString> = std::env::args_os().collect();
-    if argv.get(1).is_some_and(|arg| arg == "--fresh") && argv.len() > 2 {
-        let fresh = argv.remove(1);
-        argv.insert(2, fresh);
+    if argv.get(1).is_some_and(|arg| arg == "--daemon-client") && argv.len() > 2 {
+        let daemon_client = argv.remove(1);
+        argv.insert(2, daemon_client);
     }
     let cli = __CLI_TYPE__::parse_from(argv);
     let server = server_binary()?;
-    if cli.fresh {
+    if !cli.daemon_client {
         let error = Command::new(server).args(original_argv)
             .stdin(Stdio::inherit()).stdout(Stdio::inherit()).stderr(Stdio::inherit()).exec();
         return Err(error.into());
@@ -128,7 +135,7 @@ async fn run() -> Result<i32, ClientError> {
         // __PATH_ARMS__
         _ => return Err(format!("no HTTP path for {verb}").into()),
     };
-    let mut builder = Request::builder().method(method).uri(format!("http://__BIN__{path}"));
+    let mut builder = Request::builder().method(method).uri(format!("http://__BIN__{path}")).header("te", "trailers");
     let body = if __INPUT_MATCH__ {
         let metadata = base64::engine::general_purpose::STANDARD.encode(json.as_bytes());
         builder = builder.header("x-__BIN__-request", metadata).header("content-type", "application/x-ndjson");
@@ -144,47 +151,41 @@ async fn run() -> Result<i32, ClientError> {
     };
     let response = send(builder.body(body)?, &socket).await?;
     let status = response.status();
-    let error_code = response.headers().get("x-__BIN__-exit-code")
+    let mut error_code = response.headers().get("x-__BIN__-exit-code")
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.parse::<i32>().ok());
+    let mut diagnostics = Vec::new();
+    append_diagnostics(&mut diagnostics, response.headers())?;
     let mut body = response.into_body();
     if !status.is_success() {
         let mut stderr = tokio::io::stderr();
         while let Some(frame) = body.frame().await {
-            if let Ok(bytes) = frame?.into_data() { stderr.write_all(&bytes).await?; }
+            match frame?.into_data() {
+                Ok(bytes) => stderr.write_all(&bytes).await?,
+                Err(frame) => if let Ok(headers) = frame.into_trailers() {
+                    append_diagnostics(&mut diagnostics, &headers)?;
+                    error_code = headers.get("x-__BIN__-exit-code").and_then(|value| value.to_str().ok()).and_then(|value| value.parse().ok()).or(error_code);
+                },
+            }
         }
+        stderr.write_all(&diagnostics).await?;
         stderr.flush().await?;
         return Ok(error_code.unwrap_or(if status == StatusCode::BAD_REQUEST { 2 } else { 1 }));
     }
-    let mut stdout = tokio::io::stdout();
-    let mut pending = Vec::new();
-    let mut line = Vec::new();
+    let mut stdout = tokio::io::BufWriter::with_capacity(64 * 1024, tokio::io::stdout());
     while let Some(frame) = body.frame().await {
         let frame = frame?;
-        if let Ok(bytes) = frame.into_data() {
-            for byte in &bytes {
-                line.push(*byte);
-                if *byte == b'\n' {
-                    if !pending.is_empty() { stdout.write_all(&pending).await?; }
-                    pending = std::mem::take(&mut line);
-                }
-            }
+        match frame.into_data() {
+            Ok(bytes) => stdout.write_all(&bytes).await?,
+            Err(frame) => if let Ok(headers) = frame.into_trailers() {
+                append_diagnostics(&mut diagnostics, &headers)?;
+                error_code = headers.get("x-__BIN__-exit-code").and_then(|value| value.to_str().ok()).and_then(|value| value.parse().ok()).or(error_code);
+            },
         }
     }
-    if !line.is_empty() {
-        if !pending.is_empty() { stdout.write_all(&pending).await?; }
-        pending = line;
-    }
-    let mut exit = 0;
-    if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&pending) {
-        if value.get("error").is_some() {
-            exit = value.get("code").and_then(serde_json::Value::as_i64).unwrap_or(1) as i32;
-        }
-    }
-    if exit == 0 { stdout.write_all(&pending).await?; }
-    else { tokio::io::stderr().write_all(&pending).await?; }
+    tokio::io::stderr().write_all(&diagnostics).await?;
     stdout.flush().await?;
-    Ok(exit)
+    Ok(error_code.unwrap_or(0))
 }
 
 pub async fn main() -> ExitCode {

@@ -163,7 +163,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
           >
             <StructField name="cmd" type={root ? <>Option{"<"}{props.keys.cmd}{">"}</> : props.keys.cmd} attrs={["command(subcommand)"]} />
             {root && <StructField name="file" type={root} attrs={["command(flatten)"]} />}
-            {props.service.daemon && <StructField name="fresh" type="bool" attrs={["doc = \"Run without the resident daemon (server mode is already fresh)\"", "arg(long, global = true)"]} />}
+            {props.service.daemon && <StructField name="daemon_client" type="bool" attrs={["doc = \"Send this command to the resident daemon (ignored by the server binary)\"", "arg(long, global = true)"]} />}
           </StructDeclaration>,
           <EnumDeclaration name="Cmd" refkey={props.keys.cmd} derive={["clap::Subcommand", "Debug"]}>
             <List hardline>

@@ -39,6 +39,7 @@ it("assigns daemon routes during validation and emits both transports from the s
     "// Generated from DaemonFixture's @daemon service and path-valued operation parameters.
     use std::path::{Path, PathBuf};
     use serde::{Deserialize, Serialize};
+    use sha2::{Digest as _, Sha256};
 
     pub const IDLE_SECS: u64 = 37;
     pub const HANDSHAKE: bool = false;
@@ -126,7 +127,23 @@ it("assigns daemon routes during validation and emits both transports from the s
     }
 
     pub fn socket_path() -> Result<PathBuf, std::io::Error> {
-        Ok(cache_dir()?.join("probe.sock"))
+        Ok(socket_path_at(&cache_dir()?))
+    }
+
+    pub fn socket_path_at(cache: &Path) -> PathBuf {
+        use std::os::unix::ffi::OsStrExt as _;
+        let socket = cache.join("probe.sock");
+        if socket.as_os_str().as_bytes().len() <= 100 { return socket; }
+        let digest = Sha256::digest(cache.as_os_str().as_bytes());
+        let digest = digest[..10].iter().fold(String::new(), |mut out, byte| {
+            use std::fmt::Write as _;
+            write!(out, "{byte:02x}").expect("hex digest");
+            out
+        });
+        let name = format!("probe-{digest}");
+        let short = std::env::temp_dir().join(&name).join("probe.sock");
+        if short.as_os_str().as_bytes().len() <= 100 { return short; }
+        PathBuf::from("/tmp").join(name).join("probe.sock")
     }"
   `);
 });
