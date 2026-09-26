@@ -4,3 +4,5 @@ export { generateTsp, generateTs, generateStateConfig, generateDecoratorLibrary 
 export { $lib } from "./lib.js";
 export { getClapArg, getClapModel, getClapRoot, getClapOperation } from "./clap.js";
 export type { ClapArg, ClapModel, ClapRoot } from "./clap.js";
+export { getDaemon } from "./daemon.js";
+export type { DaemonOptions } from "./daemon.js";

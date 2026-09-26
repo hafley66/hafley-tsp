@@ -82,6 +82,9 @@ importers:
       '@typespec/compiler':
         specifier: ^1.0.0
         version: 1.10.0(@types/node@25.5.0)
+      '@typespec/http':
+        specifier: ~1.10.0
+        version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))
     devDependencies:
       '@alloy-js/rollup-plugin':
         specifier: ^0.1.0
