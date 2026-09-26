@@ -52,7 +52,10 @@ fn empty_body() -> ClientBody {
 async fn handshake(socket: &Path, stamp: &str) -> Result<StatusCode, ClientError> {
     let request = Request::builder().method(Method::GET).uri("http://__BIN__/__handshake")
         .header("x-__BIN__-build", stamp).body(empty_body())?;
-    Ok(send(request, socket).await?.status())
+    let response = send(request, socket).await?;
+    let status = response.status();
+    response.into_body().collect().await?;
+    Ok(status)
 }
 
 async fn ready_socket(server: &Path) -> Result<PathBuf, ClientError> {
