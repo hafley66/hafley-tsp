@@ -23,6 +23,7 @@ const SCALAR_MAP: Record<string, RustType> = {
   uint16:      { code: "u16", externalUses: [] },
   uint32:      { code: "u32", externalUses: [] },
   uint64:      { code: "u64", externalUses: [] },
+  usize:       { code: "usize", externalUses: [] },
   float32:     { code: "f32", externalUses: [] },
   float64:     { code: "f64", externalUses: [] },
   bytes:       { code: "Vec<u8>", externalUses: [] },

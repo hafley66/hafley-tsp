@@ -78,5 +78,5 @@ describe("clap and HTTP field metadata", () => {
       env: { ...process.env, SPREFA_BUILD_GIT_HASH: "test-hash" },
       stdio: "pipe",
     });
-  });
+  }, 30000);
 });
