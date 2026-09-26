@@ -168,6 +168,20 @@ export function domainExtras(types: TypeDef[], service: ServiceDef): Map<string,
   const byName = new Map(types.map(t => [t.name, t]));
   const extras = new Map<string, ModelExtras>();
   const enumsUsed = new Set<string>();
+  const defaultable = (name: string, seen = new Set<string>()): boolean => {
+    if (seen.has(name)) return false;
+    const model = byName.get(name);
+    if (!model || model.kind !== "model") return false;
+    const next = new Set(seen).add(name);
+    return model.properties.every(f => {
+      if (f.optional || f.type.kind === "array" || f.type.kind === "map") return true;
+      if (f.type.kind === "model") return defaultable(f.type.name, next);
+      return f.type.kind === "scalar" && [
+        "string", "boolean", "path", "int8", "int16", "int32", "int64",
+        "uint8", "uint16", "uint32", "uint64", "usize", "float32", "float64",
+      ].includes(f.type.alias ?? f.type.name);
+    });
+  };
   const noteEnum = (t: ModelProperty["type"]) => {
     if (t.kind === "enum") enumsUsed.add(t.name);
     if (t.kind === "array" && t.element.kind === "enum") enumsUsed.add(t.element.name);
@@ -177,7 +191,7 @@ export function domainExtras(types: TypeDef[], service: ServiceDef): Map<string,
     if (!model || model.kind !== "model" || extras.has(model.name)) return;
     const fieldAttrs = new Map<string, string[]>();
     extras.set(model.name, {
-      derives: ["clap::Args"],
+      derives: ["clap::Args", ...(defaultable(model.name) ? ["Default"] : [])],
       fieldAttrs,
       ...(model.requiredOneOf?.length ? { attrs: [`command(group(clap::ArgGroup::new(${JSON.stringify(model.requiredOneOfName ?? "required_one_of")}).required(true).args([${model.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] } : {}),
     });
