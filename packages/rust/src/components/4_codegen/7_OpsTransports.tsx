@@ -165,7 +165,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
             {"let stdin = std::io::stdin();\nlet stdout = std::io::stdout();\nmatch run(cli, &mut stdin.lock(), &mut stdout.lock()) {\n    Ok(()) => std::process::ExitCode::SUCCESS,\n    Err(e) => {\n        eprintln!(\"error: {e}\");\n        std::process::ExitCode::FAILURE\n    }\n}"}
           </FunctionDeclaration>,
           <>fn write_json{"<"}T: serde::Serialize{">"}(out: &amp;mut dyn Write, value: &amp;T) -&gt; {itemResult(props.keys, undefined)} {"{"}{"\n"}    serde_json::to_writer(&amp;mut *out, value)?;{"\n"}    out.write_all(b"\n")?;{"\n"}    Ok(()){"\n"}{"}"}</>,
-          props.plans.some(p => p.returnsStream) && `fn write_stream<T: serde::Serialize>(out: &mut dyn Write, items: impl Iterator<Item = OpResult<T>>) -> OpResult<()> {
+          props.plans.some(p => p.returnsStream) && `pub fn write_stream<T: serde::Serialize>(out: &mut dyn Write, items: impl Iterator<Item = OpResult<T>>) -> OpResult<()> {
     let mut rows = 0u64;
     for item in items {
         match item {

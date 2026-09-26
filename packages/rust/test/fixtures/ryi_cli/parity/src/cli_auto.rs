@@ -97,7 +97,7 @@ fn write_json<T: serde::Serialize>(out: &mut dyn Write, value: &T) -> OpResult<(
     Ok(())
 }
 
-fn write_stream<T: serde::Serialize>(out: &mut dyn Write, items: impl Iterator<Item = OpResult<T>>) -> OpResult<()> {
+pub fn write_stream<T: serde::Serialize>(out: &mut dyn Write, items: impl Iterator<Item = OpResult<T>>) -> OpResult<()> {
     let mut rows = 0u64;
     for item in items {
         match item {
