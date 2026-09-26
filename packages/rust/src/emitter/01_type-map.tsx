@@ -33,6 +33,7 @@ const SCALAR_MAP: Record<string, RustType> = {
   duration:       { code: "Duration", externalUses: ["std::time::Duration"] },
   url:            { code: "String", externalUses: [] },
   path:           { code: "PathBuf", externalUses: ["std::path::PathBuf"] },
+  jsonValue:      { code: "serde_json::Value", externalUses: [] },
   uuid:           { code: "Uuid", externalUses: ["uuid::Uuid"] },
   decimal:        { code: "Decimal", externalUses: ["rust_decimal::Decimal"] },
   decimal128:     { code: "Decimal", externalUses: ["rust_decimal::Decimal"] },

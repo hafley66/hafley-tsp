@@ -65,7 +65,7 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
           Result{"<"}T, {props.keys.opError}{">"}
         </TypeAlias>,
         ...props.plans.map(p => (
-          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
+          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
                 {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={f.cliAttrs} />)}
