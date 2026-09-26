@@ -7,8 +7,16 @@ export interface DaemonOptions {
   handshake: boolean;
 }
 
+const daemonContexts = new WeakMap<Program, Map<Namespace, DecoratorContext>>();
+
 export function $daemon(context: DecoratorContext, target: Namespace, options: DaemonOptions): void {
   context.program.stateMap(DecoratorDefStateKeys.daemon).set(target, options);
+  let contexts = daemonContexts.get(context.program);
+  if (!contexts) {
+    contexts = new Map();
+    daemonContexts.set(context.program, contexts);
+  }
+  contexts.set(target, context);
 }
 
 export function getDaemon(program: Program, target: Namespace): DaemonOptions | undefined {
@@ -20,9 +28,11 @@ export function getDaemon(program: Program, target: Namespace): DaemonOptions | 
 export function $onValidate(program: Program): void {
   for (const [target] of program.stateMap(DecoratorDefStateKeys.daemon)) {
     const namespace = target as Namespace;
+    const context = daemonContexts.get(program)?.get(namespace);
+    if (!context) continue;
     for (const op of namespace.operations.values()) {
       if (getRoutePath(program, op) === undefined) {
-        setRoute({ program }, op, { path: `/${op.name}`, shared: false });
+        setRoute(context, op, { path: `/${op.name}`, shared: false });
       }
     }
   }

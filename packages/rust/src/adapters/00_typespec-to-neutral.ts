@@ -183,7 +183,7 @@ export function programToTypeDefs(
 
   // Decorator declarations are metadata, not domain types.
   for (const [name, childNs] of globalNs.namespaces) {
-    if (name === "TypeSpec" || name === "DecoratorDef" || name === "Clap") continue;
+    if (name === "TypeSpec" || name === "DecoratorDef" || name === "Clap" || name === "Daemon") continue;
     defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
   }
 

@@ -27,9 +27,9 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
     return { name: prop.name, typeCode: rt.code, attrs: [
       ...(extras?.fieldAttrs.get(prop.name) ?? []),
       ...(daemon && extras?.fieldAttrs.get(prop.name)?.includes("command(flatten)") ? ["serde(flatten)"] : []),
-      ...(daemon && prop.cli?.skip ? ["serde(skip)"] : []),
-      ...(daemon && (prop.type.kind === "array" || prop.type.kind === "scalar" && prop.type.name === "boolean") ? ["serde(default)"] : []),
-          ] };
+      ...(daemon && extras && prop.cli?.skip ? ["serde(skip)"] : []),
+      ...(daemon && extras && (prop.type.kind === "array" || prop.type.kind === "scalar" && prop.type.name === "boolean") ? ["serde(default)"] : []),
+    ] };
   });
 
   const uniqueUses = [...new Set(fileExternalUses)];

@@ -17,7 +17,7 @@ function pathFields(op: OpPlan, types: TypeDef[]): string[] {
       return;
     }
     const type = property.type.kind === "array" ? property.type.element : property.type;
-    if (type.kind === "scalar" && (type.alias === "path" || type.name === "path" || property.cli?.positional && type.name === "string")) {
+    if (type.kind === "scalar" && (type.alias === "path" || type.name === "path")) {
       names.add(property.name);
     }
   };
@@ -79,7 +79,7 @@ function inputHandler(plan: OpPlan): string {
     let args: ${plan.argsName} = match request.decode(${JSON.stringify(plan.op.name)}) { Ok(args) => args, Err(error) => return bad_request(error) };
     let input = jsonl_input(body);
     let out = tokio::task::spawn_blocking(move || crate::ops::with_request_root(root, || crate::ops::${plan.fn}(&args, input))).await;
-    match out { Ok(out) => ${response}, Err(error) => OpError(error.to_string(), 1).into_response() }
+    match out { Ok(out) => ${response}, Err(error) => error_response(OpError(error.to_string(), 1)) }
 }`;
 }
 

@@ -7,6 +7,11 @@ using Daemon;
 using Http;
 using Http.Streams;
 
+@service
+@daemon(#{ idleSecs: 37, handshake: false })
+@rootArgs(RootArgs)
+namespace DaemonFixture;
+
 scalar path extends string;
 scalar jsonValue extends string;
 
@@ -18,11 +23,6 @@ model Inputs {
 model RootArgs {
   inputs: Inputs;
 }
-
-@service
-@daemon(#{ idleSecs: 37, handshake: false })
-@rootArgs(RootArgs)
-namespace DaemonFixture;
 
 op extract(args: RootArgs): JsonlStream<jsonValue>;
 op ingest(@bodyRoot input: JsonlStream<jsonValue>): jsonValue;

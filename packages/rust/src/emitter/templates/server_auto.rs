@@ -12,7 +12,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::Json;
 use base64::Engine as _;
-use fs4::FileExt as _;
+use fs4::fs_std::FileExt as _;
 use futures_util::StreamExt as _;
 use tokio_util::sync::CancellationToken;
 

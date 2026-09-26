@@ -19,8 +19,16 @@ it("assigns daemon routes during validation and emits both transports from the s
         "idleSecs": 37,
       },
       "operations": [
-        ["post", "/extract", "extract"],
-        ["post", "/ingest", "ingest"],
+        [
+          "post",
+          "/extract",
+          "extract",
+        ],
+        [
+          "post",
+          "/ingest",
+          "ingest",
+        ],
       ],
     }
   `);
@@ -50,7 +58,7 @@ it("assigns daemon routes during validation and emits both transports from the s
 
         pub fn decode<T: serde::de::DeserializeOwned>(mut self, verb: &str) -> Result<T, String> {
             if !self.request_root.is_absolute() {
-                return Err(\\"request_root must be absolute\\".into());
+                return Err("request_root must be absolute".into());
             }
             resolve_paths(verb, &self.request_root, &mut self.args);
             serde_json::from_value(self.args).map_err(|error| error.to_string())
@@ -59,8 +67,8 @@ it("assigns daemon routes during validation and emits both transports from the s
 
     fn resolve_paths(verb: &str, root: &Path, args: &mut serde_json::Value) {
         let names: &[&str] = match verb {
-            \\"extract\\" => &[\\"paths\\", \\"root\\"],
-            \\"ingest\\" => &[],
+            "extract" => &["root"],
+            "ingest" => &[],
             _ => &[],
         };
         let Some(object) = args.as_object_mut() else { return };
@@ -83,22 +91,22 @@ it("assigns daemon routes during validation and emits both transports from the s
     }
 
     fn resolve_one(root: &Path, path: &mut String) {
-        if path == \\"-\\" || path.is_empty() || Path::new(path).is_absolute() { return; }
+        if path == "-" || path.is_empty() || Path::new(path).is_absolute() { return; }
         *path = root.join(&*path).to_string_lossy().into_owned();
     }
 
     pub fn cache_dir() -> Result<PathBuf, std::io::Error> {
-        let base = std::env::var_os(\\"XDG_CACHE_HOME\\").map(PathBuf::from).or_else(|| {
-            std::env::var_os(\\"HOME\\").map(|home| PathBuf::from(home).join(\\".cache\\"))
-        }).ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, \\"HOME is unset\\"))?;
+        let base = std::env::var_os("XDG_CACHE_HOME").map(PathBuf::from).or_else(|| {
+            std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".cache"))
+        }).ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "HOME is unset"))?;
         if !base.is_absolute() {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, \\"cache home must be absolute\\"));
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "cache home must be absolute"));
         }
-        Ok(base.join(\\"ryi\\"))
+        Ok(base.join("ryi"))
     }
 
     pub fn socket_path() -> Result<PathBuf, std::io::Error> {
-        Ok(cache_dir()?.join(\\"ryi.sock\\"))
+        Ok(cache_dir()?.join("ryi.sock"))
     }"
   `);
 });
