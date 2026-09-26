@@ -220,28 +220,14 @@ const JSONL_RESPONSE = `fn jsonl_response(produce: impl FnOnce(&mut dyn FnMut(Op
 const JSONL_INPUT = `fn jsonl_input<T: DeserializeOwned + Send + 'static>(body: Body) -> impl Iterator<Item = OpResult<T>> + Send {
     let (tx, mut rx) = tokio::sync::mpsc::channel::<OpResult<T>>(64);
     tokio::spawn(async move {
-        let mut chunks = body.into_data_stream();
-        let mut buf: Vec<u8> = Vec::new();
-        while let Some(chunk) = chunks.next().await {
-            match chunk {
-                Ok(bytes) => buf.extend_from_slice(&bytes),
-                Err(e) => {
-                    let _ = tx.send(Err(OpError(e.to_string()))).await;
-                    return;
-                }
+        let chunks = body.into_data_stream().map(|chunk| chunk.map_err(std::io::Error::other));
+        let reader = tokio_util::io::StreamReader::new(chunks);
+        let mut lines = tokio_util::codec::FramedRead::new(reader, tokio_util::codec::LinesCodec::new());
+        while let Some(line) = lines.next().await {
+            let value = line.map_err(OpError::from).and_then(|line| serde_json::from_str(&line).map_err(OpError::from));
+            if tx.send(value).await.is_err() {
+                return;
             }
-            while let Some(pos) = buf.iter().position(|b| *b == b'\\n') {
-                let line: Vec<u8> = buf.drain(..=pos).collect();
-                if line.iter().all(u8::is_ascii_whitespace) {
-                    continue;
-                }
-                if tx.send(serde_json::from_slice(&line).map_err(OpError::from)).await.is_err() {
-                    return;
-                }
-            }
-        }
-        if !buf.iter().all(u8::is_ascii_whitespace) {
-            let _ = tx.send(serde_json::from_slice(&buf).map_err(OpError::from)).await;
         }
     });
     std::iter::from_fn(move || rx.blocking_recv())
@@ -282,7 +268,7 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
         ])}
       >
         <Items items={[
-          <>impl IntoResponse for {props.keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        (StatusCode::INTERNAL_SERVER_ERROR, self.0).into_response(){"\n"}    {"}"}{"\n"}{"}"}</>,
+          <>impl IntoResponse for {props.keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"{"}"error": self.0{"}"}))).into_response(){"\n"}    {"}"}{"\n"}{"}"}</>,
           streamsOut && JSONL_RESPONSE,
           streamsIn && JSONL_INPUT,
           ...handlers.flatMap(h => {

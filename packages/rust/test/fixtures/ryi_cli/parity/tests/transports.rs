@@ -105,7 +105,7 @@ http /fast?paths=a&paths=b        status=200 ct=application/x-ndjson layer= line
 http /fast?paths=a&paths=boom&paths=b status=200 ct=application/x-ndjson layer= lines=3 first={\"owner_path\":\"a\",\"owner_name\":\"Owner\",\" | complete
 http /fast                        status=200 ct=application/x-ndjson layer= lines=1 first={\"complete\":true,\"rows\":0} | complete
 http /ingest                      status=200 ct=application/json layer= lines=1 first={\"rows\":2,\"tables\":1} | complete
-http /ingest                      status=500 ct=text/plain; charset=utf-8 layer= lines=1 first=expected ident at line 1 column 2 | complete
+http /ingest                      status=500 ct=application/json layer= lines=1 first={\"error\":\"expected ident at line 1 colum | complete
 http /cleave?target=x&dest=y&commit=true status=200 ct=application/json layer=on lines=1 first={\"files\":[\"y\"],\"edits\":1,\"committed\":tru | complete"
     );
 }
