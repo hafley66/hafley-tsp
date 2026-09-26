@@ -60,7 +60,7 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
 }
 
 function inputHandler(plan: OpPlan, bin: string): string {
-  const response = plan.returnsStream ? "jsonl_response(out).await" : "raw_response(out).await";
+  const response = plan.returnsStream ? "jsonl_response(out, diagnostics).await" : "raw_response(out, &diagnostics).await";
   const header = `x-${bin}-request`;
   return `async fn ${plan.fn}(headers: HeaderMap, body: Body) -> Response {
     let encoded = match headers.get(${JSON.stringify(header)}).and_then(|header| header.to_str().ok()) {
@@ -78,7 +78,9 @@ function inputHandler(plan: OpPlan, bin: string): string {
     let root = request.request_root.clone();
     let args: ${plan.argsName} = match request.decode(${JSON.stringify(plan.op.name)}) { Ok(args) => args, Err(error) => return bad_request(error) };
     let input = jsonl_input(body);
-    let out = tokio::task::spawn_blocking(move || crate::ops::with_request_root(root, || crate::ops::${plan.fn}(&args, input))).await;
+    let diagnostics = Arc::new(Mutex::new(Vec::new()));
+    let captured = diagnostics.clone();
+    let out = tokio::task::spawn_blocking(move || crate::ops::with_request_context(root, Some(captured), || crate::ops::${plan.fn}(&args, input))).await;
     match out { Ok(out) => ${response}, Err(error) => error_response(OpError(error.to_string(), 1)) }
 }`;
 }
