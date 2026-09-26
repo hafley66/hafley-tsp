@@ -5,6 +5,7 @@ import { DecoratorDefStateKeys } from "./lib.js";
 export interface DaemonOptions {
   idleSecs: number;
   handshake: boolean;
+  serverBin?: string;
 }
 
 const daemonContexts = new WeakMap<Program, Map<Namespace, DecoratorContext>>();

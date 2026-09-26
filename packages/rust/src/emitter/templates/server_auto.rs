@@ -1,4 +1,4 @@
-// Generated from the __SERVICE__ HTTP operations and @daemon options.
+// Generated for __SERVER_BIN__ from the __SERVICE__ HTTP operations and @daemon options.
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};

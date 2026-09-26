@@ -17,6 +17,7 @@ it("assigns daemon routes during validation and emits both transports from the s
       "daemon": {
         "handshake": false,
         "idleSecs": 37,
+        "serverBin": "probe-daemon",
       },
       "operations": [
         [
@@ -43,6 +44,7 @@ it("assigns daemon routes during validation and emits both transports from the s
 
     pub const IDLE_SECS: u64 = 37;
     pub const HANDSHAKE: bool = false;
+    pub const SERVER_BIN: &str = "probe-daemon";
 
     pub fn idle_secs() -> u64 {
         std::env::var("PROBE_IDLE_SECS").ok().and_then(|value| value.parse::<u64>().ok())

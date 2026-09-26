@@ -8,7 +8,7 @@ using Http;
 using Http.Streams;
 
 @service
-@daemon(#{ idleSecs: 37, handshake: false })
+@daemon(#{ idleSecs: 37, handshake: false, serverBin: "probe-daemon" })
 @rootArgs(RootArgs)
 namespace DaemonFixture;
 

@@ -26,9 +26,11 @@ function pathFields(op: OpPlan, types: TypeDef[]): string[] {
 }
 
 function daemonFile(service: ServiceDef, plans: OpPlan[], types: TypeDef[], bin: string): string {
+  const serverBin = service.daemon!.serverBin ?? `${bin}-server`;
   const paths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => &[${pathFields(plan, types).map(name => JSON.stringify(name)).join(", ")}],`).join("\n");
   return template("daemon_auto")
     .replaceAll("__BIN__", bin)
+    .replaceAll("__SERVER_BIN__", serverBin)
     .replace("__SERVICE__", service.name)
     .replace("__IDLE_SECS__", String(service.daemon!.idleSecs))
     .replace("__HANDSHAKE__", String(service.daemon!.handshake))
@@ -51,7 +53,6 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   const paths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => ${JSON.stringify(plan.op.path)},`).join("\n");
   return template("client_auto")
     .replaceAll("__BIN__", bin)
-    .replaceAll("__SERVER_BIN__", `${bin}-server`)
     .replaceAll("__CLI_TYPE__", pascalCase(bin))
     .replace("        // __COMMAND_ARMS__", arms)
     .replace("        // __METHOD_ARMS__", methods)
@@ -95,6 +96,7 @@ function serverFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   const verbArms = plans.map(plan => `        ${JSON.stringify(plan.op.path)} => ${JSON.stringify(plan.op.name)},`).join("\n");
   return template("server_auto")
     .replace("__SERVICE__", service.name)
+    .replaceAll("__SERVER_BIN__", service.daemon!.serverBin ?? `${bin}-server`)
     .replaceAll("__BIN__", bin)
     .replaceAll("__REQUEST_HEADER__", `x-${bin}-request`)
     .replace("// __HANDLERS__", handlers)

@@ -107,7 +107,7 @@ export interface OperationDef {
 export interface ServiceDef {
   name: string;
   doc?: string;
-  daemon?: { idleSecs: number; handshake: boolean };
+  daemon?: { idleSecs: number; handshake: boolean; serverBin?: string };
   rootArgs?: string;
   afterHelp?: string;
   argsConflictsWithSubcommands?: boolean;
