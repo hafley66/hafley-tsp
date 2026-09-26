@@ -88,6 +88,11 @@ function flagAttrs(prop: ModelProperty): string {
   return `arg(${parts.join(", ")})`;
 }
 
+function rustChar(value: string): string {
+  if ([...value].length !== 1) throw new Error(`clap value_delimiter must be one character: ${JSON.stringify(value)}`);
+  return `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\n/g, "\\n")}'`;
+}
+
 function argOptions(prop: ModelProperty): string[] {
   const options = [
     ...(prop.type.kind === "enum" ? ["value_enum"] : []),
@@ -97,7 +102,7 @@ function argOptions(prop: ModelProperty): string[] {
     ...(prop.cli?.requiresAll ? [`requires_all = [${prop.cli.requiresAll.map(n => JSON.stringify(n)).join(", ")}]`] : []),
     ...(prop.cli?.conflictsWith?.length === 1 ? [`conflicts_with = ${JSON.stringify(prop.cli.conflictsWith[0])}`] : []),
     ...(prop.cli?.conflictsWith && prop.cli.conflictsWith.length > 1 ? [`conflicts_with_all = [${prop.cli.conflictsWith.map(n => JSON.stringify(n)).join(", ")}]`] : []),
-    ...(prop.cli?.valueDelimiter ? [`value_delimiter = ${JSON.stringify(prop.cli.valueDelimiter)}`] : []),
+    ...(prop.cli?.valueDelimiter ? [`value_delimiter = ${rustChar(prop.cli.valueDelimiter)}`] : []),
     ...(prop.cli?.required ? ["required = true"] : []),
   ];
   if (prop.cli?.minValue !== undefined || prop.cli?.maxValue !== undefined) {

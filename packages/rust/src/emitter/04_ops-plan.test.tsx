@@ -24,7 +24,7 @@ const types: TypeDef[] = [
   {
     kind: "model", name: "Inputs", properties: [
       { name: "paths", type: { kind: "array", element: str }, cli: { positional: true, valueName: "PATH" } },
-      { name: "patterns", type: { kind: "array", element: str }, cli: { long: "pattern", valueName: "GLOB" } },
+      { name: "patterns", type: { kind: "array", element: str }, cli: { long: "pattern", valueName: "GLOB", valueDelimiter: "," } },
     ],
   },
   { kind: "model", name: "FileArgs", properties: [{ name: "inputs", type: { kind: "model", name: "Inputs" } }] },
@@ -57,7 +57,7 @@ describe("clap and HTTP field metadata", () => {
       cli.includes("Option<Cmd>"),
       cli.includes("concat!(\"Build: \", env!(\"SPREFA_BUILD_GIT_HASH\")"),
       input.includes("#[arg(value_name = \"PATH\")]"),
-      input.includes("#[arg(long = \"pattern\", value_name = \"GLOB\")]"),
+      input.includes("#[arg(long = \"pattern\", value_name = \"GLOB\", value_delimiter = ',')]"),
       ops.includes("required_one_of\").required(true)"),
       ops.includes("requires = \"root\""),
       ops.includes("conflicts_with = \"uses\""),
