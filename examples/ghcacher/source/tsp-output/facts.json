@@ -1,0 +1,438 @@
+{
+  "entities": [],
+  "fields": [],
+  "pks": [],
+  "uniques": [],
+  "indexes": [],
+  "defaults": [],
+  "manuals": [],
+  "relations": [],
+  "bindings": [],
+  "field_maps": [],
+  "auto_maps": [],
+  "sources": [
+    {
+      "model": "GhReview",
+      "transport": "graphql",
+      "paginated": false
+    },
+    {
+      "model": "GhPullRequest",
+      "transport": "graphql",
+      "paginated": false
+    },
+    {
+      "model": "GhRepo",
+      "transport": "rest",
+      "endpoint": "/orgs/{owner}/repos",
+      "paginated": true
+    },
+    {
+      "model": "GhBranch",
+      "transport": "rest",
+      "endpoint": "/repos/{owner}/{name}/branches",
+      "paginated": true
+    },
+    {
+      "model": "GhNotification",
+      "transport": "rest",
+      "endpoint": "/notifications",
+      "paginated": false
+    },
+    {
+      "model": "GhPrComment",
+      "transport": "graphql",
+      "paginated": false
+    },
+    {
+      "model": "GhStatusCheck",
+      "transport": "graphql",
+      "paginated": false
+    },
+    {
+      "model": "GhRepoEvent",
+      "transport": "rest",
+      "endpoint": "/repos/{owner}/{name}/events",
+      "paginated": true,
+      "poll_interval": {
+        "isInteger": true
+      }
+    }
+  ],
+  "source_nested": [],
+  "sync_strategies": [],
+  "source_fields": [
+    {
+      "model": "GhReview",
+      "name": "id",
+      "type": "integer",
+      "nullable": false
+    },
+    {
+      "model": "GhReview",
+      "name": "author",
+      "type": "GhUser",
+      "nullable": false
+    },
+    {
+      "model": "GhReview",
+      "name": "state",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhReview",
+      "name": "body",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhReview",
+      "name": "submittedAt",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "number",
+      "type": "integer",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "title",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "state",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "isDraft",
+      "type": "boolean",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "author",
+      "type": "GhUser",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "headRefName",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "headRefOid",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "baseRefName",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "mergeable",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "additions",
+      "type": "integer",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "deletions",
+      "type": "integer",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "changedFiles",
+      "type": "integer",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "createdAt",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "updatedAt",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "mergedAt",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "closedAt",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPullRequest",
+      "name": "body",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhRepo",
+      "name": "owner",
+      "type": "GhUser",
+      "nullable": false
+    },
+    {
+      "model": "GhRepo",
+      "name": "name",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhRepo",
+      "name": "defaultBranchRef",
+      "type": "GhRef",
+      "nullable": false
+    },
+    {
+      "model": "GhBranch",
+      "name": "name",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhBranch",
+      "name": "commit",
+      "type": "",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "repository",
+      "type": "GhNotificationRepository",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "subject",
+      "type": "GhNotificationSubject",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "reason",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "unread",
+      "type": "boolean",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhNotification",
+      "name": "last_read_at",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPrComment",
+      "name": "id",
+      "type": "integer",
+      "nullable": false
+    },
+    {
+      "model": "GhPrComment",
+      "name": "author",
+      "type": "GhUser",
+      "nullable": false
+    },
+    {
+      "model": "GhPrComment",
+      "name": "body",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPrComment",
+      "name": "path",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhPrComment",
+      "name": "line",
+      "type": "integer",
+      "nullable": true
+    },
+    {
+      "model": "GhPrComment",
+      "name": "in_reply_to_id",
+      "type": "integer",
+      "nullable": true
+    },
+    {
+      "model": "GhPrComment",
+      "name": "created_at",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhPrComment",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhStatusCheck",
+      "name": "context",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhStatusCheck",
+      "name": "state",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhStatusCheck",
+      "name": "target_url",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhStatusCheck",
+      "name": "description",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhStatusCheck",
+      "name": "updated_at",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhRepoEvent",
+      "name": "id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhRepoEvent",
+      "name": "type",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhRepoEvent",
+      "name": "actor",
+      "type": "GhUser",
+      "nullable": false
+    },
+    {
+      "model": "GhRepoEvent",
+      "name": "payload",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhRepoEvent",
+      "name": "created_at",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhUser",
+      "name": "login",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhRef",
+      "name": "name",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhRef",
+      "name": "oid",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhNotificationSubject",
+      "name": "type",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhNotificationSubject",
+      "name": "title",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "model": "GhNotificationSubject",
+      "name": "url",
+      "type": "string",
+      "nullable": true
+    },
+    {
+      "model": "GhNotificationRepository",
+      "name": "owner",
+      "type": "GhUser",
+      "nullable": false
+    },
+    {
+      "model": "GhNotificationRepository",
+      "name": "name",
+      "type": "string",
+      "nullable": false
+    }
+  ],
+  "config_models": [],
+  "config_fields": [],
+  "cli_commands": [],
+  "cli_fields": [],
+  "http_routers": [],
+  "http_routes": []
+}

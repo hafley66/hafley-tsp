@@ -1,9 +1,16 @@
 {
-  "name": "@hafley/alloy-rs",
+  "name": "@hafley66/alloy-rs",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -12,6 +19,10 @@
     "./emitter": {
       "types": "./dist/emitter/index.d.ts",
       "default": "./dist/emitter/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "default": "./dist/adapters/index.js"
     }
   },
   "scripts": {
