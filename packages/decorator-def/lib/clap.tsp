@@ -4,6 +4,7 @@ namespace Clap;
 
 extern dec valueName(target: ModelProperty, name: valueof string);
 extern dec requires(target: ModelProperty, name: valueof string);
+extern dec requiresAll(target: ModelProperty, names: valueof string[]);
 extern dec conflictsWith(target: ModelProperty, names: valueof string[]);
 extern dec valueDelimiter(target: ModelProperty, delimiter: valueof string);
 extern dec positional(target: ModelProperty);

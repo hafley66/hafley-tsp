@@ -4,6 +4,7 @@ import { DecoratorDefStateKeys } from "./lib.js";
 export interface ClapArg {
   valueName?: string;
   requires?: string;
+  requiresAll?: string[];
   conflictsWith?: string[];
   valueDelimiter?: string;
   positional?: boolean;
@@ -29,6 +30,7 @@ function put(context: DecoratorContext, target: ModelProperty | Model | Namespac
 
 export const $valueName = (c: DecoratorContext, t: ModelProperty, name: string) => put(c, t, { valueName: name });
 export const $requires = (c: DecoratorContext, t: ModelProperty, name: string) => put(c, t, { requires: name });
+export const $requiresAll = (c: DecoratorContext, t: ModelProperty, names: string[]) => put(c, t, { requiresAll: names });
 export const $conflictsWith = (c: DecoratorContext, t: ModelProperty, names: string[]) => put(c, t, { conflictsWith: names });
 export const $valueDelimiter = (c: DecoratorContext, t: ModelProperty, delimiter: string) => put(c, t, { valueDelimiter: delimiter });
 export const $positional = (c: DecoratorContext, t: ModelProperty) => put(c, t, { positional: true });
