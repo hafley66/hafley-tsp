@@ -48,7 +48,7 @@ export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
           {ops && <OpsAutoFile plans={plans} keys={keys} />}
           {ops && <OpsStubFile plans={plans} keys={keys} />}
           {ops && ops.cli !== false && (
-            <CliAutoFile plans={plans} keys={keys} bin={ops.bin ?? ops.service.name.toLowerCase()} doc={ops.service.doc} implPath={implPath} />
+            <CliAutoFile plans={plans} keys={keys} bin={ops.bin ?? ops.service.name.toLowerCase()} service={ops.service} registry={registry} implPath={implPath} />
           )}
           {ops && ops.http !== false && <HttpAutoFile plans={plans} keys={keys} registry={registry} implPath={implPath} />}
           <SourceFile path="lib.rs" />

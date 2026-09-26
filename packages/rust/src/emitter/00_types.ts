@@ -10,6 +10,17 @@ export interface ModelProperty {
   optional?: boolean;
   doc?: string;
   default?: ParamValue;
+  cli?: {
+    long?: string;
+    valueName?: string;
+    requires?: string;
+    conflictsWith?: string[];
+    valueDelimiter?: string;
+    positional?: boolean;
+    skip?: boolean;
+    minValue?: number;
+    maxValue?: number;
+  };
 }
 
 export interface ScalarType {
@@ -44,6 +55,7 @@ export interface ModelDef {
   name: string;
   doc?: string;
   properties: ModelProperty[];
+  requiredOneOf?: string[];
 }
 
 export interface EnumMember {
@@ -68,6 +80,7 @@ export type ParamSource = "path" | "query" | "header" | "body";
 
 export interface OperationParam extends ModelProperty {
   source: ParamSource;
+  headerName?: string;
   stream?: boolean; // JsonlStream<T> body: `type` is the item T
 }
 
@@ -76,6 +89,8 @@ export type HttpVerb = "get" | "post" | "put" | "patch" | "delete" | "head";
 export interface OperationDef {
   name: string;
   doc?: string;
+  afterHelp?: string;
+  requiredOneOf?: string[];
   verb: HttpVerb;
   path: string;
   params: OperationParam[];
@@ -86,5 +101,8 @@ export interface OperationDef {
 export interface ServiceDef {
   name: string;
   doc?: string;
+  rootArgs?: string;
+  afterHelp?: string;
+  argsConflictsWithSubcommands?: boolean;
   operations: OperationDef[];
 }

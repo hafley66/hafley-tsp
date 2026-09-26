@@ -24,7 +24,10 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
     let rt = mapType(prop.type, registry);
     if (prop.optional) rt = wrapOptional(rt);
     fileExternalUses.push(...rt.externalUses);
-    return { name: prop.name, typeCode: rt.code, attrs: extras?.fieldAttrs.get(prop.name) };
+    return { name: prop.name, typeCode: rt.code, attrs: [
+      ...(extras?.fieldAttrs.get(prop.name) ?? []),
+      ...(prop.cli?.positional && prop.type.kind === "array" ? ["serde(default)"] : []),
+    ] };
   });
 
   const uniqueUses = [...new Set(fileExternalUses)];
@@ -36,6 +39,7 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
         name={model.name}
         refkey={key}
         derive={[...MODEL_DERIVES, ...(extras?.derives ?? [])]}
+        attrs={extras?.attrs}
       >
         <List hardline>
           {fields.map(f => (

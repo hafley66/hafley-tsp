@@ -81,15 +81,37 @@ function roleOf(param: OperationParam): CliRole {
 }
 
 function flagAttrs(prop: ModelProperty): string {
-  const parts = ["long", ...(prop.type.kind === "enum" ? ["value_enum"] : []), ...defaultAttr(prop.default)];
+  if (prop.cli?.skip) return "arg(skip)";
+  if (prop.cli?.positional) return `arg(${argOptions(prop).join(", ")})`;
+  const parts = [prop.cli?.long ? `long = ${JSON.stringify(prop.cli.long)}` : "long", ...argOptions(prop)];
   return `arg(${parts.join(", ")})`;
+}
+
+function argOptions(prop: ModelProperty): string[] {
+  const options = [
+    ...(prop.type.kind === "enum" ? ["value_enum"] : []),
+    ...defaultAttr(prop.default),
+    ...(prop.cli?.valueName ? [`value_name = ${JSON.stringify(prop.cli.valueName)}`] : []),
+    ...(prop.cli?.requires ? [`requires = ${JSON.stringify(prop.cli.requires)}`] : []),
+    ...(prop.cli?.conflictsWith?.length === 1 ? [`conflicts_with = ${JSON.stringify(prop.cli.conflictsWith[0])}`] : []),
+    ...(prop.cli?.conflictsWith && prop.cli.conflictsWith.length > 1 ? [`conflicts_with_all = [${prop.cli.conflictsWith.map(n => JSON.stringify(n)).join(", ")}]`] : []),
+    ...(prop.cli?.valueDelimiter ? [`value_delimiter = ${JSON.stringify(prop.cli.valueDelimiter)}`] : []),
+  ];
+  if (prop.cli?.minValue !== undefined || prop.cli?.maxValue !== undefined) {
+    const type = prop.type.kind === "scalar" ? prop.type.name : "u64";
+    const rustType = type.startsWith("uint") ? `u${type.slice(4)}` : type.startsWith("int") ? `i${type.slice(3)}` : type;
+    const start = prop.cli.minValue ?? 0;
+    const end = prop.cli.maxValue === undefined ? "" : `=${prop.cli.maxValue}`;
+    options.push(`value_parser = clap::value_parser!(${rustType}).range(${start}..${end})`);
+  }
+  return options;
 }
 
 function fieldPlan(param: OperationParam, registry: RefkeyRegistry): FieldPlan {
   const role = roleOf(param);
   const cliAttrs = [
     ...docAttr(param.doc),
-    ...(role === "flatten" ? ["command(flatten)"] : role === "flag" ? [flagAttrs(param)] : []),
+    ...(role === "flatten" ? ["command(flatten)"] : role === "flag" ? [flagAttrs(param)] : role === "positional" ? [flagAttrs({ ...param, cli: { ...param.cli, positional: true } })] : []),
   ];
   const cliType = role === "flatten" || role === "stream" ? mapType(param.type, registry) : cliFieldType(param, registry);
   return { param, field: rustIdent(param.name), role, cliType, cliAttrs };
@@ -129,6 +151,7 @@ export function planOps(service: ServiceDef, registry: RefkeyRegistry, newKey: (
 export interface ModelExtras {
   derives: string[];
   fieldAttrs: Map<string, string[]>;
+  attrs?: string[];
 }
 
 export function domainExtras(types: TypeDef[], service: ServiceDef): Map<string, ModelExtras> {
@@ -139,18 +162,31 @@ export function domainExtras(types: TypeDef[], service: ServiceDef): Map<string,
     if (t.kind === "enum") enumsUsed.add(t.name);
     if (t.kind === "array" && t.element.kind === "enum") enumsUsed.add(t.element.name);
   };
+  const visit = (name: string) => {
+    const model = byName.get(name);
+    if (!model || model.kind !== "model" || extras.has(model.name)) return;
+    const fieldAttrs = new Map<string, string[]>();
+    extras.set(model.name, {
+      derives: ["clap::Args"],
+      fieldAttrs,
+      ...(model.requiredOneOf?.length ? { attrs: [`command(group(clap::ArgGroup::new("required_one_of").required(true).args([${model.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] } : {}),
+    });
+    for (const f of model.properties) {
+      noteEnum(f.type);
+      if (f.type.kind === "model") {
+        fieldAttrs.set(f.name, [...docAttr(f.doc), "command(flatten)"]);
+        visit(f.type.name);
+      } else {
+        fieldAttrs.set(f.name, [...docAttr(f.doc), flagAttrs(f)]);
+      }
+    }
+  };
+  if (service.rootArgs) visit(service.rootArgs);
   for (const op of service.operations) {
     for (const p of op.params) {
       noteEnum(p.type);
       if (roleOf(p) !== "flatten" || p.type.kind !== "model") continue;
-      const model = byName.get(p.type.name);
-      if (!model || model.kind !== "model" || extras.has(model.name)) continue;
-      const fieldAttrs = new Map<string, string[]>();
-      for (const f of (model as ModelDef).properties) {
-        noteEnum(f.type);
-        fieldAttrs.set(f.name, [...docAttr(f.doc), flagAttrs(f)]);
-      }
-      extras.set(model.name, { derives: ["clap::Args"], fieldAttrs });
+      visit(p.type.name);
     }
   }
   for (const name of enumsUsed) {
@@ -187,7 +223,15 @@ export function httpField(plan: FieldPlan, registry: RefkeyRegistry): HttpField 
     const base = mapType(p.type, registry);
     return { field: f, structType: p.optional ? wrapOptional(base) : base, wildcard: false, expr: `path.${f}` };
   }
-  if (p.source === "query" || p.source === "header") {
+  if (p.source === "header") {
+    const base = mapType(p.type, registry);
+    const read = `headers.get(${JSON.stringify(p.headerName ?? p.name)}).and_then(|v| v.to_str().ok()).map(|v| v.parse::<${base.code}>()).transpose().map_err(|e| OpError(e.to_string()))?`;
+    const expr = p.default !== undefined
+      ? `${read}.unwrap_or(${rustLiteral(p.default, p.type)})`
+      : isBool(p.type) ? `${read}.unwrap_or(false)` : p.optional ? read : `${read}.ok_or_else(|| OpError(${JSON.stringify(`missing header ${p.headerName ?? p.name}`)}.into()))?`;
+    return { field: f, structType: undefined, wildcard: false, expr };
+  }
+  if (p.source === "query") {
     const base = mapType(p.type, registry);
     if (p.type.kind === "array") return { field: f, structType: base, wildcard: false, expr: `query.${f}` };
     if (isBool(p.type)) return { field: f, structType: wrapOptional(base), wildcard: false, expr: `query.${f}.unwrap_or(${p.default ?? false})` };
@@ -208,4 +252,3 @@ export function axumRoutes(op: OperationDef): string[] {
   const anyOptional = pathParams.some(p => p.optional);
   return anyOptional && full !== base ? [base, full] : [full];
 }
-

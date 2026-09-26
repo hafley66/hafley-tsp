@@ -8,6 +8,7 @@ import { SourceFile } from "../3_files/0_SourceFile.js";
 import { CodegenPair, ImplCall } from "./1_CodegenPair.js";
 import { axumRoutes, httpField, pascalCase, type OpPlan } from "../../emitter/04_ops-plan.js";
 import type { RefkeyRegistry, RustType } from "../../emitter/01_type-map.js";
+import type { ServiceDef } from "../../emitter/00_types.js";
 
 export interface OpsKeys {
   opError: Refkey;
@@ -26,6 +27,19 @@ function Items(props: { items: Children[] }) {
 
 function itemResult(keys: OpsKeys, item: RustType | undefined): Children {
   return <>{keys.opResult}{"<"}{item?.code ?? "()"}{">"}</>;
+}
+
+function afterHelpExpr(value: string): string {
+  const parts: string[] = [];
+  let from = 0;
+  for (const match of value.matchAll(/\$([A-Z][A-Z0-9_]*)/g)) {
+    parts.push(JSON.stringify(value.slice(from, match.index)));
+    parts.push(`env!(${JSON.stringify(match[1])})`);
+    from = match.index! + match[0].length;
+  }
+  if (!parts.length) return JSON.stringify(value);
+  parts.push(JSON.stringify(value.slice(from)));
+  return `concat!(${parts.join(", ")})`;
 }
 
 // The stub's return: one value, or an Iterator of items ending at None (complete).
@@ -51,7 +65,7 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
           Result{"<"}T, {props.keys.opError}{">"}
         </TypeAlias>,
         ...props.plans.map(p => (
-          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone"]} braced>
+          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone"]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new("required_one_of").required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
                 {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={f.cliAttrs} />)}
@@ -82,19 +96,28 @@ export function OpsStubFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
   );
 }
 
-function cliArm(keys: OpsKeys, p: OpPlan): Children {
+function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean): Children {
   const call = <ImplCall fn={p.fn} args={opCallArgs(p, "read_jsonl(&mut *input)")} />;
   const body = p.returnsStream
     ? <>for item in {call} {"{"} write_json(out, &amp;item?)?; {"}"}</>
     : p.returns
       ? <>write_json(out, &amp;{call}?)?;</>
       : <>{call}?;</>;
-  return <>        {keys.cmd}::{p.variant}(args) =&gt; {"{"} {body} {"}"}</>;
+  return <>        {optional ? "Some(" : ""}{keys.cmd}::{p.variant}(args){optional ? ")" : ""} =&gt; {"{"} {body} {"}"}</>;
 }
 
 // cli_auto.rs: clap derive tree; run() writes JSON (JSONL for streams) and reads stdin JSONL.
-export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string; doc?: string; implPath: string }) {
-  const about = props.doc !== undefined ? `, about = ${JSON.stringify(props.doc)}` : "";
+export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string; service: ServiceDef; registry: RefkeyRegistry; implPath: string }) {
+  const about = props.service.doc !== undefined ? `, about = ${JSON.stringify(props.service.doc)}` : "";
+  const root = props.service.rootArgs ? props.registry.get(props.service.rootArgs) : undefined;
+  const command = [
+    `name = ${JSON.stringify(props.bin)}`,
+    "version",
+    ...(props.service.doc !== undefined ? [`about = ${JSON.stringify(props.service.doc)}`] : []),
+    ...(props.service.afterHelp ? [`after_help = ${afterHelpExpr(props.service.afterHelp)}`] : []),
+    ...(props.service.argsConflictsWithSubcommands ? ["args_conflicts_with_subcommands = true"] : []),
+    ...(root ? ["subcommand_negates_reqs = true", "disable_help_subcommand = true"] : []),
+  ];
   const readsInput = props.plans.some(p => p.input);
   return (
     <CodegenPair name="cli" implPath={props.implPath}>
@@ -104,15 +127,19 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
             name={pascalCase(props.bin)}
             refkey={props.keys.root}
             derive={["clap::Parser", "Debug"]}
-            attrs={[`command(name = ${JSON.stringify(props.bin)}, version${about})`]}
+            attrs={[`command(${command.join(", ")})`]}
           >
-            <StructField name="cmd" type={props.keys.cmd} attrs={["command(subcommand)"]} />
+            <StructField name="cmd" type={root ? <>Option{"<"}{props.keys.cmd}{">"}</> : props.keys.cmd} attrs={["command(subcommand)"]} />
+            {root && <StructField name="file" type={root} attrs={["command(flatten)"]} />}
           </StructDeclaration>,
           <EnumDeclaration name="Cmd" refkey={props.keys.cmd} derive={["clap::Subcommand", "Debug"]}>
             <List hardline>
               {props.plans.map(p => (
                 <>
-                  {p.op.doc !== undefined ? <><Attributes attrs={[`doc = ${JSON.stringify(p.op.doc)}`]} />{"\n"}</> : null}
+                  {(p.op.doc !== undefined || p.op.afterHelp) ? <><Attributes attrs={[
+                    ...(p.op.doc !== undefined ? [`doc = ${JSON.stringify(p.op.doc)}`] : []),
+                    ...(p.op.afterHelp ? [`command(after_help = ${afterHelpExpr(p.op.afterHelp)})`] : []),
+                  ]} />{"\n"}</> : null}
                   {p.variant}({p.argsKey}),
                 </>
               ))}
@@ -129,7 +156,8 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
           >
             {readsInput ? null : <>let _ = input;{"\n"}</>}
             match cli.cmd {"{"}{"\n"}
-            <List hardline>{props.plans.map(p => cliArm(props.keys, p))}</List>
+            <List hardline>{props.plans.map(p => cliArm(props.keys, p, !!root))}</List>
+            {root ? "\n        None => { let _ = cli.file; }" : ""}
             {"\n}\nOk(())"}
           </FunctionDeclaration>,
           <FunctionDeclaration name="main" params={[{ name: "cli", type: props.keys.root }]} returns="std::process::ExitCode">
@@ -198,10 +226,11 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
   const handlers = props.plans.map(p => {
     const fields = p.fields.map(f => ({ plan: f, http: httpField(f, props.registry) }));
     const pathFields = fields.filter(f => f.plan.param.source === "path");
-    const queryFields = fields.filter(f => f.plan.param.source === "query" || f.plan.param.source === "header");
+    const queryFields = fields.filter(f => f.plan.param.source === "query");
+    const headerFields = fields.filter(f => f.plan.param.source === "header");
     const body = fields.find(f => f.plan.param.source === "body");
     const optionalPath = pathFields.some(f => f.plan.param.optional);
-    return { p, fields, pathFields, queryFields, body, optionalPath };
+    return { p, fields, pathFields, queryFields, headerFields, body, optionalPath };
   });
   const streamsOut = props.plans.some(p => p.returnsStream);
   const streamsIn = props.plans.some(p => p.input);
@@ -215,6 +244,7 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
           "axum::Json",
           "axum::extract::Path",
           "axum::http::StatusCode",
+          ...(handlers.some(h => h.headerFields.length) ? ["axum::http::HeaderMap"] : []),
           "axum::response::IntoResponse",
           "axum::response::Response",
           "axum_extra::extract::Query",
@@ -260,6 +290,7 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
                   ? [{ name: "path", type: <>Option{"<"}Path{"<"}{h.p.variant}Path{">>"}</> }]
                   : [{ name: "Path(path)", type: <>Path{"<"}{h.p.variant}Path{">"}</> }]),
               ...(h.queryFields.length === 0 ? [] : [{ name: "Query(query)", type: <>Query{"<"}{h.p.variant}Query{">"}</> }]),
+              ...(h.headerFields.length === 0 ? [] : [{ name: "headers", type: "HeaderMap" }]),
               ...(h.body ? [{ name: "Json(body)", type: <>Json{"<"}{h.body.plan.cliType.code}{">"}</> }] : []),
               ...(h.p.input ? [{ name: "body", type: "Body" }] : []),
             ];

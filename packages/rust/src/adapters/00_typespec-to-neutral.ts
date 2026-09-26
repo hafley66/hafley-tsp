@@ -9,7 +9,10 @@ import type {
   Type,
   Namespace,
   Value,
+  Program,
 } from "@typespec/compiler";
+import { getMinValue, getMaxValue, resolveEncodedName } from "@typespec/compiler";
+import { getClapArg, getClapModel } from "../../../decorator-def/src/clap.js";
 
 import type {
   TypeDef,
@@ -25,6 +28,20 @@ import type {
 } from "../emitter/00_types.js";
 
 export type DocOf = (type: Type) => string | undefined;
+
+export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
+  const extra = getClapArg(program, prop);
+  const encoded = resolveEncodedName(program, prop, "application/x-clap");
+  const minValue = getMinValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMinValue(program, prop.type) : undefined);
+  const maxValue = getMaxValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMaxValue(program, prop.type) : undefined);
+  const cli = {
+    ...(encoded !== prop.name ? { long: encoded } : {}),
+    ...extra,
+    ...(minValue !== undefined ? { minValue } : {}),
+    ...(maxValue !== undefined ? { maxValue } : {}),
+  };
+  return Object.keys(cli).length ? cli : undefined;
+}
 
 // Resolve a Scalar by walking baseScalar: `scalar uuid extends string` -> "string".
 // A real program stops at the first TypeSpec stdlib scalar (uint32 stays uint32).
@@ -94,20 +111,23 @@ export function mapPropertyType(type: Type): ModelProperty["type"] {
   }
 }
 
-function convertModel(model: Model, docOf?: DocOf): ModelDef {
+function convertModel(model: Model, docOf?: DocOf, program?: Program): ModelDef {
   const properties: ModelProperty[] = [];
   for (const [, prop] of model.properties) {
     const doc = docOf?.(prop);
     const value = paramValue(prop.defaultValue);
+    const cli = program ? cliOf(program, prop) : undefined;
     properties.push({
       name: prop.name,
       type: mapPropertyType(prop.type),
       optional: prop.optional || undefined,
       ...(doc !== undefined ? { doc } : {}),
       ...(value !== undefined ? { default: value } : {}),
+      ...(cli ? { cli } : {}),
     });
   }
-  return { kind: "model", name: model.name, properties };
+  const requiredOneOf = program ? getClapModel(program, model)?.requiredOneOf : undefined;
+  return { kind: "model", name: model.name, properties, ...(requiredOneOf ? { requiredOneOf } : {}) };
 }
 
 function convertEnum(tspEnum: TspEnum): EnumDef {
@@ -122,6 +142,7 @@ function convertEnum(tspEnum: TspEnum): EnumDef {
 export interface ConvertOptions {
   recursive?: boolean;
   docOf?: DocOf;
+  program?: Program;
 }
 
 export function namespaceToTypeDefs(
@@ -133,7 +154,7 @@ export function namespaceToTypeDefs(
   for (const [, model] of ns.models) {
     // Skip anonymous/template models
     if (!model.name || model.name === "") continue;
-    defs.push(convertModel(model, options.docOf));
+    defs.push(convertModel(model, options.docOf, options.program));
   }
 
   for (const [, tspEnum] of ns.enums) {
@@ -161,11 +182,11 @@ export function programToTypeDefs(
   // Collect from user-defined namespaces (skip "TypeSpec" stdlib namespace)
   for (const [name, childNs] of globalNs.namespaces) {
     if (name === "TypeSpec") continue;
-    defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf }));
+    defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
   }
 
   // Also collect top-level (un-namespaced) types
-  defs.push(...namespaceToTypeDefs(globalNs, { docOf }));
+  defs.push(...namespaceToTypeDefs(globalNs, { docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
 
   return defs;
 }
