@@ -6,6 +6,7 @@ import { CliAutoFile, HttpAutoFile, OpsAutoFile, OpsStubFile, type OpsKeys } fro
 import { VisibilityContext } from "../scopes/06_contexts.js";
 import { emitTypeDef } from "./02_emit-model.js";
 import { domainExtras, planOps, type ModelExtras } from "./04_ops-plan.js";
+import { DaemonFiles } from "./07_daemon-files.js";
 import type { RefkeyRegistry } from "./01_type-map.js";
 import type { ServiceDef, TypeDef } from "./00_types.js";
 
@@ -45,12 +46,13 @@ export function emitCrate(types: TypeDef[], options: CrateEmitOptions = {}) {
           <ModDirectory name={modelsModule}>
             {emitted.map(e => e.jsx)}
           </ModDirectory>
-          {ops && <OpsAutoFile plans={plans} keys={keys} />}
-          {ops && <OpsStubFile plans={plans} keys={keys} />}
+          {ops && <OpsAutoFile plans={plans} keys={keys} daemon={!!ops.service.daemon} />}
+          {ops && <OpsStubFile plans={plans} keys={keys} daemon={!!ops.service.daemon} />}
           {ops && ops.cli !== false && (
             <CliAutoFile plans={plans} keys={keys} bin={ops.bin ?? ops.service.name.toLowerCase()} service={ops.service} registry={registry} implPath={implPath} />
           )}
-          {ops && ops.http !== false && <HttpAutoFile plans={plans} keys={keys} registry={registry} implPath={implPath} />}
+          {ops && ops.service.daemon && <DaemonFiles service={ops.service} plans={plans} types={types} />}
+          {ops && !ops.service.daemon && ops.http !== false && <HttpAutoFile plans={plans} keys={keys} registry={registry} implPath={implPath} />}
           <SourceFile path="lib.rs" />
         </CrateDirectory>
       </VisibilityContext.Provider>

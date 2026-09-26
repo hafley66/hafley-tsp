@@ -7,6 +7,7 @@ import { getStreamOf, isStream } from "@typespec/streams";
 import type { OperationDef, OperationParam, ParamSource, ServiceDef, TypeDef } from "../emitter/00_types.js";
 import { cliOf, mapPropertyType, paramValue, programToTypeDefs } from "./00_typespec-to-neutral.js";
 import { getClapOperation, getClapRoot } from "../../../decorator-def/src/clap.js";
+import { getDaemon } from "../../../decorator-def/src/daemon.js";
 
 function streamItem(program: Program, t: Type): Type | undefined {
   return t.kind === "Model" && isStream(program, t) ? getStreamOf(program, t) : undefined;
@@ -25,7 +26,18 @@ function operationDef(program: Program, http: HttpOperation): OperationDef {
     if (p.type === "path" || p.type === "query" || p.type === "header") sources.set(p.param, { source: p.type, ...(p.type === "header" ? { name: p.name } : {}) });
   }
   const params: OperationParam[] = [];
+  const spreadModels = new Set<string>();
   for (const [, prop] of http.operation.parameters.properties) {
+    // A TypeSpec model spread stays one clap flatten field. Its HTTP shape is
+    // flattened by serde; the source property identifies the shared model.
+    const spread = prop.sourceProperty?.model;
+    if (spread?.name) {
+      if (!spreadModels.has(spread.name)) {
+        spreadModels.add(spread.name);
+        params.push({ name: spread.name[0]!.toLowerCase() + spread.name.slice(1), type: { kind: "model", name: spread.name }, source: "body" });
+      }
+      continue;
+    }
     const doc = getDoc(program, prop);
     const value = paramValue(prop.defaultValue);
     const item = streamItem(program, prop.type);
@@ -71,6 +83,7 @@ export function programToOps(program: Program): ProgramOps {
     types: programToTypeDefs(program, t => getDoc(program, t)),
     service: {
       name: service.namespace.name,
+      ...(getDaemon(program, service.namespace) ? { daemon: getDaemon(program, service.namespace) } : {}),
       ...(doc !== undefined ? { doc } : {}),
       ...(root?.args ? { rootArgs: root.args.name } : {}),
       ...(root?.afterHelp ? { afterHelp: root.afterHelp } : {}),

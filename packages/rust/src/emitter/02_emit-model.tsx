@@ -26,6 +26,9 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
     fileExternalUses.push(...rt.externalUses);
     return { name: prop.name, typeCode: rt.code, attrs: [
       ...(extras?.fieldAttrs.get(prop.name) ?? []),
+      ...(prop.type.kind === "model" ? ["serde(flatten)"] : []),
+      ...(prop.cli?.skip ? ["serde(skip)"] : []),
+      ...(prop.type.kind === "array" || prop.type.kind === "scalar" && prop.type.name === "boolean" ? ["serde(default)"] : []),
       ...(prop.cli?.positional && prop.type.kind === "array" ? ["serde(default)"] : []),
     ] };
   });

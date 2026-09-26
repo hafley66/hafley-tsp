@@ -43,7 +43,11 @@ function afterHelpExpr(value: string): string {
 }
 
 // The stub's return: one value, or an Iterator of items ending at None (complete).
-function stubReturns(keys: OpsKeys, p: OpPlan): Children {
+function stubReturns(keys: OpsKeys, p: OpPlan, daemon = false): Children {
+  if (daemon) {
+    if (!p.returnsStream) return <>OpResult{"<Vec<u8>>"}</>;
+    return <>impl Iterator{"<"}Item = OpResult{"<Vec<u8>>"}{">"} + Send + 'static</>;
+  }
   if (!p.returnsStream) return itemResult(keys, p.returns);
   return <>impl Iterator{"<"}Item = {itemResult(keys, p.returns)}{">"} + '_</>;
 }
@@ -53,22 +57,22 @@ function opCallArgs(p: OpPlan, input: string): string[] {
 }
 
 // ops_auto.rs: the request shape per op, plus the error both transports share.
-export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
+export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: boolean }) {
   const fieldTypes = props.plans.flatMap(p => p.fields.map(f => f.cliType));
   return (
     <SourceFile path="ops_auto.rs" externalUses={uses(fieldTypes, [])}>
       <Items items={[
-        <TupleStructDeclaration name="OpError" refkey={props.keys.opError} derive={["Debug"]} fields={["pub String"]} />,
-        "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string())\n    }\n}",
+        <TupleStructDeclaration name="OpError" refkey={props.keys.opError} derive={["Debug"]} fields={props.daemon ? ["pub String", "pub i32"] : ["pub String"]} />,
+        props.daemon ? "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string(), 1)\n    }\n}" : "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string())\n    }\n}",
         "impl std::fmt::Display for OpError {\n    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n        f.write_str(&self.0)\n    }\n}",
         <TypeAlias name="OpResult" refkey={props.keys.opResult} typeParams={[{ name: "T" }]}>
           Result{"<"}T, {props.keys.opError}{">"}
         </TypeAlias>,
         ...props.plans.map(p => (
-          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
+          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", "serde::Deserialize", ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
-                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={f.cliAttrs} />)}
+                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...f.cliAttrs, ...(f.role === "flatten" ? ["serde(flatten)"] : []), ...(f.param.cli?.skip ? ["serde(skip)"] : []), ...(f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean" ? ["serde(default)"] : [])]} />)}
               </List>
             ) : undefined}
           </StructDeclaration>
@@ -79,7 +83,7 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
 }
 
 // ops.rs: the one user-owned impl per op; both transports call it.
-export function OpsStubFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
+export function OpsStubFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: boolean }) {
   return (
     <SourceFile path="ops.rs" externalUses={uses(props.plans.flatMap(p => [p.returns, p.input?.cliType]), [])}>
       <Items items={props.plans.map(p => {
@@ -87,7 +91,7 @@ export function OpsStubFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
         if (p.input) params.push({ name: "input", type: <>impl Iterator{"<"}Item = {itemResult(props.keys, p.input.cliType)}{">"}</> });
         const unused = p.input ? "let _ = args;\nlet _ = input;\n" : "let _ = args;\n";
         return (
-          <FunctionDeclaration name={p.fn} params={params} returns={stubReturns(props.keys, p)}>
+          <FunctionDeclaration name={p.fn} params={params} returns={stubReturns(props.keys, p, props.daemon)}>
             {unused + (p.returnsStream ? "std::iter::from_fn(|| todo!())" : "todo!()")}
           </FunctionDeclaration>
         );
@@ -122,7 +126,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
   const readsInput = props.plans.some(p => p.input);
   return (
     <CodegenPair name="cli" implPath={props.implPath}>
-      <SourceFile path="cli_auto.rs" externalUses={uses([], ["std::io::BufRead", "std::io::Write"])}>
+      <SourceFile path="cli_auto.rs" externalUses={uses([], props.service.daemon ? [] : ["std::io::BufRead", "std::io::Write"])}>
         <Items items={[
           <StructDeclaration
             name={pascalCase(props.bin)}
@@ -132,6 +136,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
           >
             <StructField name="cmd" type={root ? <>Option{"<"}{props.keys.cmd}{">"}</> : props.keys.cmd} attrs={["command(subcommand)"]} />
             {root && <StructField name="file" type={root} attrs={["command(flatten)"]} />}
+            {props.service.daemon && <StructField name="fresh" type="bool" attrs={["arg(long, global = true)"]} />}
           </StructDeclaration>,
           <EnumDeclaration name="Cmd" refkey={props.keys.cmd} derive={["clap::Subcommand", "Debug"]}>
             <List hardline>
@@ -146,7 +151,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
               ))}
             </List>
           </EnumDeclaration>,
-          <FunctionDeclaration
+          !props.service.daemon && <FunctionDeclaration
             name="run"
             params={[
               { name: "cli", type: props.keys.root },
@@ -161,11 +166,11 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
             {root ? "\n        None => { let _ = cli.file; }" : ""}
             {"\n}\nOk(())"}
           </FunctionDeclaration>,
-          <FunctionDeclaration name="main" params={[{ name: "cli", type: props.keys.root }]} returns="std::process::ExitCode">
+          !props.service.daemon && <FunctionDeclaration name="main" params={[{ name: "cli", type: props.keys.root }]} returns="std::process::ExitCode">
             {"let stdin = std::io::stdin();\nlet stdout = std::io::stdout();\nmatch run(cli, &mut stdin.lock(), &mut stdout.lock()) {\n    Ok(()) => std::process::ExitCode::SUCCESS,\n    Err(e) => {\n        eprintln!(\"error: {e}\");\n        std::process::ExitCode::FAILURE\n    }\n}"}
           </FunctionDeclaration>,
-          <>fn write_json{"<"}T: serde::Serialize{">"}(out: &amp;mut dyn Write, value: &amp;T) -&gt; {itemResult(props.keys, undefined)} {"{"}{"\n"}    serde_json::to_writer(&amp;mut *out, value)?;{"\n"}    out.write_all(b"\n")?;{"\n"}    Ok(()){"\n"}{"}"}</>,
-          props.plans.some(p => p.returnsStream) && `pub fn write_stream<T: serde::Serialize>(out: &mut dyn Write, items: impl Iterator<Item = OpResult<T>>) -> OpResult<()> {
+          !props.service.daemon && <>fn write_json{"<"}T: serde::Serialize{">"}(out: &amp;mut dyn Write, value: &amp;T) -&gt; {itemResult(props.keys, undefined)} {"{"}{"\n"}    serde_json::to_writer(&amp;mut *out, value)?;{"\n"}    out.write_all(b"\n")?;{"\n"}    Ok(()){"\n"}{"}"}</>,
+          !props.service.daemon && props.plans.some(p => p.returnsStream) && `pub fn write_stream<T: serde::Serialize>(out: &mut dyn Write, items: impl Iterator<Item = OpResult<T>>) -> OpResult<()> {
     let mut rows = 0u64;
     for item in items {
         match item {
@@ -180,7 +185,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
     write_json(out, &serde_json::json!({"complete": true, "rows": rows}))?;
     Ok(())
 }`,
-          readsInput && <>fn read_jsonl{"<'a, T: serde::de::DeserializeOwned>"}(input: &amp;'a mut dyn BufRead) -&gt; impl Iterator{"<"}Item = {props.keys.opResult}{"<T>> + 'a {"}{"\n"}    input.lines().map(|line| Ok(serde_json::from_str(&amp;line?)?)){"\n"}{"}"}</>,
+          !props.service.daemon && readsInput && <>fn read_jsonl{"<'a, T: serde::de::DeserializeOwned>"}(input: &amp;'a mut dyn BufRead) -&gt; impl Iterator{"<"}Item = {props.keys.opResult}{"<T>> + 'a {"}{"\n"}    input.lines().map(|line| Ok(serde_json::from_str(&amp;line?)?)){"\n"}{"}"}</>,
         ]} />
       </SourceFile>
     </CodegenPair>
