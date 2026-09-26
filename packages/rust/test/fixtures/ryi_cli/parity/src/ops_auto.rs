@@ -98,7 +98,7 @@ pub struct ScipArgs {
 }
 
 #[derive(clap::Args, Debug, Clone)]
-#[command(group(clap::ArgGroup::new("required_one_of").required(true).args(["callers", "uses", "from", "call_path", "type_path", "flow_path"])))]
+#[command(group(clap::ArgGroup::new("arm").required(true).args(["callers", "uses", "from", "call_path", "type_path", "flow_path"])))]
 pub struct GraphArgs {
   #[doc = "Files, directories, or globs; - reads a path list from stdin"]
   #[arg(skip)]
@@ -150,27 +150,6 @@ pub struct GraphArgs {
   #[doc = "Add go/types type evidence"]
   #[arg(long, requires = "root")]
   pub go_checker: bool,
-}
-
-#[derive(clap::Args, Debug, Clone)]
-pub struct QueryArgs {
-  #[doc = "Files, directories, or globs; - reads a path list from stdin"]
-  #[arg(skip)]
-  pub paths: Vec<String>,
-  #[command(flatten)]
-  pub inputs: Inputs,
-  #[doc = "Language name (default: from each file's extension)"]
-  #[arg(long)]
-  pub lang: Option<String>,
-  #[doc = "Tree-sitter query text"]
-  #[arg(long)]
-  pub query: String,
-  #[doc = "Expected content digest (one input only)"]
-  #[arg(long)]
-  pub digest: Option<String>,
-  #[doc = "Write to a new SQLite database instead of stdout"]
-  #[arg(long, value_name = "PATH")]
-  pub sqlite: Option<PathBuf>,
 }
 
 #[derive(clap::Args, Debug, Clone)]
@@ -282,12 +261,21 @@ pub struct RenameArgs {
 }
 
 #[derive(clap::Args, Debug, Clone)]
-pub struct IngestArgs {
-  #[doc = "TSI JSONL files (/dev/stdin reads standard input)"]
-  #[arg(value_name = "PATH", required = true)]
-  pub paths: Vec<PathBuf>,
+pub struct QueryArgs {
+  #[doc = "Files, directories, or globs; - reads a path list from stdin"]
   #[arg(skip)]
-  pub trace: Option<String>,
+  pub paths: Vec<String>,
+  #[command(flatten)]
+  pub inputs: Inputs,
+  #[doc = "Language name (default: from each file's extension)"]
+  #[arg(long)]
+  pub lang: Option<String>,
+  #[doc = "Tree-sitter query text"]
+  #[arg(long)]
+  pub query: String,
+  #[doc = "Expected content digest (one input only)"]
+  #[arg(long)]
+  pub digest: Option<String>,
   #[doc = "Write to a new SQLite database instead of stdout"]
   #[arg(long, value_name = "PATH")]
   pub sqlite: Option<PathBuf>,
@@ -357,6 +345,18 @@ pub struct DiffArgs {
 }
 
 #[derive(clap::Args, Debug, Clone)]
+pub struct IngestArgs {
+  #[doc = "TSI JSONL files (/dev/stdin reads standard input)"]
+  #[arg(value_name = "PATH", required = true)]
+  pub paths: Vec<PathBuf>,
+  #[arg(skip)]
+  pub trace: Option<String>,
+  #[doc = "Write to a new SQLite database instead of stdout"]
+  #[arg(long, value_name = "PATH")]
+  pub sqlite: Option<PathBuf>,
+}
+
+#[derive(clap::Args, Debug, Clone, Default)]
 pub struct SchemaArgs {}
 
 #[derive(clap::Args, Debug, Clone)]

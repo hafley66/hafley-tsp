@@ -98,7 +98,7 @@ op scip(
 /** Ask one question of the resolved call/type graph */
 @route("/graph")
 @post
-@requiredOneOf(#["callers", "uses", "from", "call_path", "type_path", "flow_path"])
+@requiredOneOf(#["callers", "uses", "from", "call_path", "type_path", "flow_path"], "arm")
 op graph(
   /** Files, directories, or globs; - reads a path list from stdin */
   @skip @path paths?: string[],
@@ -150,28 +150,6 @@ op graph(
   /** Add go/types type evidence */
   @requires("root") @query go_checker?: boolean,
 ): CallEdge[];
-
-/** Run a tree-sitter query over files */
-@route("/query")
-@post
-op query(
-  /** Files, directories, or globs; - reads a path list from stdin */
-  @skip @path paths?: string[],
-
-  @bodyRoot inputs: Inputs,
-
-  /** Language name (default: from each file's extension) */
-  @query lang?: string,
-
-  /** Tree-sitter query text */
-  @query query: string,
-
-  /** Expected content digest (one input only) */
-  @query digest?: string,
-
-  /** Write to a new SQLite database instead of stdout */
-  @valueName("PATH") @query sqlite?: path,
-): FactSummary;
 
 /** Move one item into another file, with its imports */
 @route("/cleave")
@@ -285,16 +263,23 @@ op rename(
   @query json?: boolean,
 ): EditPlan;
 
-/** Validate and re-emit foreign TSI JSONL */
-@route("/ingest")
+/** Run a tree-sitter query over files */
+@route("/query")
 @post
-op ingest(
-  /** TSI JSONL files (/dev/stdin reads standard input) */
-  @positional @valueName("PATH") @minItems(1) @query paths?: path[],
+op query(
+  /** Files, directories, or globs; - reads a path list from stdin */
+  @skip @path paths?: string[],
 
-  @bodyRoot input: JsonlStream<TypeEdge>,
+  @bodyRoot inputs: Inputs,
 
-  @skip @header("X-Trace") trace?: string,
+  /** Language name (default: from each file's extension) */
+  @query lang?: string,
+
+  /** Tree-sitter query text */
+  @query query: string,
+
+  /** Expected content digest (one input only) */
+  @query digest?: string,
 
   /** Write to a new SQLite database instead of stdout */
   @valueName("PATH") @query sqlite?: path,
@@ -345,6 +330,21 @@ op diff(
   @encodedName("application/x-clap", "pattern") @valueName("GLOB") @query patterns: string[],
   /** Resolve arms (call,type) */
   @valueDelimiter(",") @valueName("ARMS") @query arms: string[],
+  /** Write to a new SQLite database instead of stdout */
+  @valueName("PATH") @query sqlite?: path,
+): FactSummary;
+
+/** Validate and re-emit foreign TSI JSONL */
+@route("/ingest")
+@post
+op ingest(
+  /** TSI JSONL files (/dev/stdin reads standard input) */
+  @positional @valueName("PATH") @minItems(1) @query paths?: path[],
+
+  @bodyRoot input: JsonlStream<TypeEdge>,
+
+  @skip @header("X-Trace") trace?: string,
+
   /** Write to a new SQLite database instead of stdout */
   @valueName("PATH") @query sqlite?: path,
 ): FactSummary;

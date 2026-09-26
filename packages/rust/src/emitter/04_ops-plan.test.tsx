@@ -34,7 +34,7 @@ const service: ServiceDef = {
   name: "Probe", rootArgs: "FileArgs", argsConflictsWithSubcommands: true,
   afterHelp: "Build: $SPREFA_BUILD_GIT_HASH",
   operations: [{
-    name: "graph", verb: "post", path: "/graph", requiredOneOf: ["callers", "uses"],
+    name: "graph", verb: "post", path: "/graph", requiredOneOf: ["callers", "uses"], requiredOneOfName: "arm",
     params: [
       { name: "inputs", type: { kind: "model", name: "Inputs" }, source: "body" },
       { name: "callers", type: str, source: "query", optional: true, cli: { valueName: "NAME", requires: "root", conflictsWith: ["uses"] } },
@@ -44,7 +44,7 @@ const service: ServiceDef = {
       { name: "trace", type: str, source: "header", headerName: "X-Trace", optional: true, cli: { skip: true } },
       { name: "tags", type: { kind: "array", element: str }, source: "header", headerName: "X-Tag", cli: { skip: true } },
     ],
-  }],
+  }, { name: "schema", verb: "post", path: "/schema", params: [] }],
 };
 
 describe("clap and HTTP field metadata", () => {
@@ -60,7 +60,7 @@ describe("clap and HTTP field metadata", () => {
       cli.includes("concat!(\"Build: \", env!(\"SPREFA_BUILD_GIT_HASH\")"),
       input.includes("#[arg(value_name = \"PATH\")]"),
       input.includes("#[arg(long = \"pattern\", value_name = \"GLOB\", value_delimiter = ',')]"),
-      ops.includes("required_one_of\").required(true)"),
+      ops.includes("ArgGroup::new(\"arm\").required(true)"),
       ops.includes("requires = \"root\""),
       ops.includes("conflicts_with = \"uses\""),
       ops.includes("value_parser = clap::value_parser!(u64).range(1..)"),
@@ -68,7 +68,10 @@ describe("clap and HTTP field metadata", () => {
       http.includes("headers.get_all(\"X-Tag\")"),
       http.includes("headers: HeaderMap"),
       http.includes('query.output.unwrap_or(PathBuf::from("-"))'),
-    ]).toEqual(Array(13).fill(true));
+      cli.includes("Schema,"),
+      cli.includes("Cmd::Schema"),
+      ops.includes("pub struct SchemaArgs"),
+    ]).toEqual(Array(16).fill(true));
   });
 
   it.skipIf(!process.env.CARGO_CHECK)("compiles the emitted clap and axum crate", () => {

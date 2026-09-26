@@ -12,7 +12,6 @@ use crate::ops_auto::OpResult;
 use crate::ops_auto::QueryArgs;
 use crate::ops_auto::RegionArgs;
 use crate::ops_auto::RenameArgs;
-use crate::ops_auto::SchemaArgs;
 use crate::ops_auto::ScipArgs;
 use crate::ops_auto::SlowArgs;
 use crate::ops_auto::TrailArgs;
@@ -36,8 +35,6 @@ pub enum Cmd {
   Scip(ScipArgs),
   #[doc = "Ask one question of the resolved call/type graph"]
   Graph(GraphArgs),
-  #[doc = "Run a tree-sitter query over files"]
-  Query(QueryArgs),
   #[doc = "Move one item into another file, with its imports"]
   Cleave(CleaveArgs),
   #[doc = "Move a file and repair every specifier that names it"]
@@ -45,16 +42,18 @@ pub enum Cmd {
   #[doc = "Rename a symbol and every occurrence bound to it"]
   #[command(after_help = "Exit codes: 2 plan error, 3 ambiguous (pass --at), 4 not found, 5 inexact, 6 dynamic, 7 plan has abstains")]
   Rename(RenameArgs),
-  #[doc = "Validate and re-emit foreign TSI JSONL"]
-  Ingest(IngestArgs),
+  #[doc = "Run a tree-sitter query over files"]
+  Query(QueryArgs),
   #[doc = "Replace a generated region between sprefa markers"]
   Region(RegionArgs),
   #[doc = "Stream fact deltas as the worktree changes"]
   Watch(WatchArgs),
   #[doc = "Fact delta between two commits"]
   Diff(DiffArgs),
+  #[doc = "Validate and re-emit foreign TSI JSONL"]
+  Ingest(IngestArgs),
   #[doc = "Print the output record schema"]
-  Schema(SchemaArgs),
+  Schema,
   #[doc = "Print the last N runs from the trail"]
   Trail(TrailArgs),
 }
@@ -65,15 +64,15 @@ pub fn run(cli: Ryi, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<(
           Some(Cmd::Slow(args)) => { write_json(out, &crate::ops::slow(&args)?)?; }
           Some(Cmd::Scip(args)) => { write_json(out, &crate::ops::scip(&args)?)?; }
           Some(Cmd::Graph(args)) => { write_json(out, &crate::ops::graph(&args)?)?; }
-          Some(Cmd::Query(args)) => { write_json(out, &crate::ops::query(&args)?)?; }
           Some(Cmd::Cleave(args)) => { write_json(out, &crate::ops::cleave(&args)?)?; }
           Some(Cmd::Move(args)) => { write_json(out, &crate::ops::r#move(&args)?)?; }
           Some(Cmd::Rename(args)) => { write_json(out, &crate::ops::rename(&args)?)?; }
-          Some(Cmd::Ingest(args)) => { write_json(out, &crate::ops::ingest(&args, read_jsonl(&mut *input))?)?; }
+          Some(Cmd::Query(args)) => { write_json(out, &crate::ops::query(&args)?)?; }
           Some(Cmd::Region(args)) => { write_json(out, &crate::ops::region(&args)?)?; }
           Some(Cmd::Watch(args)) => { write_json(out, &crate::ops::watch(&args)?)?; }
           Some(Cmd::Diff(args)) => { write_json(out, &crate::ops::diff(&args)?)?; }
-          Some(Cmd::Schema(args)) => { write_json(out, &crate::ops::schema(&args)?)?; }
+          Some(Cmd::Ingest(args)) => { write_json(out, &crate::ops::ingest(&args, read_jsonl(&mut *input))?)?; }
+          Some(Cmd::Schema) => { let args = Default::default(); write_json(out, &crate::ops::schema(&args)?)?; }
           Some(Cmd::Trail(args)) => { write_json(out, &crate::ops::trail(&args)?)?; }
           None => { let _ = cli.file; }
   }

@@ -65,7 +65,7 @@ export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys }) {
           Result{"<"}T, {props.keys.opError}{">"}
         </TypeAlias>,
         ...props.plans.map(p => (
-          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone"]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new("required_one_of").required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
+          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
                 {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={f.cliAttrs} />)}
@@ -103,7 +103,8 @@ function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean): Children {
     : p.returns
       ? <>write_json(out, &amp;{call}?)?;</>
       : <>{call}?;</>;
-  return <>        {optional ? "Some(" : ""}{keys.cmd}::{p.variant}(args){optional ? ")" : ""} =&gt; {"{"} {body} {"}"}</>;
+  const empty = p.fields.length === 0;
+  return <>        {optional ? "Some(" : ""}{keys.cmd}::{p.variant}{empty ? "" : "(args)"}{optional ? ")" : ""} =&gt; {"{"} {empty ? "let args = Default::default(); " : ""}{body} {"}"}</>;
 }
 
 // cli_auto.rs: clap derive tree; run() writes JSON (JSONL for streams) and reads stdin JSONL.
@@ -140,7 +141,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
                     ...(p.op.doc !== undefined ? [`doc = ${JSON.stringify(p.op.doc)}`] : []),
                     ...(p.op.afterHelp ? [`command(after_help = ${afterHelpExpr(p.op.afterHelp)})`] : []),
                   ]} />{"\n"}</> : null}
-                  {p.variant}({p.argsKey}),
+                  {p.variant}{p.fields.length ? <>({p.argsKey})</> : null},
                 </>
               ))}
             </List>

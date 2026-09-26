@@ -9,13 +9,13 @@ const VERBS: [&str; 14] = ["fast", "slow", "scip", "graph", "cleave", "move", "r
 
 fn table(cmd: clap::Command) -> String {
     let mut rows = Vec::new();
-    rows.push(format!("root about={} after_help={} args_conflicts={}",
+    rows.push(format!("root about={} after_help={} args_conflicts={} debug={cmd:?}",
         cmd.get_about().map(|s| s.to_string()).unwrap_or_default(),
         cmd.get_after_help().map(|s| s.to_string()).unwrap_or_default(),
         cmd.is_args_conflicts_with_subcommands_set()));
     let mut root_args: Vec<String> = cmd.get_arguments()
         .filter(|a| !matches!(a.get_id().as_str(), "help" | "version"))
-        .map(|a| format!("root {} {:?} {:?} {}",
+        .map(|a| format!("root {} {:?} {:?} {} debug={a:?}",
             a.get_long().map(|l| format!("--{l}")).unwrap_or_else(|| format!("<{}>", a.get_id())),
             a.get_action(), a.get_value_names(), a.get_value_delimiter().map(|c| c.to_string()).unwrap_or_default()))
         .collect();
@@ -44,7 +44,7 @@ fn table(cmd: clap::Command) -> String {
                     a.get_default_values().iter().map(|v| v.to_string_lossy().into_owned()).collect();
                 let help = a.get_help().map(|h| h.to_string()).unwrap_or_default();
                 format!(
-                    "{verb:6} {flag:18} {ty:26} {:8} req={:5} def={:3} value={:?} delimiter={:?} | {help}",
+                    "{verb:6} {flag:18} {ty:26} {:8} req={:5} def={:3} value={:?} delimiter={:?} | {help} debug={a:?}",
                     format!("{:?}", a.get_action()),
                     a.is_required_set(),
                     defaults.join(","),

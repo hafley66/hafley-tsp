@@ -128,8 +128,8 @@ function convertModel(model: Model, docOf?: DocOf, program?: Program): ModelDef 
       ...(cli ? { cli } : {}),
     });
   }
-  const requiredOneOf = program ? getClapModel(program, model)?.requiredOneOf : undefined;
-  return { kind: "model", name: model.name, properties, ...(requiredOneOf ? { requiredOneOf } : {}) };
+  const clap = program ? getClapModel(program, model) : undefined;
+  return { kind: "model", name: model.name, properties, ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf, requiredOneOfName: clap.requiredOneOfName } : {}) };
 }
 
 function convertEnum(tspEnum: TspEnum): EnumDef {

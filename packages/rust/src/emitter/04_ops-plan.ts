@@ -179,7 +179,7 @@ export function domainExtras(types: TypeDef[], service: ServiceDef): Map<string,
     extras.set(model.name, {
       derives: ["clap::Args"],
       fieldAttrs,
-      ...(model.requiredOneOf?.length ? { attrs: [`command(group(clap::ArgGroup::new("required_one_of").required(true).args([${model.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] } : {}),
+      ...(model.requiredOneOf?.length ? { attrs: [`command(group(clap::ArgGroup::new(${JSON.stringify(model.requiredOneOfName ?? "required_one_of")}).required(true).args([${model.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] } : {}),
     });
     for (const f of model.properties) {
       noteEnum(f.type);

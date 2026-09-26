@@ -58,6 +58,7 @@ export interface ModelDef {
   doc?: string;
   properties: ModelProperty[];
   requiredOneOf?: string[];
+  requiredOneOfName?: string;
 }
 
 export interface EnumMember {
@@ -93,6 +94,7 @@ export interface OperationDef {
   doc?: string;
   afterHelp?: string;
   requiredOneOf?: string[];
+  requiredOneOfName?: string;
   verb: HttpVerb;
   path: string;
   params: OperationParam[];

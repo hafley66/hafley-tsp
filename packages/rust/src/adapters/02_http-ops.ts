@@ -42,11 +42,13 @@ function operationDef(program: Program, http: HttpOperation): OperationDef {
     });
   }
   const doc = getDoc(program, http.operation);
+  const clap = getClapOperation(program, http.operation);
   return {
     name: http.operation.name,
     ...(doc !== undefined ? { doc } : {}),
-    ...(getClapOperation(program, http.operation)?.afterHelp ? { afterHelp: getClapOperation(program, http.operation)?.afterHelp } : {}),
-    ...(getClapOperation(program, http.operation)?.requiredOneOf ? { requiredOneOf: getClapOperation(program, http.operation)?.requiredOneOf } : {}),
+    ...(clap?.afterHelp ? { afterHelp: clap.afterHelp } : {}),
+    ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf } : {}),
+    ...(clap?.requiredOneOfName ? { requiredOneOfName: clap.requiredOneOfName } : {}),
     verb: http.verb,
     path: http.uriTemplate,
     params,

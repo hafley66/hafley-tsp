@@ -236,33 +236,6 @@ pub async fn graph(path: Option<Path<GraphPath>>, Query(query): Query<GraphQuery
 }
 
 #[derive(Deserialize, Default, Debug)]
-pub struct QueryPath {
-  pub paths: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct QueryQuery {
-  pub lang: Option<String>,
-  pub query: String,
-  pub digest: Option<String>,
-  pub sqlite: Option<PathBuf>,
-}
-
-pub async fn query(path: Option<Path<QueryPath>>, Query(query): Query<QueryQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
-  let path = path.map(|Path(p)| p).unwrap_or_default();
-  let args = QueryArgs {
-      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
-      inputs: body,
-      lang: query.lang,
-      query: query.query,
-      digest: query.digest,
-      sqlite: query.sqlite,
-  };
-  let out = tokio::task::spawn_blocking(move || crate::ops::query(&args)).await??;
-  Ok(Json(out))
-}
-
-#[derive(Deserialize, Default, Debug)]
 pub struct CleavePath {
   pub target: Option<String>,
   pub dest: Option<PathBuf>,
@@ -375,21 +348,30 @@ pub async fn rename(path: Option<Path<RenamePath>>, Query(query): Query<RenameQu
   Ok(Json(out))
 }
 
+#[derive(Deserialize, Default, Debug)]
+pub struct QueryPath {
+  pub paths: Option<String>,
+}
+
 #[derive(Deserialize, Debug)]
-pub struct IngestQuery {
-  #[serde(default)]
-  pub paths: Vec<PathBuf>,
+pub struct QueryQuery {
+  pub lang: Option<String>,
+  pub query: String,
+  pub digest: Option<String>,
   pub sqlite: Option<PathBuf>,
 }
 
-pub async fn ingest(Query(query): Query<IngestQuery>, headers: HeaderMap, body: Body) -> OpResult<Json<FactSummary>> {
-  let args = IngestArgs {
-      paths: query.paths,
-      trace: headers.get("X-Trace").and_then(|v| v.to_str().ok()).map(|v| v.parse::<String>()).transpose().map_err(|e| OpError(e.to_string()))?,
+pub async fn query(path: Option<Path<QueryPath>>, Query(query): Query<QueryQuery>, Json(body): Json<Inputs>) -> OpResult<Json<FactSummary>> {
+  let path = path.map(|Path(p)| p).unwrap_or_default();
+  let args = QueryArgs {
+      paths: path.paths.map(|s| s.split('/').map(Into::into).collect()).unwrap_or_default(),
+      inputs: body,
+      lang: query.lang,
+      query: query.query,
+      digest: query.digest,
       sqlite: query.sqlite,
   };
-  let input = jsonl_input::<TypeEdge>(body);
-  let out = tokio::task::spawn_blocking(move || crate::ops::ingest(&args, input)).await??;
+  let out = tokio::task::spawn_blocking(move || crate::ops::query(&args)).await??;
   Ok(Json(out))
 }
 
@@ -468,6 +450,24 @@ pub async fn diff(Query(query): Query<DiffQuery>) -> OpResult<Json<FactSummary>>
   Ok(Json(out))
 }
 
+#[derive(Deserialize, Debug)]
+pub struct IngestQuery {
+  #[serde(default)]
+  pub paths: Vec<PathBuf>,
+  pub sqlite: Option<PathBuf>,
+}
+
+pub async fn ingest(Query(query): Query<IngestQuery>, headers: HeaderMap, body: Body) -> OpResult<Json<FactSummary>> {
+  let args = IngestArgs {
+      paths: query.paths,
+      trace: headers.get("X-Trace").and_then(|v| v.to_str().ok()).map(|v| v.parse::<String>()).transpose().map_err(|e| OpError(e.to_string()))?,
+      sqlite: query.sqlite,
+  };
+  let input = jsonl_input::<TypeEdge>(body);
+  let out = tokio::task::spawn_blocking(move || crate::ops::ingest(&args, input)).await??;
+  Ok(Json(out))
+}
+
 pub async fn schema() -> OpResult<Json<FactSummary>> {
   let args = SchemaArgs {
 
@@ -499,18 +499,18 @@ pub fn router() -> axum::Router {
       .route("/scip/{*paths}", post(scip))
       .route("/graph", post(graph))
       .route("/graph/{*paths}", post(graph))
-      .route("/query", post(query))
-      .route("/query/{*paths}", post(query))
       .route("/cleave", post(cleave))
       .route("/cleave/{target}/{dest}", post(cleave))
       .route("/move", post(r#move))
       .route("/move/{old}/{new}", post(r#move))
       .route("/rename", post(rename))
       .route("/rename/{target}/{new}", post(rename))
-      .route("/ingest", post(ingest))
+      .route("/query", post(query))
+      .route("/query/{*paths}", post(query))
       .route("/region/{target}/{id}", post(region))
       .route("/watch", post(watch))
       .route("/diff", post(diff))
+      .route("/ingest", post(ingest))
       .route("/schema", post(schema))
       .route("/trail/{runs}", post(trail))
 }
