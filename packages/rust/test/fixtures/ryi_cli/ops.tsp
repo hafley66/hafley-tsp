@@ -1,11 +1,17 @@
 import "@typespec/http";
 import "@typespec/http/streams";
 import "./domain.tsp";
+import "../../../../decorator-def/lib/main.tsp";
 
 using Http;
 using Http.Streams;
+using Clap;
 
 @service
+@rootArgs(FileArgs)
+@argsConflictsWithSubcommands
+@doc("Source files -> flat graph facts (JSONL on stdout, or --sqlite)")
+@afterHelp("Logging: RUST_LOG (default sprefa_extract=info,hafley_scm=info), HAFLEY_LOG_FORMAT=json|text\nBuild: git hash: $SPREFA_BUILD_GIT_HASH, datetime: $SPREFA_BUILD_DATETIME")
 namespace Ryi;
 
 /** Syntax-only whole-project facts (no compiler) */
@@ -13,12 +19,12 @@ namespace Ryi;
 @post
 op fast(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @path paths?: string[],
+  @skip @path paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
   /** Write to a new SQLite database instead of stdout */
-  @query sqlite?: path,
+  @valueName("PATH") @query sqlite?: path,
 
   /** Add 1-based line/col beside every span */
   @query lines?: boolean,
@@ -29,24 +35,24 @@ op fast(
 @post
 op slow(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @path paths?: string[],
+  @skip @path paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
   /** Write to a new SQLite database instead of stdout */
-  @query sqlite?: path,
+  @valueName("PATH") @query sqlite?: path,
 
   /** Add 1-based line/col beside every span */
   @query lines?: boolean,
 
   /** Load this index.scip instead of finding or building one */
-  @query scip_index?: path,
+  @valueName("FILE") @query scip_index?: path,
 
   /** Skip the compiler checkers */
   @query no_checker?: boolean,
 
   /** Seconds allowed for one indexer run */
-  @query scip_timeout?: uint64,
+  @valueName("SECS") @query scip_timeout?: uint64,
 ): FactSummary;
 
 /** Raw SCIP index rows */
@@ -54,94 +60,95 @@ op slow(
 @post
 op scip(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @path paths?: string[],
+  @skip @path paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
   /** Write to a new SQLite database instead of stdout */
-  @query sqlite?: path,
+  @valueName("PATH") @query sqlite?: path,
 
   /** Add 1-based line/col beside every span */
   @query lines?: boolean,
 
   /** Load this index.scip instead of finding or building one */
-  @query scip_index?: path,
+  @valueName("FILE") @conflictsWith(#["indexer"]) @query scip_index?: path,
 
   /** SCIP index cache directory */
-  @query scip_cache?: path,
+  @valueName("DIR") @query scip_cache?: path,
 
   /** Seconds allowed for one indexer run */
-  @query scip_timeout?: uint64,
+  @valueName("SECS") @query scip_timeout?: uint64,
 
   /** Run only this language's SCIP indexer */
-  @query indexer?: string,
+  @valueName("LANG") @query indexer?: string,
 
   /** Stream the index records themselves instead of the scip_* relations */
   @query raw?: boolean,
 
   /** Only these --raw record kinds (comma-separated) */
-  @query records?: string,
+  @valueName("KINDS") @requires("raw") @query records?: string,
 
   /** Add the source text to each scip_occurrence */
-  @query occurrence_text?: boolean,
+  @requires("raw") @query occurrence_text?: boolean,
 
   /** Build the index for --raw with the inputs' language indexer */
-  @query scip_build?: boolean,
+  @requiresAll(#["raw", "root"]) @conflictsWith(#["scip_index"]) @query scip_build?: boolean,
 ): FactSummary;
 
 /** Ask one question of the resolved call/type graph */
 @route("/graph")
 @post
+@requiredOneOf(#["callers", "uses", "from", "call_path", "type_path", "flow_path"])
 op graph(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @path paths?: string[],
+  @skip @path paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
   /** Resolved call edges landing on NAME */
-  @query callers?: string,
+  @valueName("NAME") @query callers?: string,
 
   /** Declarations that reference type NAME */
-  @query uses?: string,
+  @valueName("NAME") @query uses?: string,
 
   /** Everything NAME reaches along call edges */
-  @query from?: string,
+  @valueName("NAME") @query from?: string,
 
   /** Shortest call paths from NAME */
-  @query call_path?: string,
+  @valueName("NAME") @query call_path?: string,
 
   /** Shortest type-reference paths from NAME */
-  @query type_path?: string,
+  @valueName("NAME") @query type_path?: string,
 
-  /** Flow paths from BLOB\@START:END */
-  @query flow_path?: string,
+  @doc("Flow paths from BLOB@START:END")
+  @valueName("BLOB@START:END") @query flow_path?: string,
 
   /** Keep the fact store in a new SQLite database at PATH */
-  @query sqlite?: path,
+  @valueName("PATH") @query sqlite?: path,
 
   /** Walk the SCIP oracle's edges (ryi slow) instead of the syntax resolve */
-  @query slow?: boolean,
+  @conflictsWith(#["rust_checker", "ts_checker", "go_checker"]) @query slow?: boolean,
 
   /** Seconds the question may run; past it graph exits 3 */
-  @query timeout?: uint64 = 30,
+  @minValue(1) @valueName("SECS") @query timeout?: uint64 = 30,
 
   /** Query a committed revision */
-  @query at?: string,
+  @valueName("REV") @requires("root") @conflictsWith(#["rust_checker", "ts_checker", "go_checker", "scip_index", "sqlite"]) @query at?: string,
 
   /** Diff the answers against REV */
-  @query compare?: string,
+  @valueName("REV") @requires("at") @conflictsWith(#["sqlite"]) @query compare?: string,
 
   /** Load this index.scip */
-  @query scip_index?: path,
+  @valueName("FILE") @requires("root") @query scip_index?: path,
 
   /** Add rust-analyzer type evidence */
-  @query rust_checker?: boolean,
+  @requires("root") @query rust_checker?: boolean,
 
   /** Add TypeScript checker type evidence */
-  @query ts_checker?: boolean,
+  @requires("root") @query ts_checker?: boolean,
 
   /** Add go/types type evidence */
-  @query go_checker?: boolean,
+  @requires("root") @query go_checker?: boolean,
 ): CallEdge[];
 
 /** Run a tree-sitter query over files */
@@ -149,7 +156,7 @@ op graph(
 @post
 op query(
   /** Files, directories, or globs; - reads a path list from stdin */
-  @path paths?: string[],
+  @skip @path paths?: string[],
 
   @bodyRoot inputs: Inputs,
 
@@ -163,18 +170,21 @@ op query(
   @query digest?: string,
 
   /** Write to a new SQLite database instead of stdout */
-  @query sqlite?: path,
+  @valueName("PATH") @query sqlite?: path,
 ): FactSummary;
 
 /** Move one item into another file, with its imports */
 @route("/cleave")
 @post
 op cleave(
-  /** SRC#ITEM */
-  @path target: string,
+  /** SRC#ITEM (omit with --list) */
+  @path target?: string,
 
-  /** Destination file (created if missing) */
-  @path dest: path,
+  /** Destination file, created if missing (omit with --list) */
+  @path dest?: path,
+
+  /** TSV of SRC#ITEM<TAB>DEST rows, applied in order as one stage */
+  @conflictsWith(#["target", "dest", "json"]) @query list?: path,
 
   /** Corpus root (default: git root of SRC) */
   @query root?: path,
@@ -239,6 +249,7 @@ op `move`(
 /** Rename a symbol and every occurrence bound to it */
 @route("/rename")
 @post
+@afterHelp("Exit codes: 2 plan error, 3 ambiguous (pass --at), 4 not found, 5 inexact, 6 dynamic, 7 plan has abstains")
 op rename(
   /** FILE#OLD (omit with --list) */
   @path target?: string,
@@ -264,8 +275,11 @@ op rename(
   /** Report leftover old-name spellings in plain text */
   @query text_refs?: boolean,
 
-  /** Cross-check the plan against this SCIP index (report only) */
-  @query verify_scip?: path,
+  /** SCIP index (default ROOT/index.scip): its seats join the plan */
+  @valueName("INDEX") @query verify_scip?: path,
+
+  /** Only report the SCIP diff; keep the syntax plan as is */
+  @query no_scip_merge?: boolean,
 
   /** End with one JSON line of abstains */
   @query json?: boolean,
@@ -275,8 +289,73 @@ op rename(
 @route("/ingest")
 @post
 op ingest(
+  /** TSI JSONL files (/dev/stdin reads standard input) */
+  @positional @valueName("PATH") @minItems(1) @query paths?: path[],
+
   @bodyRoot input: JsonlStream<TypeEdge>,
 
+  @skip @header("X-Trace") trace?: string,
+
   /** Write to a new SQLite database instead of stdout */
-  @query sqlite?: path,
+  @valueName("PATH") @query sqlite?: path,
+): FactSummary;
+
+/** Replace a generated region between sprefa markers */
+@route("/region") @post
+op region(
+  /** DL7 file holding the markers */
+  @path target: path,
+  /** Marker id after sprefa:auto-begin / sprefa:auto-end */
+  @path id: string,
+  /** Generated body file, or - for stdin */
+  @query generated: path = "-",
+  /** Write the replacement (default: report drift) */
+  @query apply?: boolean,
+  /** Soopy state root for --apply */
+  @query state?: path,
+): EditPlan;
+
+/** Stream fact deltas as the worktree changes */
+@route("/watch") @post
+op watch(
+  /** Repository root (default: git root of the working directory) */
+  @valueName("DIR") @query root?: path,
+  /** Glob to watch; repeatable (default: every roster extension) */
+  @encodedName("application/x-clap", "pattern") @valueName("GLOB") @query patterns: string[],
+  /** Fact kinds (cst,type,call,df,data) */
+  @valueDelimiter(",") @valueName("KINDS") @query kinds: string[],
+  /** Receipt store path */
+  @valueName("PATH") @query receipts?: path,
+  /** Emit one snapshot and exit */
+  @query once?: boolean,
+  /** Poll interval when the platform watcher is unavailable */
+  @minValue(1) @query poll_ms?: uint64 = 500,
+): FactSummary;
+
+/** Fact delta between two commits */
+@route("/diff") @post
+op diff(
+  /** Repository root (default: git root of the working directory) */
+  @valueName("DIR") @query root?: path,
+  /** Base revision */
+  @valueName("REV") @query from: string,
+  /** Target revision */
+  @valueName("REV") @query to: string,
+  /** Glob to include; repeatable (default: every roster extension) */
+  @encodedName("application/x-clap", "pattern") @valueName("GLOB") @query patterns: string[],
+  /** Resolve arms (call,type) */
+  @valueDelimiter(",") @valueName("ARMS") @query arms: string[],
+  /** Write to a new SQLite database instead of stdout */
+  @valueName("PATH") @query sqlite?: path,
+): FactSummary;
+
+/** Print the output record schema */
+@route("/schema") @post
+op schema(): FactSummary;
+
+/** Print the last N runs from the trail */
+@route("/trail") @post
+op trail(
+  /** Runs to print */
+  @valueName("N") @path runs: usize = 5,
 ): FactSummary;
