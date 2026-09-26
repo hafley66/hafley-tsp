@@ -76,6 +76,7 @@ function inputHandler(plan: OpPlan, bin: string): string {
         Err(error) => return bad_request(error.to_string()),
     };
     let root = request.request_root.clone();
+    tracing::Span::current().record("request_root", &tracing::field::display(root.display()));
     let args: ${plan.argsName} = match request.decode(${JSON.stringify(plan.op.name)}) { Ok(args) => args, Err(error) => return bad_request(error) };
     let input = jsonl_input(body);
     let diagnostics = Arc::new(Mutex::new(Vec::new()));
@@ -91,12 +92,14 @@ function serverFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
   ).join("\n");
   const inputHandlers = plans.filter(plan => plan.input).map(plan => inputHandler(plan, bin)).join("\n\n");
   const routes = plans.map(plan => `        .route(${JSON.stringify(plan.op.path)}, ${plan.op.verb}(${plan.fn}))`).join("\n");
+  const verbArms = plans.map(plan => `        ${JSON.stringify(plan.op.path)} => ${JSON.stringify(plan.op.name)},`).join("\n");
   return template("server_auto")
     .replace("__SERVICE__", service.name)
     .replaceAll("__BIN__", bin)
     .replaceAll("__REQUEST_HEADER__", `x-${bin}-request`)
     .replace("// __HANDLERS__", handlers)
     .replace("// __INPUT_HANDLERS__", inputHandlers)
+    .replace("        // __VERB_ARMS__", verbArms)
     .replace("        // __ROUTES__", routes);
 }
 
