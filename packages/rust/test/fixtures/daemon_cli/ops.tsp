@@ -26,5 +26,5 @@ model RootArgs {
 
 model RawByteStream is HttpStream<bytes, "application/octet-stream", bytes>;
 
-op extract(args: RootArgs, @bodyRoot input: RawByteStream): JsonlStream<jsonValue>;
+op extract(@bodyIgnore args: RootArgs, @bodyRoot input: RawByteStream): JsonlStream<jsonValue>;
 op ingest(@bodyRoot input: RawByteStream): jsonValue;
