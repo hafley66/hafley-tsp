@@ -27,6 +27,11 @@ it("assigns daemon routes during validation and emits both transports from the s
         ],
         [
           "post",
+          "/fast",
+          "fast",
+        ],
+        [
+          "post",
           "/ingest",
           "ingest",
         ],
@@ -37,6 +42,10 @@ it("assigns daemon routes during validation and emits both transports from the s
     [
       [
         "extract",
+        "raw",
+      ],
+      [
+        "fast",
         "raw",
       ],
       [
@@ -100,6 +109,7 @@ it("assigns daemon routes during validation and emits both transports from the s
     pub fn request_uses_stdin(verb: &str, args: &serde_json::Value) -> bool {
         let names: &[&str] = match verb {
             "extract" => &["paths"],
+            "fast" => &["paths"],
             "ingest" => &[],
             _ => &[],
         };
