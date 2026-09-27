@@ -151,6 +151,7 @@ macro_rules! raw_handler {
 
 // __HANDLERS__
 
+// __JSONL_INPUT_START__
 fn jsonl_input<T: serde::de::DeserializeOwned + Send + 'static>(body: Body) -> impl Iterator<Item = OpResult<T>> + Send {
     let (tx, mut rx) = tokio::sync::mpsc::channel(64);
     tokio::spawn(async move {
@@ -164,6 +165,7 @@ fn jsonl_input<T: serde::de::DeserializeOwned + Send + 'static>(body: Body) -> i
     });
     std::iter::from_fn(move || rx.blocking_recv())
 }
+// __JSONL_INPUT_END__
 
 // __INPUT_HANDLERS__
 

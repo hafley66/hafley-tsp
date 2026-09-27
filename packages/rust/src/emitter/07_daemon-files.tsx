@@ -144,6 +144,8 @@ function serverFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
     .replaceAll("__REQUEST_HEADER__", `x-${bin}-request`)
     .replace("// __HANDLERS__", handlers)
     .replace("// __INPUT_HANDLERS__", inputHandlers)
+    .replace(/\/\/ __JSONL_INPUT_START__\n([\s\S]*?)\/\/ __JSONL_INPUT_END__\n/, (_match, helper) =>
+      plans.some(plan => plan.input && plan.input.param.streamFormat !== "raw") ? helper : "")
     .replace("        // __VERB_ARMS__", verbArms)
     .replace("        // __ROUTES__", routes);
 }
