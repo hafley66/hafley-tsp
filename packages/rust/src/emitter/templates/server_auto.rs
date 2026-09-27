@@ -19,6 +19,7 @@ use futures_util::StreamExt as _;
 use http_body::Frame;
 use http_body_util::{BodyExt as _, StreamBody};
 use tokio_util::sync::CancellationToken;
+use tokio::io::AsyncWriteExt as _;
 use tracing::Instrument as _;
 
 use crate::daemon_auto::Request;

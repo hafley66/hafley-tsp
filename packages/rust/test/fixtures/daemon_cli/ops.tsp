@@ -16,7 +16,7 @@ scalar path extends string;
 scalar jsonValue extends string;
 
 model Inputs {
-  @positional paths: string[];
+  @positional paths: path[];
   @valueName("DIR") root?: path;
 }
 
@@ -24,5 +24,7 @@ model RootArgs {
   inputs: Inputs;
 }
 
-op extract(args: RootArgs): JsonlStream<jsonValue>;
-op ingest(@bodyRoot input: JsonlStream<jsonValue>): jsonValue;
+model RawByteStream is HttpStream<bytes, "application/octet-stream", bytes>;
+
+op extract(args: RootArgs, @bodyRoot input: RawByteStream): JsonlStream<jsonValue>;
+op ingest(@bodyRoot input: RawByteStream): jsonValue;

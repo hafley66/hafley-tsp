@@ -12,6 +12,7 @@ import type {
   Program,
 } from "@typespec/compiler";
 import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
+import { isStream } from "@typespec/streams";
 import { getClapArg, getClapModel } from "../../../decorator-def/src/clap.js";
 
 import type {
@@ -156,6 +157,7 @@ export function namespaceToTypeDefs(
   for (const [, model] of ns.models) {
     // Skip anonymous/template models
     if (!model.name || model.name === "") continue;
+    if (options.program && isStream(options.program, model)) continue;
     defs.push(convertModel(model, options.docOf, options.program));
   }
 

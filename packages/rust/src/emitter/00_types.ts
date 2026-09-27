@@ -86,7 +86,9 @@ export type ParamSource = "path" | "query" | "header" | "body";
 export interface OperationParam extends ModelProperty {
   source: ParamSource;
   headerName?: string;
-  stream?: boolean; // JsonlStream<T> body: `type` is the item T
+  stream?: boolean; // HttpStream<T> body: `type` is the item T
+  streamFormat?: "jsonl" | "raw";
+  streamContentType?: string;
 }
 
 export type HttpVerb = "get" | "post" | "put" | "patch" | "delete" | "head";

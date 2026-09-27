@@ -41,12 +41,16 @@ function operationDef(program: Program, http: HttpOperation, daemon: boolean): O
     const doc = getDoc(program, prop);
     const value = paramValue(prop.defaultValue);
     const item = streamItem(program, prop.type);
+    const itemType = item && mapPropertyType(item);
+    const streamFormat = itemType?.kind === "scalar" && itemType.name === "bytes" ? "raw" : "jsonl";
     params.push({
       name: prop.name,
-      type: mapPropertyType(item ?? prop.type),
+      type: itemType ?? mapPropertyType(prop.type),
       source: sources.get(prop)?.source ?? "body",
       ...(sources.get(prop)?.name ? { headerName: sources.get(prop)!.name } : {}),
       ...(item ? { stream: true } : {}),
+      ...(item ? { streamFormat } : {}),
+      ...(item && http.parameters.body?.contentTypes[0] ? { streamContentType: http.parameters.body.contentTypes[0] } : {}),
       optional: prop.optional || undefined,
       ...(doc !== undefined ? { doc } : {}),
       ...(value !== undefined ? { default: value } : {}),

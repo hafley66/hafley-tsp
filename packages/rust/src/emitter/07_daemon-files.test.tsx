@@ -33,6 +33,18 @@ it("assigns daemon routes during validation and emits both transports from the s
       ],
     }
   `);
+  expect(service.operations.map(op => [op.name, op.params.find(param => param.stream)?.streamFormat])).toMatchInlineSnapshot(`
+    [
+      [
+        "extract",
+        "raw",
+      ],
+      [
+        "ingest",
+        "raw",
+      ],
+    ]
+  `);
   const dir = mkdtempSync(join(tmpdir(), "daemon-emitter-"));
   const written = writeCrate(emitCrate(types, { ops: { service, bin: "probe" } }), dir);
   expect(written.sort().join(" ")).toMatchInlineSnapshot(`"cli_auto.rs client_auto.rs daemon_auto.rs lib.rs models/inputs.rs models/mod.rs models/root_args.rs ops.rs ops_auto.rs server_auto.rs"`);
@@ -88,12 +100,16 @@ it("assigns daemon routes during validation and emits both transports from the s
         }
     }
 
-    fn resolve_paths(verb: &str, root: &Path, args: &mut serde_json::Value) {
-        let names: &[&str] = match verb {
-            "extract" => &["root"],
+    fn path_fields(verb: &str) -> &'static [&'static str] {
+        match verb {
+            "extract" => &["paths", "root"],
             "ingest" => &[],
             _ => &[],
-        };
+        }
+    }
+
+    fn resolve_paths(verb: &str, root: &Path, args: &mut serde_json::Value) {
+        let names = path_fields(verb);
         let Some(object) = args.as_object_mut() else { return };
         for name in names {
             let Some(value) = object.get_mut(*name) else { continue };
@@ -111,6 +127,29 @@ it("assigns daemon routes during validation and emits both transports from the s
                 _ => {}
             }
         }
+    }
+
+    pub fn request_uses_stdin(verb: &str, args: &serde_json::Value) -> bool {
+        let names: &[&str] = match verb {
+            "extract" => &["paths"],
+            "ingest" => &[],
+            _ => &[],
+        };
+        fn has_stdin(value: &serde_json::Value, names: &[&str]) -> bool {
+            match value {
+                serde_json::Value::Object(object) => object.iter().any(|(key, value)| {
+                    if names.contains(&key.as_str()) {
+                        match value {
+                            serde_json::Value::String(path) => path == "-" || path == "/dev/stdin",
+                            serde_json::Value::Array(paths) => paths.iter().any(|path| path.as_str().is_some_and(|path| path == "-" || path == "/dev/stdin")),
+                            _ => false,
+                        }
+                    } else { has_stdin(value, names) }
+                }),
+                _ => false,
+            }
+        }
+        has_stdin(args, names)
     }
 
     fn resolve_one(root: &Path, path: &mut String) {

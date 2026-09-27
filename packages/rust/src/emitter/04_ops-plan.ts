@@ -136,7 +136,7 @@ export interface OpPlan {
   argsName: string;
   argsKey: Refkey;
   fields: FieldPlan[]; // the <Op>Args fields; a stream input is never one of them
-  input: FieldPlan | undefined; // JsonlStream<T> request body, arrives as an Iterator
+  input: FieldPlan | undefined; // request body stream, JSONL items or raw bytes
   returns: RustType | undefined;
   returnsStream: boolean;
 }

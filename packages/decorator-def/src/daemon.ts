@@ -1,5 +1,5 @@
 import type { DecoratorContext, Namespace, Program } from "@typespec/compiler";
-import { getRoutePath, setRoute } from "@typespec/http";
+import { $bodyIgnore, getRoutePath, isBodyRoot, isHeader, isPathParam, isQueryParam, setRoute } from "@typespec/http";
 import { DecoratorDefStateKeys } from "./lib.js";
 
 export interface DaemonOptions {
@@ -34,6 +34,15 @@ export function $onValidate(program: Program): void {
     for (const op of namespace.operations.values()) {
       if (getRoutePath(program, op) === undefined) {
         setRoute(context, op, { path: `/${op.name}`, shared: false });
+      }
+      // Args for a streamed body travel in the generated request header.
+      // Exclude them from HTTP's implicit body while retaining their clap shape.
+      if ([...op.parameters.properties.values()].some(prop => isBodyRoot(program, prop))) {
+        for (const prop of op.parameters.properties.values()) {
+          if (!isBodyRoot(program, prop) && !isHeader(program, prop) && !isPathParam(program, prop) && !isQueryParam(program, prop)) {
+            $bodyIgnore(context, prop);
+          }
+        }
       }
     }
   }
