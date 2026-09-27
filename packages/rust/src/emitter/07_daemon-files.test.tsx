@@ -49,7 +49,7 @@ it("assigns daemon routes during validation and emits both transports from the s
   const written = writeCrate(emitCrate(types, { ops: { service, bin: "probe" } }), dir);
   expect(written.sort().join(" ")).toMatchInlineSnapshot(`"cli_auto.rs client_auto.rs daemon_auto.rs lib.rs models/inputs.rs models/mod.rs models/root_args.rs ops.rs ops_auto.rs server_auto.rs"`);
   expect(readFileSync(join(dir, "daemon_auto.rs"), "utf8").trim()).toMatchInlineSnapshot(`
-    "// Generated from DaemonFixture's @daemon service and path-valued operation parameters.
+    "// Generated from DaemonFixture's @daemon service.
     use std::path::{Path, PathBuf};
     use serde::{Deserialize, Serialize};
     use sha2::{Digest as _, Sha256};
@@ -85,47 +85,15 @@ it("assigns daemon routes during validation and emits both transports from the s
     }
 
     impl Request {
-        pub fn new<T: Serialize>(verb: &str, request_root: PathBuf, args: &T) -> Result<Self, serde_json::Error> {
-            let mut args = serde_json::to_value(args)?;
-            resolve_paths(verb, &request_root, &mut args);
-            Ok(Self { request_root, args })
+        pub fn new<T: Serialize>(request_root: PathBuf, args: &T) -> Result<Self, serde_json::Error> {
+            Ok(Self { request_root, args: serde_json::to_value(args)? })
         }
 
-        pub fn decode<T: serde::de::DeserializeOwned>(mut self, verb: &str) -> Result<T, String> {
+        pub fn decode<T: serde::de::DeserializeOwned>(self) -> Result<T, String> {
             if !self.request_root.is_absolute() {
                 return Err("request_root must be absolute".into());
             }
-            resolve_paths(verb, &self.request_root, &mut self.args);
             serde_json::from_value(self.args).map_err(|error| error.to_string())
-        }
-    }
-
-    fn path_fields(verb: &str) -> &'static [&'static str] {
-        match verb {
-            "extract" => &["paths", "root"],
-            "ingest" => &[],
-            _ => &[],
-        }
-    }
-
-    fn resolve_paths(verb: &str, root: &Path, args: &mut serde_json::Value) {
-        let names = path_fields(verb);
-        let Some(object) = args.as_object_mut() else { return };
-        for name in names {
-            let Some(value) = object.get_mut(*name) else { continue };
-            match value {
-                serde_json::Value::String(path) => resolve_one(root, path),
-                serde_json::Value::Array(paths) => {
-                    for value in paths {
-                        if let Some(path) = value.as_str().map(str::to_owned) {
-                            let mut path = path;
-                            resolve_one(root, &mut path);
-                            *value = serde_json::Value::String(path);
-                        }
-                    }
-                }
-                _ => {}
-            }
         }
     }
 
@@ -150,11 +118,6 @@ it("assigns daemon routes during validation and emits both transports from the s
             }
         }
         has_stdin(args, names)
-    }
-
-    fn resolve_one(root: &Path, path: &mut String) {
-        if path == "-" || path.is_empty() || Path::new(path).is_absolute() { return; }
-        *path = root.join(&*path).to_string_lossy().into_owned();
     }
 
     pub fn cache_dir() -> Result<PathBuf, std::io::Error> {

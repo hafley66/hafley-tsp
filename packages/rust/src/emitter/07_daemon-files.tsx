@@ -7,9 +7,8 @@ function template(name: string): string {
   return readFileSync(new URL(`../../src/emitter/templates/${name}.rs`, import.meta.url), "utf8");
 }
 
-function pathFields(op: OpPlan, types: TypeDef[], stdinOnly = false): string[] {
+function stdinPathFields(op: OpPlan, types: TypeDef[]): string[] {
   const models = new Map(types.filter((type): type is ModelDef => type.kind === "model").map(type => [type.name, type]));
-  const names = new Set<string>();
   const defaulted = new Set<string>();
   const positional = new Set<string>();
   const visit = (property: ModelProperty) => {
@@ -20,19 +19,17 @@ function pathFields(op: OpPlan, types: TypeDef[], stdinOnly = false): string[] {
     }
     const type = property.type.kind === "array" ? property.type.element : property.type;
     if (type.kind === "scalar" && (type.alias === "path" || type.name === "path")) {
-      names.add(property.name);
       if (property.default === "-") defaulted.add(property.name);
       if (property.cli?.positional) positional.add(property.name);
     }
   };
   op.op.params.forEach(visit);
-  return [...(stdinOnly ? defaulted.size ? defaulted : positional : names)];
+  return [...(defaulted.size ? defaulted : positional)];
 }
 
 function daemonFile(service: ServiceDef, plans: OpPlan[], types: TypeDef[], bin: string): string {
   const serverBin = service.daemon!.serverBin ?? `${bin}-server`;
-  const paths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => &[${pathFields(plan, types).map(name => JSON.stringify(name)).join(", ")}],`).join("\n");
-  const stdinPaths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => &[${(plan.input?.param.streamFormat === "raw" ? pathFields(plan, types, true) : []).map(name => JSON.stringify(name)).join(", ")}],`).join("\n");
+  const stdinPaths = plans.map(plan => `        ${JSON.stringify(plan.op.name)} => &[${(plan.input?.param.streamFormat === "raw" ? stdinPathFields(plan, types) : []).map(name => JSON.stringify(name)).join(", ")}],`).join("\n");
   return template("daemon_auto")
     .replaceAll("__BIN__", bin)
     .replaceAll("__SERVER_BIN__", serverBin)
@@ -41,7 +38,6 @@ function daemonFile(service: ServiceDef, plans: OpPlan[], types: TypeDef[], bin:
     .replace("__HANDSHAKE__", String(service.daemon!.handshake))
     .replace("__IDLE_ENV__", `${bin.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_IDLE_SECS`)
     .replace("__HANDSHAKE_ENV__", `${bin.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_HANDSHAKE`)
-    .replace("        // __PATH_ARMS__", paths)
     .replace("        // __STDIN_PATH_ARMS__", stdinPaths);
 }
 
@@ -125,7 +121,7 @@ function inputHandler(plan: OpPlan, bin: string): string {
     };
     let root = request.request_root.clone();
     tracing::Span::current().record("request_root", &tracing::field::display(root.display()));
-    let args: ${plan.argsName} = match request.decode(${JSON.stringify(plan.op.name)}) { Ok(args) => args, Err(error) => return bad_request(error) };
+    let args: ${plan.argsName} = match request.decode() { Ok(args) => args, Err(error) => return bad_request(error) };
     ${raw ? "" : "let input = jsonl_input(body);"}
     let diagnostics = Arc::new(Mutex::new(Vec::new()));
     let captured = diagnostics.clone();

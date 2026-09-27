@@ -1,5 +1,4 @@
 // Generated for __SERVER_BIN__ from the __SERVICE__ HTTP operations and @daemon options.
-use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -116,7 +115,7 @@ macro_rules! stream_handler {
         async fn $handler(Json(request): Json<Request>) -> Response {
             let root = request.request_root.clone();
             tracing::Span::current().record("request_root", &tracing::field::display(root.display()));
-            let args: $args = match request.decode($verb) { Ok(args) => args, Err(error) => return bad_request(error) };
+            let args: $args = match request.decode() { Ok(args) => args, Err(error) => return bad_request(error) };
             let diagnostics = Arc::new(Mutex::new(Vec::new()));
             let items = crate::ops::with_request_context(root, Some(diagnostics.clone()), || crate::ops::$op(&args));
             jsonl_response(items, diagnostics).await
@@ -128,7 +127,7 @@ macro_rules! raw_handler {
         async fn $handler(Json(request): Json<Request>) -> Response {
             let root = request.request_root.clone();
             tracing::Span::current().record("request_root", &tracing::field::display(root.display()));
-            let args: $args = match request.decode($verb) { Ok(args) => args, Err(error) => return bad_request(error) };
+            let args: $args = match request.decode() { Ok(args) => args, Err(error) => return bad_request(error) };
             let diagnostics = Arc::new(Mutex::new(Vec::new()));
             let captured = diagnostics.clone();
             let out = tokio::task::spawn_blocking(move || crate::ops::with_request_context(root, Some(captured), || crate::ops::$op(&args))).await;
