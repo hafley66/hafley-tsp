@@ -7,7 +7,7 @@ import { RUST_TYPE, SqlxRowStructs, rustIdent, rustType, sqlxStorage } from "@ha
 import {
   StructDeclaration, StructField, EnumDeclaration, TupleVariant,
   ReplaceFile, AutoZone, ManualZone, CrateDirectory, VisibilityContext,
-} from "@hafley/alloy-rs";
+} from "@hafley66/alloy-rs";
 
 import type { Model, Program } from "@typespec/compiler";
 import {

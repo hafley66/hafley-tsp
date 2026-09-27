@@ -7,7 +7,7 @@ export interface OpsEmitterOptions {
   bin?: string;
 }
 
-// `tsp compile ops.tsp --emit @hafley/alloy-rs`: models + ops_auto/ops/cli_auto/http_auto into emitterOutputDir.
+// `tsp compile ops.tsp --emit @hafley66/alloy-rs`: models + ops_auto/ops/cli_auto/http_auto into emitterOutputDir.
 export async function $onEmit(context: EmitContext<OpsEmitterOptions>): Promise<void> {
   if (context.program.compilerOptions.noEmit) return;
   const { types, service } = programToOps(context.program);
