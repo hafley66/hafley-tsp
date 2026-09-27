@@ -16,7 +16,7 @@
   "dependencies": {
     "@alloy-js/core": "0.23.0-dev.12",
     "@alloy-js/go": "0.3.0-dev.3",
-    "@hafley/alloy-rs": "workspace:*",
+    "@hafley66/alloy-rs": "workspace:*",
     "@hafley/typespec-decorator-def": "workspace:*",
     "@hafley/typespec-sql": "workspace:*",
     "@hafley/typespec-sqlx": "workspace:*",

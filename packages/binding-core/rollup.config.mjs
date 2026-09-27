@@ -38,7 +38,7 @@ export default {
     "@alloy-js/core/jsx-runtime",
     "@alloy-js/go",
     "@alloy-js/go/jsx-runtime",
-    "@hafley/alloy-rs",
+    "@hafley66/alloy-rs",
     "@hafley/typespec-decorator-def",
     "@hafley/typespec-sql",
     "@hafley/typespec-sqlx",

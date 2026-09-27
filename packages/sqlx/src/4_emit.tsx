@@ -1,5 +1,5 @@
 import { Output, render, SourceFile, type OutputDirectory } from "@alloy-js/core";
-import { AutoZone, CrateDirectory, ManualZone, ReplaceFile, VisibilityContext } from "@hafley/alloy-rs";
+import { AutoZone, CrateDirectory, ManualZone, ReplaceFile, VisibilityContext } from "@hafley66/alloy-rs";
 import type { Program } from "@typespec/compiler";
 import { SqlxRowStructs, sqlxStorage, type SqlxStorageOptions, type SqlxStorageParts } from "./3_storage.js";
 

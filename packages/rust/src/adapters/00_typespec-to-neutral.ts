@@ -13,7 +13,7 @@ import type {
 } from "@typespec/compiler";
 import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
 import { isStream } from "@typespec/streams";
-import { getClapArg, getClapModel } from "../../../decorator-def/src/clap.js";
+import { getClapArg, getClapModel } from "@hafley/typespec-decorator-def";
 
 import type {
   TypeDef,

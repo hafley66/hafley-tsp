@@ -18,6 +18,6 @@ const input = Object.fromEntries(walk(source).map((file) => [relative(source, fi
 export default {
   input,
   output: { dir: "dist/src", format: "esm", preserveModules: false, sourcemap: true, entryFileNames: "[name].js" },
-  external: ["@alloy-js/core", "@alloy-js/core/jsx-runtime", "@hafley/alloy-rs", "@hafley/typespec-sql", "@typespec/compiler", "node:fs/promises", "node:path"],
+  external: ["@alloy-js/core", "@alloy-js/core/jsx-runtime", "@hafley66/alloy-rs", "@hafley/typespec-sql", "@typespec/compiler", "node:fs/promises", "node:path"],
   plugins: [nodeResolve({ extensions: [".ts", ".tsx", ".js", ".jsx"] }), alloyPlugin()],
 };

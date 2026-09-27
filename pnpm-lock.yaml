@@ -42,9 +42,6 @@ importers:
       '@alloy-js/go':
         specifier: 0.3.0-dev.3
         version: 0.3.0-dev.3
-      '@hafley/alloy-rs':
-        specifier: workspace:*
-        version: link:../rust
       '@hafley/typespec-decorator-def':
         specifier: workspace:*
         version: link:../decorator-def
@@ -54,6 +51,9 @@ importers:
       '@hafley/typespec-sqlx':
         specifier: workspace:*
         version: link:../sqlx
+      '@hafley66/alloy-rs':
+        specifier: workspace:*
+        version: link:../rust
       '@typespec/compiler':
         specifier: ^1.0.0
         version: 1.10.0(@types/node@25.5.0)
@@ -139,12 +139,12 @@ importers:
       '@alloy-js/core':
         specifier: 0.23.0-dev.12
         version: 0.23.0-dev.12
-      '@hafley/alloy-rs':
-        specifier: workspace:*
-        version: link:../rust
       '@hafley/typespec-sql':
         specifier: workspace:*
         version: link:../sql
+      '@hafley66/alloy-rs':
+        specifier: workspace:*
+        version: link:../rust
       '@typespec/compiler':
         specifier: ^1.0.0
         version: 1.10.0(@types/node@25.5.0)
@@ -167,6 +167,9 @@ importers:
       '@alloy-js/core':
         specifier: 0.23.0-dev.12
         version: 0.23.0-dev.12
+      '@hafley/typespec-decorator-def':
+        specifier: workspace:*
+        version: link:../decorator-def
       '@typespec/compiler':
         specifier: ^1.0.0
         version: 1.10.0(@types/node@25.5.0)
@@ -192,6 +195,9 @@ importers:
       '@typespec/openapi3':
         specifier: ~1.10.0
         version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0))))(@typespec/openapi@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))
+      rollup:
+        specifier: ^4.60.1
+        version: 4.60.1
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
@@ -217,12 +223,12 @@ importers:
       '@alloy-js/core':
         specifier: 0.23.0-dev.12
         version: 0.23.0-dev.12
-      '@hafley/alloy-rs':
-        specifier: workspace:*
-        version: link:../rust
       '@hafley/typespec-sql':
         specifier: workspace:*
         version: link:../sql
+      '@hafley66/alloy-rs':
+        specifier: workspace:*
+        version: link:../rust
       '@typespec/compiler':
         specifier: ^1.0.0
         version: 1.10.0(@types/node@25.5.0)

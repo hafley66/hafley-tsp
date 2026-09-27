@@ -101,7 +101,7 @@ export function createAlloyRustTarget(registry: RefkeyRegistry): TargetLang<Rust
       }
 
       // The JSX here uses whatever Rust declaration components are available.
-      // This is the shape -- the actual components come from @hafley/alloy-rs.
+      // This is the shape -- the actual components come from @hafley66/alloy-rs.
       const jsx = (
         <>
           {fields.map(f => (

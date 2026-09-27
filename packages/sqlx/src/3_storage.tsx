@@ -1,5 +1,5 @@
 import { List } from "@alloy-js/core";
-import { StructDeclaration, StructField } from "@hafley/alloy-rs";
+import { StructDeclaration, StructField } from "@hafley66/alloy-rs";
 import type { Model, Program, Type } from "@typespec/compiler";
 import {
   collectModels,

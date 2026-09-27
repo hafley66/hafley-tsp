@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@alloy-js/core": "0.23.0-dev.12",
-    "@hafley/alloy-rs": "workspace:*",
+    "@hafley66/alloy-rs": "workspace:*",
     "@hafley/typespec-sql": "workspace:*",
     "@typespec/compiler": "^1.0.0"
   },

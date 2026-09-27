@@ -6,8 +6,8 @@ import { getAllHttpServices, type HttpOperation } from "@typespec/http";
 import { getStreamOf, isStream } from "@typespec/streams";
 import type { OperationDef, OperationParam, ParamSource, ServiceDef, TypeDef } from "../emitter/00_types.js";
 import { cliOf, mapPropertyType, paramValue, programToTypeDefs } from "./00_typespec-to-neutral.js";
-import { getClapOperation, getClapRoot } from "../../../decorator-def/src/clap.js";
-import { getDaemon } from "../../../decorator-def/src/daemon.js";
+import { getClapOperation, getClapRoot } from "@hafley/typespec-decorator-def";
+import { getDaemon } from "@hafley/typespec-decorator-def";
 
 function streamItem(program: Program, t: Type): Type | undefined {
   return t.kind === "Model" && isStream(program, t) ? getStreamOf(program, t) : undefined;
