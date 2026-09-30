@@ -5,11 +5,13 @@ import { writeCrate } from "./05_write-crate.js";
 
 export interface OpsEmitterOptions {
   bin?: string;
+  routes?: { from: string; to: string }[];
 }
 
 // `tsp compile ops.tsp --emit @hafley66/alloy-rs`: models + ops_auto/ops/cli_auto/http_auto into emitterOutputDir.
 export async function $onEmit(context: EmitContext<OpsEmitterOptions>): Promise<void> {
   if (context.program.compilerOptions.noEmit) return;
   const { types, service } = programToOps(context.program);
-  writeCrate(emitCrate(types, { ops: { service, bin: context.options.bin } }), context.emitterOutputDir);
+  writeCrate(emitCrate(types, { ops: { service, bin: context.options.bin } }), context.emitterOutputDir,
+    context.options.routes && Object.fromEntries(context.options.routes.map(route => [route.from, route.to])));
 }
