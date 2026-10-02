@@ -509,7 +509,7 @@ pub enum DbSyncCursorCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true, subcommand_required = true)]
+#[command(subcommand_required = true)]
 pub struct MeCommand {
   #[command(flatten)]
   pub args: MeArgs,#[command(subcommand)]
@@ -734,7 +734,7 @@ pub enum BeepForkCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true, subcommand_required = true)]
+#[command(subcommand_required = true)]
 pub struct BeepSelectionCommand {
   #[command(flatten)]
   pub args: BeepSelectionArgs,#[command(subcommand)]
