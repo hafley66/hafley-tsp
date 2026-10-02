@@ -51,3 +51,7 @@ All six `x-clap-value-name` declarations are removed. Help parity remains **155/
 `Record<string>` query fields emit repeatable `KEY=VAL` arguments with a generated parser. The clap field stores `Vec<(String, String)>`, preserving occurrence order and duplicate keys. Parsing splits the first `=`, permits empty values, and rejects absent `=` or empty keys. HTTP query maps are collected into that argument representation. Models without clap derives retain their `HashMap` fields.
 
 Validation: help parity **155/155**; Rust package tests **162 passed, 4 skipped**; TypeScript checking passed; generated parser acceptance test passed. The ryi regeneration test remains byte-identical.
+
+## Type-derived trailing arguments (step 2)
+
+`tui` uses `@body args?: string[]`; the adapter derives positional placement and `last = true` from a body string array. Its route contains only the `harness` path parameter. The single `x-clap-last` declaration and adapter handling are removed. Help parity remains **155/155**, with no changed captures. Parser tests confirm forwarding flags after `--`, omission of the optional array, and rejection of trailing values before the separator. Rust package tests: **162 passed, 4 skipped**; ryi regeneration remains byte-identical.

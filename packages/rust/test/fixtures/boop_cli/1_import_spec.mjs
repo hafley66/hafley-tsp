@@ -45,8 +45,9 @@ for (const c of orderedCommands()) {
     const required = positional ? row.arg.startsWith("<") : c.usage.includes(`${row.long} <`);
     const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
-    const wire = positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
-    fields.push({ name, text: doc(about, "  ") + (positional && c.usage.includes(`[-- <${label}>`) ? `  @extension("x-clap-last", true)\n` : "") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
+    const trailing = positional && c.usage.includes(`[-- <${label}>`);
+    const wire = trailing ? "@body" : positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
+    fields.push({ name, text: doc(about, "  ") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, trailing, required });
   };
   c.arguments.forEach(r => add(r, true));
   c.options.forEach(r => add(r, false));
@@ -74,7 +75,7 @@ const emit = (path, indent = "") => {
   const parent = records.find(r => r.c.path.join("/") === path.slice(0, -1).join("/"))?.c;
   if (path.length && !parent.subcommands.some(v => v.name === path.at(-1))) out += `${pad}@extension("x-clap-hidden", true)\n`;
   const params = fields.map(f => models.has(f.text) ? `...${models.get(f.text)}` : f.text.trim().replace(/;$/, "")).map(f => f.split("\n").map(line => pad + "  " + line).join("\n"));
-  const routeParams = fields.filter(f => f.positional).map(f => `{positional_${f.name}}`).join("/");
+  const routeParams = fields.filter(f => f.positional && !f.trailing).map(f => `{positional_${f.name}}`).join("/");
   out += `${pad}@route(${JSON.stringify(routeParams ? "/" + routeParams : "/")})\n${pad}@post\n${pad}op ${ident(path.length ? path.join("_").replaceAll("-", "_") : "root")}(\n${params.join(",\n")}\n${pad}): void;\n\n`;
   for (const { c: child } of children) emit(child.path, pad);
   if (path.length) out += `${indent}}\n\n`;

@@ -12,7 +12,7 @@ import type {
   Program,
 } from "@typespec/compiler";
 import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
-import { getQueryParamOptions } from "@typespec/http";
+import { getQueryParamOptions, isBody } from "@typespec/http";
 import { getExtensions } from "@typespec/openapi";
 import { isStream } from "@typespec/streams";
 import { getClapArg, getClapModel } from "@hafley/typespec-decorator-def";
@@ -52,8 +52,8 @@ function typeValueLabel(type: Type): string | undefined {
 
 export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
   const extra = getClapArg(program, prop);
-  const last = getExtensions(program, prop).get("x-clap-last");
-  if (last !== undefined && typeof last !== "boolean") throw new Error("x-clap-last must be boolean");
+  const type = mapPropertyType(prop.type);
+  const last = isBody(program, prop) && type.kind === "array" && type.element.kind === "scalar" && type.element.name === "string";
   const valueName = typeValueLabel(prop.type);
   const short = getExtensions(program, prop).get("x-clap-short");
   if (short !== undefined && (typeof short !== "string" || [...short].length !== 1)) throw new Error("x-clap-short must be one character");
@@ -67,7 +67,7 @@ export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["
     ...(encoded !== prop.name ? { long: encoded } : {}),
     ...(valueName !== undefined ? { valueName } : {}),
     ...extra,
-    ...(last !== undefined ? { last } : {}),
+    ...(last ? { last: true, positional: true } : {}),
     ...(short !== undefined ? { short } : {}),
     ...(minValue !== undefined ? { minValue } : {}),
     ...(maxValue !== undefined ? { maxValue } : {}),

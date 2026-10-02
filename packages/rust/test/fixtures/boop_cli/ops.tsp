@@ -3268,7 +3268,7 @@ namespace tui {
    * Launch an ordinary interactive harness TUI and register this pane
    */
   @extension("x-clap-hidden", true)
-  @route("/{positional_harness}/{positional_args}")
+  @route("/{positional_harness}")
   @post
   op tui(
     /**
@@ -3278,8 +3278,7 @@ namespace tui {
     /**
        * Arguments forwarded to the ordinary harness TUI
        */
-      @extension("x-clap-last", true)
-      @path("positional_args") args?: string[],
+      @body args?: string[],
     /**
        * Executable override, for example ccz with the Claude adapter
        */

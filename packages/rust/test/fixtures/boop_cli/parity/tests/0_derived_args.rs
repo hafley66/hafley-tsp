@@ -18,3 +18,17 @@ fn record_values_repeat_and_split_only_the_first_equals() {
         assert!(error.to_string().contains("expected KEY=VAL with a nonempty key"));
     }
 }
+
+#[test]
+fn body_string_arrays_require_the_separator_and_forward_flags() {
+    let argv = ["boop", "tui", "omp", "--", "--help", "--cwd", "other dir"];
+    let matches = Boop::command().try_get_matches_from(argv).unwrap();
+    assert_eq!(
+        matches.subcommand_matches("tui").unwrap().get_many::<String>("args").unwrap().map(String::as_str).collect::<Vec<_>>(),
+        vec!["--help", "--cwd", "other dir"]
+    );
+    Boop::try_parse_from(argv).unwrap();
+    Boop::try_parse_from(["boop", "tui", "omp"]).unwrap();
+    let error = Boop::try_parse_from(["boop", "tui", "omp", "extra"]).unwrap_err();
+    assert_eq!(error.kind(), clap::error::ErrorKind::UnknownArgument);
+}
