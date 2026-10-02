@@ -13,14 +13,17 @@
   },
   "exports": {
     ".": {
+      "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./emitter": {
+      "source": "./src/emitter/index.ts",
       "types": "./dist/emitter/index.d.ts",
       "default": "./dist/emitter/index.js"
     },
     "./adapters": {
+      "source": "./src/adapters/index.ts",
       "types": "./dist/adapters/index.d.ts",
       "default": "./dist/adapters/index.js"
     }
