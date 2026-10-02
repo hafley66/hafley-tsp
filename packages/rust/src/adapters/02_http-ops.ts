@@ -92,6 +92,7 @@ export function programToOps(program: Program): ProgramOps {
     types: programToTypeDefs(program, t => getDoc(program, t)),
     service: {
       name: service.namespace.name,
+      ...(typeof getExtensions(program, service.namespace).get("x-clap-after-help") === "string" ? { helpFooter: getExtensions(program, service.namespace).get("x-clap-after-help") } : {}),
       ...(daemon ? { daemon } : {}),
       ...(doc !== undefined ? { doc } : {}),
       ...(root?.args ? { rootArgs: root.args.name } : {}),

@@ -51,7 +51,8 @@ for (const c of orderedCommands()) {
 const counts = new Map();
 for (const { fields } of records) for (const f of fields) if (!f.positional) counts.set(f.text, (counts.get(f.text) ?? 0) + 1);
 for (const [text, count] of counts) if (count > 1) models.set(text, `SharedFlags${models.size}`);
-let out = `// Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs\nimport "@typespec/http";\nimport "@typespec/openapi";\nusing Http;\nusing OpenAPI;\n\n${doc(records[0].c.about)}@service\nnamespace Boop;\n\n`;
+const footer = records[0].c.text.slice(records[0].c.text.indexOf("\n\nDOCTRINE") + 2).trimEnd();
+let out = `// Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs\nimport "@typespec/http";\nimport "@typespec/openapi";\nusing Http;\nusing OpenAPI;\n\n${doc(records[0].c.about)}@service\n@extension("x-clap-after-help", ${JSON.stringify(footer)})\nnamespace Boop;\n\n`;
 out += [...enums.values()].map(v => v.text).join("\n\n") + "\n\n";
 out += [...models].map(([text, name]) => `model ${name} {\n${text}\n}`).join("\n\n") + "\n\n";
 const emit = (path, indent = "") => {

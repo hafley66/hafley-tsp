@@ -113,6 +113,7 @@ export interface OperationDef {
 
 export interface ServiceDef {
   name: string;
+  helpFooter?: string;
   doc?: string;
   daemon?: { idleSecs: number; handshake: boolean; serverBin?: string };
   rootArgs?: string;

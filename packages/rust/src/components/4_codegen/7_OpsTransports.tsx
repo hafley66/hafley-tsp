@@ -190,6 +190,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
     `name = ${JSON.stringify(props.bin)}`,
     "version",
     ...(props.service.doc !== undefined ? [`about = ${JSON.stringify(props.service.doc)}`] : []),
+    ...(props.service.helpFooter !== undefined ? [`after_help = ${JSON.stringify(props.service.helpFooter)}`] : []),
     ...(props.service.afterHelp ? [`after_help = ${afterHelpExpr(props.service.afterHelp)}`] : []),
     ...(props.service.argsConflictsWithSubcommands ? ["args_conflicts_with_subcommands = true"] : []),
     ...(props.service.rootArgs ? ["subcommand_negates_reqs = true", "disable_help_subcommand = true"] : []),
