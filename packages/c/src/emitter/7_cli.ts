@@ -10,11 +10,12 @@ type Plan = { op: OperationDef; fields: Field[] };
 
 function flatten(props: ModelProperty[], input: ProgramOps, stack: string[] = []): Field[] {
   return props.flatMap(p => {
-    if (p.type.kind !== "model") return [{ ...p }];
-    if (stack.includes(p.type.name)) throw new Error(`Recursive CLI flatten: ${p.type.name}`);
-    const model = input.types.find(t => t.kind === "model" && t.name === p.type.name);
-    if (!model || model.kind !== "model") throw new Error(`Missing CLI model: ${p.type.name}`);
-    return flatten(model.properties, input, [...stack, p.type.name]);
+    const ref = p.type;
+    if (ref.kind !== "model") return [{ ...p }];
+    if (stack.includes(ref.name)) throw new Error(`Recursive CLI flatten: ${ref.name}`);
+    const model = input.types.find(t => t.kind === "model" && t.name === ref.name);
+    if (!model || model.kind !== "model") throw new Error(`Missing CLI model: ${ref.name}`);
+    return flatten(model.properties, input, [...stack, ref.name]);
   });
 }
 function opFields(op: OperationDef, input: ProgramOps): Field[] {

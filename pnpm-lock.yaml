@@ -79,15 +79,15 @@ importers:
       '@alloy-js/core':
         specifier: 0.23.0-dev.12
         version: 0.23.0-dev.12
-      '@typespec/compiler':
-        specifier: ^1.0.0
-        version: 1.10.0(@types/node@25.5.0)
       '@hafley/emit-helper':
         specifier: workspace:*
         version: link:../emit-helper
       '@hafley/typespec-sql':
         specifier: workspace:*
         version: link:../sql
+      '@typespec/compiler':
+        specifier: ^1.0.0
+        version: 1.10.0(@types/node@25.5.0)
       '@typespec/http':
         specifier: ~1.10.0
         version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))
@@ -101,6 +101,9 @@ importers:
       '@types/node':
         specifier: ^25.5.0
         version: 25.5.0
+      '@typespec/openapi':
+        specifier: ~1.10.0
+        version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0))))
       rollup:
         specifier: ^4.60.1
         version: 4.60.1
@@ -222,6 +225,9 @@ importers:
       '@alloy-js/core':
         specifier: 0.23.0-dev.12
         version: 0.23.0-dev.12
+      '@hafley/emit-helper':
+        specifier: workspace:*
+        version: link:../emit-helper
       '@hafley/typespec-decorator-def':
         specifier: workspace:*
         version: link:../decorator-def
@@ -240,9 +246,6 @@ importers:
       pathe:
         specifier: ^2.0.3
         version: 2.0.3
-      '@hafley/emit-helper':
-        specifier: workspace:*
-        version: link:../emit-helper
     devDependencies:
       '@alloy-js/rollup-plugin':
         specifier: ^0.1.0

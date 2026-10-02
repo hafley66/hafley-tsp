@@ -6,6 +6,11 @@ import type { Declaration } from "./0_types.js";
 import { fieldsOf, isString, keyOf, nullableInner, pointerValue, inlineCollection } from "./1_type_map.js";
 import { cString } from "./4_store.js";
 
+function named(type: { name?: string | undefined }): string {
+  if (!type.name) throw new Error("JSON codec needs a named type");
+  return cIdentifier(type.name);
+}
+
 function scalarName(type: Scalar): string {
   while (type.baseScalar && type.namespace?.name !== "TypeSpec") type = type.baseScalar;
   return type.name;
@@ -18,7 +23,7 @@ class Codec {
     const inner = nullableInner(type);
     if (inner) return `if (!${value}) ${target} = yyjson_mut_null(doc); else {\n${this.encode(inner, pointerValue(inner) ? value : `(*${value})`, target)}}\n`;
     if (inlineCollection(type)) return this.encodeCollection(type, value, target);
-    if (type.kind === "Model" || type.kind === "Union") return `${target} = ${cIdentifier(type.name)}_json_value(doc, ${value});\n`;
+    if (type.kind === "Model" || type.kind === "Union") return `${target} = ${named(type)}_json_value(doc, ${value});\n`;
     if (type.kind === "Intrinsic" && type.name === "unknown") {
       const parsed = this.fresh("parsed");
       return `if (!${value}) return NULL;\nyyjson_doc *${parsed} = yyjson_read_opts((char *)(void *)${value}, strlen(${value}), 0, &doc->alc, NULL);\nif (!${parsed}) return NULL;\n${target} = yyjson_val_mut_copy(doc, yyjson_doc_get_root(${parsed}));\n`;
@@ -40,7 +45,7 @@ class Codec {
       return `if (yyjson_is_null(${source})) ${target} = NULL; else {\n${target} = mi_heap_malloc(arena, sizeof(*${target}));\nif (!${target}) return NULL;\n${this.decode(inner, source, `(*${target})`)}}\n`;
     }
     if (inlineCollection(type)) return this.decodeCollection(type, source, target);
-    if (type.kind === "Model" || type.kind === "Union") return `${target} = ${cIdentifier(type.name)}_json_read(arena, ${source});\nif (!${target}) return NULL;\n`;
+    if (type.kind === "Model" || type.kind === "Union") return `${target} = ${named(type)}_json_read(arena, ${source});\nif (!${target}) return NULL;\n`;
     if (type.kind === "Intrinsic" && type.name === "unknown") {
       const allocator = this.fresh("alc");
       return `yyjson_alc ${allocator} = alloy_c_json_allocator(arena);\n${target} = yyjson_val_write_opts(${source}, 0, &${allocator}, NULL, NULL);\nif (!${target}) return NULL;\n`;
@@ -83,7 +88,7 @@ class Codec {
 }
 
 function implementation(type: Extract<Declaration, { kind: "Model" | "Union" }>): string {
-  const name = cIdentifier(type.name), codec = new Codec();
+  const name = named(type), codec = new Codec();
   let encode = "", decode = "";
   if (type.kind === "Model" && type.indexer) {
     encode = codec.encodeCollection(type, "(*input)", "obj");
@@ -118,10 +123,10 @@ export function WireFiles(props: { program: Program; types: Declaration[] }): Ch
   return <>
     <SourceFile path="wire_auto.h" preamble={'#pragma once\n#include <yyjson.h>\n#include <mimalloc.h>\n#include <stddef.h>\n'}>
       {types.map(type => <>
-        yyjson_mut_val *{cIdentifier(type.name)}_json_value(yyjson_mut_doc *doc, const {keyOf(type)} *input);<hbr />
-        {keyOf(type)} *{cIdentifier(type.name)}_json_read(mi_heap_t *arena, yyjson_val *obj);<hbr />
-        char *{cIdentifier(type.name)}_json_encode(mi_heap_t *arena, const {keyOf(type)} *input);<hbr />
-        {keyOf(type)} *{cIdentifier(type.name)}_json_decode(mi_heap_t *arena, const char *json, size_t length);<hbr />
+        yyjson_mut_val *{named(type)}_json_value(yyjson_mut_doc *doc, const {keyOf(type)} *input);<hbr />
+        {keyOf(type)} *{named(type)}_json_read(mi_heap_t *arena, yyjson_val *obj);<hbr />
+        char *{named(type)}_json_encode(mi_heap_t *arena, const {keyOf(type)} *input);<hbr />
+        {keyOf(type)} *{named(type)}_json_decode(mi_heap_t *arena, const char *json, size_t length);<hbr />
       </>)}
     </SourceFile>
     <SourceFile path="wire_auto.c">
