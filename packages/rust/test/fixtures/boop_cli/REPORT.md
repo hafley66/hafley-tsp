@@ -39,3 +39,5 @@ Group args versus child commands: `@extension("x-clap-args-conflicts-with-subcom
 Required child commands: `@extension("x-clap-subcommand-required", true)` on 2 operations: me, beep selection. Both have local flags and require `<COMMAND>`. HTTP parameter optionality describes the flags, not the presence of a nested CLI command.
 
 Exceptional value labels: `@extension("x-clap-value-name", ...)` on 6 captured forms: beep agent waterfall, job create, beep lane create, debug, mail wait, wait. Uppercased field names cover ordinary labels. The exceptions contain punctuation (`MS|DURATION`, `KEY=VAL`, `ID-OR-*`) or a label already used by another field (`BRANCH`, `LANE`). No `@valueName` decorator is used.
+
+Trailing args: `@extension("x-clap-last", true)` on tui's `@path args?: string[]`, required by 1 capture: tui. The native array type specifies repetition; it does not require the `--` separator shown in the capture.

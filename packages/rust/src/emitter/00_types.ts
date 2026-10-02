@@ -13,6 +13,7 @@ export interface ModelProperty {
   cli?: {
     long?: string;
     short?: string;
+    last?: boolean;
     valueName?: string;
     requires?: string;
     requiresAll?: string[];

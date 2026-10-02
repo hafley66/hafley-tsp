@@ -3277,6 +3277,7 @@ namespace tui {
     /**
        * Arguments forwarded to the ordinary harness TUI
        */
+      @extension("x-clap-last", true)
       @path("positional_args") args?: string[],
     /**
        * Executable override, for example ccz with the Claude adapter

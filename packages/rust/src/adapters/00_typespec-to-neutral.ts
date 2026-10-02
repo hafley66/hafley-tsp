@@ -34,6 +34,8 @@ export type DocOf = (type: Type) => string | undefined;
 
 export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
   const extra = getClapArg(program, prop);
+  const last = getExtensions(program, prop).get("x-clap-last");
+  if (last !== undefined && typeof last !== "boolean") throw new Error("x-clap-last must be boolean");
   const valueName = getExtensions(program, prop).get("x-clap-value-name");
   if (valueName !== undefined && typeof valueName !== "string") throw new Error("x-clap-value-name must be a string");
   const short = getExtensions(program, prop).get("x-clap-short");
@@ -47,6 +49,7 @@ export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["
     ...(query?.name && query.name !== prop.name ? { long: query.name } : {}),
     ...(encoded !== prop.name ? { long: encoded } : {}),
     ...extra,
+    ...(last !== undefined ? { last } : {}),
     ...(valueName !== undefined ? { valueName } : {}),
     ...(short !== undefined ? { short } : {}),
     ...(minValue !== undefined ? { minValue } : {}),

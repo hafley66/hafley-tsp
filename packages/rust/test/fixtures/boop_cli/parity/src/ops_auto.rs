@@ -1768,7 +1768,7 @@ pub struct TuiArgs {
   #[arg()]
   pub harness: String,
   #[doc = "Arguments forwarded to the ordinary harness TUI"]
-  #[arg()]
+  #[arg(last = true)]
   pub args: Vec<String>,
   #[doc = "Executable override, for example ccz with the Claude adapter"]
   #[arg(long = "bin")]
