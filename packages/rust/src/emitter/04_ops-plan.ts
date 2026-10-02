@@ -26,14 +26,9 @@ export function rustIdent(name: string): string {
   return RUST_KEYWORDS.has(name) ? `r#${name}` : name;
 }
 
-export function pascalCase(name: string): string {
-  return name
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map(part => part[0]!.toUpperCase() + part.slice(1))
-    .join("");
-}
-
+export { pascalCase, planCliTree, roleOf, type CliRole } from "@hafley/emit-helper/http";
+import { pascalCase, roleOf, type CliRole, type RouteNode } from "@hafley/emit-helper/http";
+export type CliNode = RouteNode<OpPlan>;
 function docAttr(doc: string | undefined): string[] {
   if (doc === undefined) return [];
   return [`doc = ${JSON.stringify(doc)}`];
@@ -70,8 +65,6 @@ export function cliFieldType(prop: ModelProperty, registry: RefkeyRegistry): Rus
   return prop.optional ? wrapOptional(base) : base;
 }
 
-export type CliRole = "positional" | "flag" | "flatten" | "stream";
-
 export interface FieldPlan {
   param: OperationParam;
   field: string;
@@ -80,13 +73,6 @@ export interface FieldPlan {
   cliAttrs: string[];
 }
 
-function roleOf(param: OperationParam): CliRole {
-  if (param.stream) return "stream";
-  if (param.cli?.positional) return "positional";
-  if (param.source === "path") return "positional";
-  if (param.source === "body" && param.type.kind === "model") return "flatten";
-  return "flag";
-}
 
 function flagAttrs(prop: ModelProperty): string {
   if (prop.cli?.skip) return "arg(skip)";
@@ -171,45 +157,6 @@ export function planOps(service: ServiceDef, registry: RefkeyRegistry, newKey: (
       returnsStream: op.returnsStream ?? false,
     };
   });
-}
-
-// Insertion order follows the HTTP operation walk. Parameter and query template
-// segments do not introduce commands. A node can own args and child commands.
-export interface CliNode {
-  segment: string;
-  path: string[];
-  variant: string;
-  enumName: string;
-  commandName: string;
-  key: Refkey;
-  commandKey: Refkey;
-  plan?: OpPlan;
-  children: Map<string, CliNode>;
-}
-
-export function planCliTree(plans: OpPlan[], newKey: () => Refkey): CliNode {
-  const node = (segment: string, path: string[]): CliNode => ({
-    segment, path, variant: pascalCase(segment),
-    enumName: path.length ? pascalCase(path.join("_")) + "Cmd" : "Cmd",
-    commandName: pascalCase(path.join("_")) + "Command",
-    key: newKey(), commandKey: newKey(), children: new Map(),
-  });
-  const root = node("", []);
-  for (const plan of plans) {
-    const segments = plan.op.path.replace(/\{[^}]*\}/g, "").split("/").filter(Boolean);
-    let current = root;
-    for (const segment of segments) {
-      let child = current.children.get(segment);
-      if (!child) {
-        child = node(segment, [...current.path, segment]);
-        current.children.set(segment, child);
-      }
-      current = child;
-    }
-    if (current.plan) throw new Error(`Multiple clap operations at /${segments.join("/")}`);
-    current.plan = plan;
-  }
-  return root;
 }
 
 // What the ops add to the domain types tsp-rust already emits: derives and

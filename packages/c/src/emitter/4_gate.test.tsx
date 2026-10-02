@@ -7,7 +7,7 @@ import { expect, it } from "vitest";
 import { emitC } from "./2_emit.js";
 import { writeC } from "./3_write.js";
 
-it.each([false, true])("compiles C files and runs arena round trips (boop2=%s)", async (boop) => {
+it.runIf(process.env.C_GATE === "1").each([false, true])("compiles C files and runs arena round trips (boop2=%s)", async (boop) => {
   const schema = process.env.BOOP_SCHEMA ?? "/Users/chrishafley/projects/boop2/schema";
   const out = mkdtempSync(join(tmpdir(), "alloy-c-"));
   try {

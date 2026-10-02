@@ -4,9 +4,7 @@ import { collectModels, isEntityModel, resolvedFields, resolveRelTarget, snakeCa
 import { internStorage, type InternStorage } from "./3_intern.js";
 import { sqliteDialect, type SqlDialect } from "./4_dialect.js";
 
-function columnName(field: ResolvedField): string {
-  return field.rel ? `${snakeCase(field.name)}_id` : snakeCase(field.name);
-}
+import { columnName } from "./4a_table_facts.js";
 
 export function emitSQL(program: Program, dialect: SqlDialect = sqliteDialect): string {
   return emitSQLFromStorage(program, internStorage(program), dialect);

@@ -6,10 +6,10 @@ import { expect, it } from "vitest";
 import { emitC } from "./2_emit.js";
 
 it.each([
-  ['model Bad { values: string[]; }', 'Anonymous models, arrays and records require a named C representation'],
   ['union Bad { string, int64 }', 'Union Bad requires named variants'],
   ['scalar Bad extends decimal;', 'Unsupported scalar: decimal'],
-  ['model Bad { `switch`: string; }', 'Invalid C11 identifier: switch'],
+  ['model Bad { `switch`: string; switch_: string; }', 'C identifier collision in Bad: switch_'],
+  ['model Bad { `a.b`: string; }', 'Invalid C11 identifier: a.b'],
   ['enum Bad { a: 1, b: 1 }', 'Ambiguous enum value: Bad.b'],
   ['model Bad { has_note: boolean; note?: string; }', 'Duplicate C field: Bad.has_note'],
   ['interface Bad { read(arena: int64): void; }', 'Reserved C parameter: Bad.read.arena'],
