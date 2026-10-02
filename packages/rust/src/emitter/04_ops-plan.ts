@@ -150,13 +150,20 @@ export interface OpPlan {
 }
 
 export function planOps(service: ServiceDef, registry: RefkeyRegistry, newKey: () => Refkey): OpPlan[] {
+  const nameCounts = new Map<string, number>();
+  for (const op of service.operations) nameCounts.set(op.name, (nameCounts.get(op.name) ?? 0) + 1);
   return service.operations.map(op => {
     const all = op.params.map(p => fieldPlan(p, registry));
+    // Namespace-local operation names can repeat. Flat Rust symbols carry the
+    // route context only when the local name occurs more than once.
+    const name = nameCounts.get(op.name)! > 1
+      ? op.path.replace(/\{[^}]*\}/g, "").split("/").filter(Boolean).join("_").replaceAll("-", "_") || op.name
+      : op.name;
     return {
       op,
-      fn: rustIdent(op.name),
-      variant: pascalCase(op.name),
-      argsName: pascalCase(op.name) + "Args",
+      fn: rustIdent(name),
+      variant: pascalCase(name),
+      argsName: pascalCase(name) + "Args",
       argsKey: newKey(),
       fields: all.filter(f => f.role !== "stream"),
       input: all.find(f => f.role === "stream"),

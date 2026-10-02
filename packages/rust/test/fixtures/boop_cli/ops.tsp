@@ -80,280 +80,280 @@ enum Values8 {
   bash,
 }
 
-model SharedFlags0 {
+model StateFlag {
   /**
    * Only lanes in this state: `live`, `idle`, `retired` or `dead`. `retired` lanes have left their pane on the idle shutdown and come back on `boop beep <lane> <body>`
    */
   @query state?: string;
 }
 
-model SharedFlags1 {
+model HarnessFlag {
   /**
    * Only lanes on this harness: claude, codex, opencode, kimi
    */
   @query harness?: string;
 }
 
-model SharedFlags2 {
+model AllFlag {
   /**
    * Include unregistered tmux sessions and native Claude subagents
    */
   @query all?: boolean;
 }
 
-model SharedFlags3 {
+model JsonFlag {
   /**
    * One JSON object per row; includes the full route fields
    */
   @query json?: boolean;
 }
 
-model SharedFlags4 {
+model NoHeaderFlag {
   /**
    * Omit the header line; for scripts
    */
   @query no_header?: boolean;
 }
 
-model SharedFlags5 {
+model SocketFlag {
   /**
    * Read liveness from this tmux socket; the default server when unset. Pane ids repeat across sockets, so a throwaway socket needs it
    */
   @query socket?: string;
 }
 
-model SharedFlags6 {
+model MailDirFlag {
   /**
    * Directory holding boop.db; defaults to ~/.agent
    */
   @query mail_dir?: string;
 }
 
-model SharedFlags7 {
+model BranchFlag {
   /**
    * The lane's whole identity: `feature/<name>`, also fix/, refactor/, chore/. Lane id and tmux session are the branch with `/` as `-`
    */
   @query branch?: GitBranch;
 }
 
-model SharedFlags8 {
+model BriefFlag {
   /**
    * Absolute path to the brief the lane reads and executes
    */
   @query brief?: string;
 }
 
-model SharedFlags9 {
+model GoalFlag {
   /**
    * What the lane is running toward
    */
   @query goal?: string;
 }
 
-model SharedFlags10 {
+model MoodFlag {
   /**
    * The format the lane's mail is rendered in; it inherits the parent's when absent
    */
   @query mood?: string;
 }
 
-model SharedFlags11 {
+model TraceFlag {
   /**
    * Continue an existing trace instead of opening one named for the lane. Every session this lane runs joins it
    */
   @query trace?: string;
 }
 
-model SharedFlags12 {
+model NoStartFlag {
   /**
    * Skip the repo's `boop-start` warmup in the new worktree
    */
   @query no_start?: boolean;
 }
 
-model SharedFlags13 {
+model CwdFlag {
   /**
    * Repo to branch from. Without it the brief's own repo wins, and only a brief outside any repo falls back to the caller's cwd
    */
   @query cwd?: string;
 }
 
-model SharedFlags14 {
+model BaseShaFlag {
   /**
    * Defaults to origin/main's head, resolved and printed at spawn
    */
   @query base_sha?: string;
 }
 
-model SharedFlags15 {
+model ExpectPathFlag {
   /**
    * A worktree-relative path that must exist for the lane to count as complete. Repeatable
    */
   @query expect_path?: string[];
 }
 
-model SharedFlags16 {
+model ExpectCommitSubjectFlag {
   /**
    * An exact commit subject line that must appear in a commit after base_sha for the lane to count as complete. Repeatable
    */
   @query expect_commit_subject?: string[];
 }
 
-model SharedFlags17 {
+model ExpectCommitsAtLeastFlag {
   /**
    * A lower bound on the commits after base_sha for the lane to count as complete
    */
   @query expect_commits_at_least?: string;
 }
 
-model SharedFlags18 {
+model VerifyFlag {
   /**
    * Run this command in the lane worktree before writing its result row
    */
   @query("verify") command?: string;
 }
 
-model SharedFlags19 {
+model EnvFlag {
   /**
    * An env var the lane's spawn inherits, `KEY=VAL`. Repeatable; each value is shell-quoted onto the supervisor's spawn command
    */
   @query env?: Record<string>;
 }
 
-model SharedFlags20 {
+model CommitPushFlag {
   /**
    * How the lane's commits reach its parent: `door` or `mailbox`. Absent, the parent's kind picks the default
    */
   @query("commit-push") mode?: string;
 }
 
-model SharedFlags21 {
+model PostPrFlag {
   /**
    * Finish by opening a PR: the lane brief closes with the push-and-PR line. Overrides a preset or global `post-pr`
    */
   @query post_pr?: boolean;
 }
 
-model SharedFlags22 {
+model NoPostPrFlag {
   /**
    * Override a preset or global `post-pr` back off for this spawn
    */
   @query no_post_pr?: boolean;
 }
 
-model SharedFlags23 {
+model PrBaseFlag {
   /**
    * The branch `gh pr create --base` targets; default `main`
    */
   @query("pr-base") pr_base_flag?: GitBranch;
 }
 
-model SharedFlags24 {
+model ParentFlag {
   /**
    * Defaults to the caller, then to the one registered coordinator
    */
   @query parent?: string;
 }
 
-model SharedFlags25 {
+model OnParentDeathFlag {
   /**
    * What this lane does when its parent route stops answering
    */
   @query on_parent_death: Values0 = Values0.orphan;
 }
 
-model SharedFlags26 {
+model PresetFlag {
   /**
    * The row of the config preset table this lane spawns from: harness, model, effort. The one model spelling `lane create` takes
    */
   @query preset?: string;
 }
 
-model SharedFlags27 {
+model VariantFlag {
   /**
    * opencode reasoning-effort variant (low|medium|high); CLI wins over the preset's variant, and opencode's default applies when neither
    */
   @query variant?: string;
 }
 
-model SharedFlags28 {
+model BinFlag {
   /**
    * Run the harness as this executable instead of its own binary (`ccz` is claude under the z.ai env). CLI wins over the preset's `bin`; the harness's own binary applies when neither names one
    */
   @query bin?: string;
 }
 
-model SharedFlags29 {
+model WaitTimeoutFlag {
   /**
    * Seconds `--wait` blocks before exiting 124; 0 waits forever
    */
   @query wait_timeout: uint64 = 3600;
 }
 
-model SharedFlags30 {
+model TimeoutFlag {
   /**
    * Stop the job after this many seconds. The supervisor checks each poll
    */
   @query timeout?: string;
 }
 
-model SharedFlags31 {
+model LaneFlag {
   /**
    * Overrides the lane id derived from `--branch`
    */
   @query lane?: LaneName;
 }
 
-model SharedFlags32 {
+model TmuxFlag {
   /**
    * Overrides the tmux session name derived from `--branch`
    */
   @query tmux?: string;
 }
 
-model SharedFlags33 {
+model SocketTmuxSocketToSpawnFlag {
   /**
    * tmux socket to spawn on; a throwaway socket for tests, `None` for the default server
    */
   @query socket?: string;
 }
 
-model SharedFlags34 {
+model DryRunFlag {
   /**
    * Print the worktree, branch, base sha and the literal `cmd:` line without spawning
    */
   @query dry_run?: boolean;
 }
 
-model SharedFlags35 {
+model ReclaimFlag {
   /**
    * Folded (dead-lane-self-reset): a dead name is reset on every create, so this is a no-op alias kept for old scripts
    */
   @query reclaim?: boolean;
 }
 
-model SharedFlags36 {
+model DeadFlag {
   /**
    * The turnkey command after a tmux server death: print one table of dead coordinator routes, then ask which to revive
    */
   @query dead?: boolean;
 }
 
-model SharedFlags37 {
+model ListFlag {
   /**
    * Print that table and exit; the read path, no prompt, no spawn
    */
   @query list?: boolean;
 }
 
-model SharedFlags38 {
+model JsonListAsJSONUncutFlag {
   /**
    * `--list` as JSON, uncut, for a reader that draws its own table
    */
   @query json?: boolean;
 }
 
-model SharedFlags39 {
+model YesFlag {
   /**
    * Skip the prompt and revive every row
    */
@@ -361,280 +361,280 @@ model SharedFlags39 {
   @query yes?: boolean;
 }
 
-model SharedFlags40 {
+model SinceFlag {
   /**
    * Only routes active this recently: Ns, Nm, Nh
    */
   @query since: string = "1h";
 }
 
-model SharedFlags41 {
+model SocketTmuxSocketThePaneFlag {
   /**
    * tmux socket the pane lives on; the default server when unset
    */
   @query socket?: string;
 }
 
-model SharedFlags42 {
+model MailDirStringOptionalFlag {
   @query mail_dir?: string;
 }
 
-model SharedFlags43 {
+model TouchedFlag {
   /**
    * Also print what the lane changed in its tree: commits past its base sha, uncommitted files, and the paths those commits touched
    */
   @query touched?: boolean;
 }
 
-model SharedFlags44 {
+model TmuxStringRequiredFlag {
   @query tmux: string;
 }
 
-model SharedFlags45 {
+model HarnessStringOptionalFlag {
   @query harness?: string;
 }
 
-model SharedFlags46 {
+model SessionIdFlag {
   @query session_id?: string;
 }
 
-model SharedFlags47 {
+model CwdStringOptionalFlag {
   @query cwd?: string;
 }
 
-model SharedFlags48 {
+model ModelFlag {
   @query `model`?: string;
 }
 
-model SharedFlags49 {
+model ModeFlag {
   @query mode?: string;
 }
 
-model SharedFlags50 {
+model ParentTheLaneThatSummonedFlag {
   /**
    * The lane that summoned this one
    */
   @query parent?: string;
 }
 
-model SharedFlags51 {
+model GoalStringOptionalFlag {
   @query goal?: string;
 }
 
-model SharedFlags52 {
+model RouteOnlyFlag {
   /**
    * Drop only the registry route; never kill the pane. The `--parent` on-exit epilogue uses this to clean up while still running inside it
    */
   @query route_only?: boolean;
 }
 
-model SharedFlags53 {
+model StateBulkDeleteDeadRemovesFlag {
   /**
    * Bulk delete: `dead` removes every dead lane's route and its own worktree, and nothing above it. Pair with `--dry-run` first
    */
   @query state?: string;
 }
 
-model SharedFlags54 {
+model DryRunPrintWhatASingleFlag {
   /**
    * Print what a single-lane or bulk delete would remove, and remove nothing
    */
   @query dry_run?: boolean;
 }
 
-model SharedFlags55 {
+model MergedIntoFlag {
   /**
    * Check merge against this branch instead of the lane's base branch or `main`; a merged branch's worktree and branch are removed, an unmerged one is kept
    */
   @query("merged-into") branch?: GitBranch;
 }
 
-model SharedFlags56 {
+model TimeoutUint64Optional540Flag {
   @query timeout: uint64 = 540;
 }
 
-model SharedFlags57 {
+model ChildrenFlag {
   @query children?: boolean;
 }
 
-model SharedFlags58 {
+model AsFlag {
   @query("as") as_name?: string;
 }
 
-model SharedFlags59 {
+model DryRunPrintWhatWouldBeFlag {
   /**
    * Print what would be pruned; remove nothing
    */
   @query dry_run?: boolean;
 }
 
-model SharedFlags60 {
+model LinesFlag {
   @query lines?: string;
 }
 
-model SharedFlags61 {
+model SocketStringOptionalFlag {
   @query socket?: string;
 }
 
-model SharedFlags62 {
+model FormatFlag {
   @query format: Values1 = Values1.ndjson;
 }
 
-model SharedFlags63 {
+model LaneLaneNameRequiredFlag {
   @query lane: LaneName;
 }
 
-model SharedFlags64 {
+model HarnessStringRequiredFlag {
   @query harness: string;
 }
 
-model SharedFlags65 {
+model BriefAbsolutePathToTheFlag {
   /**
    * Absolute path to the brief that opens the conversation
    */
   @query brief: string;
 }
 
-model SharedFlags66 {
+model EffortFlag {
   /**
    * Reasoning effort, threaded from the preset; the harness spells it as its own config, never as `model@effort`
    */
   @query effort?: string;
 }
 
-model SharedFlags67 {
+model ResumeFlag {
   /**
    * Continue an existing harness conversation instead of opening one
    */
   @query resume?: string;
 }
 
-model SharedFlags68 {
+model VariantOpencodeReasoningEffortVariantFlag {
   /**
    * opencode reasoning-effort variant, threaded from `lane create`
    */
   @query variant?: string;
 }
 
-model SharedFlags69 {
+model BinTheExecutableTheHarnessFlag {
   /**
    * The executable the harness runs as, threaded from `lane create`
    */
   @query bin?: string;
 }
 
-model SharedFlags70 {
+model VerifyValidationCommandCarriedFromFlag {
   /**
    * Validation command carried from `lane create`
    */
   @query verify?: string;
 }
 
-model SharedFlags71 {
+model HookFlag {
   @query hook: Values2 = Values2.plain;
 }
 
-model SharedFlags72 {
+model FormatTextJsonOptionalJsonFlag {
   @query format: Values3 = Values3.json;
 }
 
-model SharedFlags73 {
+model LimitFlag {
   @query limit?: string;
 }
 
-model SharedFlags74 {
+model SessionFlag {
   @query session?: string;
 }
 
-model SharedFlags75 {
+model RoleFlag {
   @query role?: string;
 }
 
-model SharedFlags76 {
+model SinceStringOptionalFlag {
   @query since?: string;
 }
 
-model SharedFlags77 {
+model UntilFlag {
   @query until?: string;
 }
 
-model SharedFlags78 {
+model TurnFromFlag {
   @query turn_from?: string;
 }
 
-model SharedFlags79 {
+model TurnToFlag {
   @query turn_to?: string;
 }
 
-model SharedFlags80 {
+model PathFlag {
   @query path?: string;
 }
 
-model SharedFlags81 {
+model LikeFlag {
   /**
    * Prefix match on the row's leading dictionary column
    */
   @query like?: string;
 }
 
-model SharedFlags82 {
+model DaysFlag {
   /**
    * Look back this many days
    */
   @query days: uint64 = 7;
 }
 
-model SharedFlags83 {
+model HarnessOnlyThisHarnessClaudeFlag {
   /**
    * Only this harness: claude, codex, kimi, opencode
    */
   @query harness?: string;
 }
 
-model SharedFlags84 {
+model LimitUint64Optional50Flag {
   @query limit: uint64 = 50;
 }
 
-model SharedFlags85 {
+model JsonBooleanOptionalFlag {
   @query json?: boolean;
 }
 
-model SharedFlags86 {
+model AsTheSubscriberDefaultsToFlag {
   /**
    * The subscriber; defaults to the caller's identity
    */
   @query("as") name?: string;
 }
 
-model SharedFlags87 {
+model LaneTheForkedLaneWhenFlag {
   /**
    * The forked lane, when one comment forked off several
    */
   @query lane?: LaneName;
 }
 
-model SharedFlags88 {
+model AsWhoTheRowsAreFlag {
   /**
    * Who the rows are from, when the whoami ladder cannot say
    */
   @query("as") name?: string;
 }
 
-model SharedFlags89 {
+model VerboseFlag {
   /**
    * Include recipients skipped by liveness proof
    */
   @query verbose?: boolean;
 }
 
-model SharedFlags90 {
+model JsonPrintOneJSONResultFlag {
   /**
    * Print one JSON result object
    */
   @query json?: boolean;
 }
 
-model SharedFlags91 {
+model FormatTextJsonOptionalTextFlag {
   @query format: Values3 = Values3.text;
 }
 
@@ -676,14 +676,14 @@ namespace job {
      */
     @route("/")
     @post
-    op job_list(
-      ...SharedFlags0,
-      ...SharedFlags1,
-      ...SharedFlags2,
-      ...SharedFlags3,
-      ...SharedFlags4,
-      ...SharedFlags5,
-      ...SharedFlags6
+    op list(
+      ...StateFlag,
+      ...HarnessFlag,
+      ...AllFlag,
+      ...JsonFlag,
+      ...NoHeaderFlag,
+      ...SocketFlag,
+      ...MailDirFlag
     ): void;
 
   }
@@ -693,11 +693,11 @@ namespace job {
     /**
      * Continue an agent process group paused by the RSS guard
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_resume(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags6
+    op resume(
+      @path lane: LaneName,
+      ...MailDirFlag
     ): void;
 
   }
@@ -709,37 +709,37 @@ namespace job {
      */
     @route("/")
     @post
-    op job_create(
-      ...SharedFlags7,
-      ...SharedFlags8,
-      ...SharedFlags9,
-      ...SharedFlags10,
-      ...SharedFlags11,
-      ...SharedFlags12,
-      ...SharedFlags13,
-      ...SharedFlags14,
-      ...SharedFlags15,
-      ...SharedFlags16,
-      ...SharedFlags17,
-      ...SharedFlags18,
-      ...SharedFlags19,
-      ...SharedFlags20,
-      ...SharedFlags21,
-      ...SharedFlags22,
-      ...SharedFlags23,
-      ...SharedFlags24,
-      ...SharedFlags25,
-      ...SharedFlags26,
-      ...SharedFlags27,
-      ...SharedFlags28,
-      ...SharedFlags29,
-      ...SharedFlags30,
-      ...SharedFlags31,
-      ...SharedFlags32,
-      ...SharedFlags33,
-      ...SharedFlags6,
-      ...SharedFlags34,
-      ...SharedFlags35
+    op create(
+      ...BranchFlag,
+      ...BriefFlag,
+      ...GoalFlag,
+      ...MoodFlag,
+      ...TraceFlag,
+      ...NoStartFlag,
+      ...CwdFlag,
+      ...BaseShaFlag,
+      ...ExpectPathFlag,
+      ...ExpectCommitSubjectFlag,
+      ...ExpectCommitsAtLeastFlag,
+      ...VerifyFlag,
+      ...EnvFlag,
+      ...CommitPushFlag,
+      ...PostPrFlag,
+      ...NoPostPrFlag,
+      ...PrBaseFlag,
+      ...ParentFlag,
+      ...OnParentDeathFlag,
+      ...PresetFlag,
+      ...VariantFlag,
+      ...BinFlag,
+      ...WaitTimeoutFlag,
+      ...TimeoutFlag,
+      ...LaneFlag,
+      ...TmuxFlag,
+      ...SocketTmuxSocketToSpawnFlag,
+      ...MailDirFlag,
+      ...DryRunFlag,
+      ...ReclaimFlag
     ): void;
 
   }
@@ -749,20 +749,20 @@ namespace job {
     /**
      * Bring a dead `boop tui` coordinator pane back on its own session. Its route must carry harness, session_id and cwd; a live target refuses
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_revive(
+    op revive(
       /**
          * The dead route to revive. Omit for `--dead` or `--list`
          */
-        @path("positional_lane") lane?: LaneName,
-      ...SharedFlags36,
-      ...SharedFlags37,
-      ...SharedFlags38,
-      ...SharedFlags39,
-      ...SharedFlags40,
-      ...SharedFlags41,
-      ...SharedFlags42
+        @path lane?: LaneName,
+      ...DeadFlag,
+      ...ListFlag,
+      ...JsonListAsJSONUncutFlag,
+      ...YesFlag,
+      ...SinceFlag,
+      ...SocketTmuxSocketThePaneFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -772,12 +772,12 @@ namespace job {
     /**
      * One lane's route and state
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_get(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags43,
-      ...SharedFlags42
+    op get(
+      @path lane: LaneName,
+      ...TouchedFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -787,11 +787,11 @@ namespace job {
     /**
      * The lane's worktree path alone, for `cd "$(boop beep lane where x)"`
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_where(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags42
+    op where(
+      @path lane: LaneName,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -801,19 +801,19 @@ namespace job {
     /**
      * Compatibility spelling for rebinding a registered route to an existing pane. Preserves its kind; fresh interactive registration uses agent register
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_patch(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags44,
-      ...SharedFlags45,
-      ...SharedFlags46,
-      ...SharedFlags47,
-      ...SharedFlags48,
-      ...SharedFlags49,
-      ...SharedFlags50,
-      ...SharedFlags51,
-      ...SharedFlags42
+    op patch(
+      @path lane: LaneName,
+      ...TmuxStringRequiredFlag,
+      ...HarnessStringOptionalFlag,
+      ...SessionIdFlag,
+      ...CwdStringOptionalFlag,
+      ...ModelFlag,
+      ...ModeFlag,
+      ...ParentTheLaneThatSummonedFlag,
+      ...GoalStringOptionalFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -823,18 +823,18 @@ namespace job {
     /**
      * Stop a lane and forget it, or bulk-delete by state
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_delete(
+    op delete(
       /**
          * One lane: kill its pane and drop its route. Omit for a bulk delete by `--state`
          */
-        @path("positional_lane") lane?: LaneName,
-      ...SharedFlags52,
-      ...SharedFlags53,
-      ...SharedFlags54,
-      ...SharedFlags55,
-      ...SharedFlags42
+        @path lane?: LaneName,
+      ...RouteOnlyFlag,
+      ...StateBulkDeleteDeadRemovesFlag,
+      ...DryRunPrintWhatASingleFlag,
+      ...MergedIntoFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -844,11 +844,11 @@ namespace job {
     /**
      * Forget a stopped job's route and keep its worktree and history
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_rm(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags42
+    op rm(
+      @path lane: LaneName,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -858,11 +858,11 @@ namespace job {
     /**
      * Stop a lane process and retain its route and result history
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_kill(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags42
+    op kill(
+      @path lane: LaneName,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -872,12 +872,12 @@ namespace job {
     /**
      * Wait for a job's result row
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_wait(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags56,
-      ...SharedFlags42
+    op wait(
+      @path lane: LaneName,
+      ...TimeoutUint64Optional540Flag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -887,11 +887,11 @@ namespace job {
     /**
      * Attach to a job's tmux session
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_attach(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags42
+    op attach(
+      @path lane: LaneName,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -901,13 +901,13 @@ namespace job {
     /**
      * Send a POSIX signal to this job or its direct children
      */
-    @route("/{positional_signal}")
+    @route("/{signal}")
     @post
-    op job_signal(
-      @path("positional_signal") signal: string,
-      ...SharedFlags57,
-      ...SharedFlags58,
-      ...SharedFlags42
+    op signal(
+      @path signal: string,
+      ...ChildrenFlag,
+      ...AsFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -919,9 +919,9 @@ namespace job {
      */
     @route("/")
     @post
-    op job_prune(
-      ...SharedFlags59,
-      ...SharedFlags42
+    op prune(
+      ...DryRunPrintWhatWouldBeFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -931,11 +931,11 @@ namespace job {
     /**
      * Which tmux pane and harness session id. Folded (audit 2026-08-25): `beep lane get` prints the same route row
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_route(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags42
+    op route(
+      @path lane: LaneName,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -945,13 +945,13 @@ namespace job {
     /**
      * Show the lane's screen
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_pane(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags60,
-      ...SharedFlags61,
-      ...SharedFlags42
+    op pane(
+      @path lane: LaneName,
+      ...LinesFlag,
+      ...SocketStringOptionalFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -961,13 +961,13 @@ namespace job {
     /**
      * The user/agent squares on the lane's screen: one per visible turn, in screen order, each with the viewport rows it sits on. Reads the pane through the multiplexer and reports the pane's own geometry, so a renderer drawing the right-margin navigator asks one verb for both
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op job_squares(
-      @path("positional_lane") lane: LaneName,
-      ...SharedFlags62,
-      ...SharedFlags61,
-      ...SharedFlags42
+    op squares(
+      @path lane: LaneName,
+      ...FormatFlag,
+      ...SocketStringOptionalFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -979,7 +979,7 @@ namespace job {
      */
     @route("/")
     @post
-    op job_message(
+    op message(
 
     ): void;
 
@@ -988,11 +988,11 @@ namespace job {
       /**
        * Every mail row addressed to or sent by the lane, oldest first
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op job_message_list(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags6
+      op list(
+        @path lane: LaneName,
+        ...MailDirFlag
       ): void;
 
     }
@@ -1007,17 +1007,17 @@ namespace job {
     @extension("x-clap-hidden", true)
     @route("/")
     @post
-    op job_run(
-      ...SharedFlags63,
-      ...SharedFlags64,
-      ...SharedFlags65,
-      ...SharedFlags48,
-      ...SharedFlags66,
-      ...SharedFlags67,
-      ...SharedFlags68,
-      ...SharedFlags69,
-      ...SharedFlags70,
-      ...SharedFlags42
+    op run(
+      ...LaneLaneNameRequiredFlag,
+      ...HarnessStringRequiredFlag,
+      ...BriefAbsolutePathToTheFlag,
+      ...ModelFlag,
+      ...EffortFlag,
+      ...ResumeFlag,
+      ...VariantOpencodeReasoningEffortVariantFlag,
+      ...BinTheExecutableTheHarnessFlag,
+      ...VerifyValidationCommandCarriedFromFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -1040,16 +1040,16 @@ namespace mail {
     /**
      * Deliver a message to a registered route
      */
-    @route("/{positional_body}")
+    @route("/{body}")
     @post
-    op mail_send(
-      @path("positional_body") body: string,
+    op send(
+      @path body: string,
       @query("to") job: string,
-      ...SharedFlags58,
+      ...AsFlag,
       @query kind: string = "request",
-      ...SharedFlags56,
+      ...TimeoutUint64Optional540Flag,
       @query no_wait?: boolean,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -1061,10 +1061,10 @@ namespace mail {
      */
     @route("/")
     @post
-    op mail_recv(
-      ...SharedFlags58,
-      ...SharedFlags71,
-      ...SharedFlags42
+    op recv(
+      ...AsFlag,
+      ...HookFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -1074,14 +1074,14 @@ namespace mail {
     /**
      * Wait for a reply, job result, or the next row addressed to --me
      */
-    @route("/{positional_id_or_job}")
+    @route("/{id_or_job}")
     @post
-    op mail_wait(
-      @path("positional_id_or_job") id_or_job?: MessageId | Job,
+    op wait(
+      @path id_or_job?: MessageId | Job,
       @query me?: boolean,
-      ...SharedFlags58,
-      ...SharedFlags56,
-      ...SharedFlags42
+      ...AsFlag,
+      ...TimeoutUint64Optional540Flag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -1091,18 +1091,18 @@ namespace mail {
     /**
      * Import ready Markdown messages from a directory until stopped
      */
-    @route("/{positional_directory}")
+    @route("/{directory}")
     @post
-    op mail_watch(
+    op watch(
       /**
          * Directory containing ready `.md` files
          */
-        @path("positional_directory") directory: string,
+        @path directory: string,
       /**
          * Process one scan and exit; useful for supervised one-shot runs
          */
         @query once?: boolean,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -1115,13 +1115,13 @@ namespace db {
    * Run raw SQL read-only against the store (the default `db` form), or read/count what agents did through a `db` subcommand
    */
   @extension("x-clap-args-conflicts-with-subcommands", true)
-  @route("/{positional_sql}")
+  @route("/{sql}")
   @post
   op db(
     /**
        * The SQL to run against ~/.agent/boop.db
        */
-      @path("positional_sql") sql?: string,
+      @path sql?: string,
     /**
        * Output format for the SQL passthrough
        */
@@ -1135,9 +1135,9 @@ namespace db {
      */
     @route("/")
     @post
-    op db_agent_summary(
-      ...SharedFlags72,
-      ...SharedFlags42
+    op agent_summary(
+      ...FormatTextJsonOptionalJsonFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -1149,7 +1149,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_session(
+    op session(
 
     ): void;
 
@@ -1160,9 +1160,9 @@ namespace db {
        */
       @route("/")
       @post
-      op db_session_list(
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1172,11 +1172,11 @@ namespace db {
       /**
        * The one `agent_session` row matching this session id
        */
-      @route("/{positional_session}")
+      @route("/{session}")
       @post
-      op db_session_get(
-        @path("positional_session") session: string,
-        ...SharedFlags62
+      op get(
+        @path session: string,
+        ...FormatFlag
       ): void;
 
     }
@@ -1190,7 +1190,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_turn(
+    op turn(
 
     ): void;
 
@@ -1201,17 +1201,17 @@ namespace db {
        */
       @route("/")
       @post
-      op db_turn_list(
-        ...SharedFlags45,
-        ...SharedFlags74,
-        ...SharedFlags75,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags78,
-        ...SharedFlags79,
-        ...SharedFlags80,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...HarnessStringOptionalFlag,
+        ...SessionFlag,
+        ...RoleFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...TurnFromFlag,
+        ...TurnToFlag,
+        ...PathFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1221,12 +1221,12 @@ namespace db {
       /**
        * The one `agent_turn` row at this session and turn number
        */
-      @route("/{positional_session}/{positional_turn}")
+      @route("/{session}/{turn}")
       @post
-      op db_turn_get(
-        @path("positional_session") session: string,
-        @path("positional_turn") turn: string,
-        ...SharedFlags62
+      op get(
+        @path session: string,
+        @path turn: string,
+        ...FormatFlag
       ): void;
 
     }
@@ -1240,7 +1240,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_chat(
+    op chat(
 
     ): void;
 
@@ -1251,17 +1251,17 @@ namespace db {
        */
       @route("/")
       @post
-      op db_chat_list(
-        ...SharedFlags45,
-        ...SharedFlags74,
-        ...SharedFlags75,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags78,
-        ...SharedFlags79,
-        ...SharedFlags80,
-        ...SharedFlags73,
-        ...SharedFlags62,
+      op list(
+        ...HarnessStringOptionalFlag,
+        ...SessionFlag,
+        ...RoleFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...TurnFromFlag,
+        ...TurnToFlag,
+        ...PathFlag,
+        ...LimitFlag,
+        ...FormatFlag,
         @query all?: boolean,
         @query follow?: boolean
       ): void;
@@ -1277,7 +1277,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_touch(
+    op touch(
 
     ): void;
 
@@ -1288,13 +1288,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_touch_list(
-        ...SharedFlags74,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags81,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...SessionFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...LikeFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1308,7 +1308,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_command(
+    op command(
 
     ): void;
 
@@ -1319,13 +1319,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_command_list(
-        ...SharedFlags74,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags81,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...SessionFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...LikeFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1339,7 +1339,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_fetch(
+    op fetch(
 
     ): void;
 
@@ -1350,13 +1350,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_fetch_list(
-        ...SharedFlags74,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags81,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...SessionFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...LikeFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1370,7 +1370,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_skill(
+    op skill(
 
     ): void;
 
@@ -1381,13 +1381,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_skill_list(
-        ...SharedFlags74,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags81,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...SessionFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...LikeFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1401,7 +1401,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_pr(
+    op pr(
 
     ): void;
 
@@ -1412,13 +1412,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_pr_list(
-        ...SharedFlags74,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags81,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...SessionFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...LikeFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1432,7 +1432,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_span(
+    op span(
 
     ): void;
 
@@ -1443,13 +1443,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_span_list(
-        ...SharedFlags74,
-        ...SharedFlags76,
-        ...SharedFlags77,
-        ...SharedFlags81,
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...SessionFlag,
+        ...SinceStringOptionalFlag,
+        ...UntilFlag,
+        ...LikeFlag,
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1463,7 +1463,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_edge(
+    op edge(
 
     ): void;
 
@@ -1474,9 +1474,9 @@ namespace db {
        */
       @route("/")
       @post
-      op db_edge_list(
-        ...SharedFlags74,
-        ...SharedFlags73
+      op list(
+        ...SessionFlag,
+        ...LimitFlag
       ): void;
 
     }
@@ -1491,8 +1491,8 @@ namespace db {
     @extension("x-clap-args-conflicts-with-subcommands", true)
     @route("/")
     @post
-    op db_usage(
-      ...SharedFlags62,
+    op usage(
+      ...FormatFlag,
       /**
          * Print this alias's SQL and exit
          */
@@ -1506,13 +1506,13 @@ namespace db {
        */
       @route("/")
       @post
-      op db_usage_blocks(
+      op blocks(
         @query window_hours: uint64 = 5,
         /**
            * Only the window that is still open
            */
           @query active?: boolean,
-        ...SharedFlags62
+        ...FormatFlag
       ): void;
 
     }
@@ -1524,9 +1524,9 @@ namespace db {
        */
       @route("/")
       @post
-      op db_usage_burn_rate(
+      op burn_rate(
         @query window_minutes: uint64 = 60,
-        ...SharedFlags62
+        ...FormatFlag
       ): void;
 
     }
@@ -1540,7 +1540,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_price(
+    op price(
 
     ): void;
 
@@ -1551,7 +1551,7 @@ namespace db {
        */
       @route("/")
       @post
-      op db_price_list(
+      op list(
 
       ): void;
 
@@ -1562,10 +1562,10 @@ namespace db {
       /**
        * Write one rate row by hand, in USD per million tokens
        */
-      @route("/{positional_model}")
+      @route("/{model}")
       @post
-      op db_price_set(
-        @path("positional_model") `model`: string,
+      op set(
+        @path `model`: string,
         @query input_per_mtok: string,
         @query output_per_mtok: string,
         @query cache_write_5m_per_mtok: string,
@@ -1585,7 +1585,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_favorite(
+    op favorite(
 
     ): void;
 
@@ -1596,7 +1596,7 @@ namespace db {
        */
       @route("/")
       @post
-      op db_favorite_add(
+      op add(
         /**
            * Markdown file to pin; stdin when absent
            */
@@ -1620,9 +1620,9 @@ namespace db {
        */
       @route("/")
       @post
-      op db_favorite_list(
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1632,11 +1632,11 @@ namespace db {
       /**
        * One favorite by id, body included
        */
-      @route("/{positional_id}")
+      @route("/{id}")
       @post
-      op db_favorite_show(
-        @path("positional_id") id: string,
-        ...SharedFlags62
+      op show(
+        @path id: string,
+        ...FormatFlag
       ): void;
 
     }
@@ -1646,10 +1646,10 @@ namespace db {
       /**
        * Rewrite the note and/or source of one favorite; the body is immutable
        */
-      @route("/{positional_id}")
+      @route("/{id}")
       @post
-      op db_favorite_edit(
-        @path("positional_id") id: string,
+      op edit(
+        @path id: string,
         @query note?: string,
         @query source?: string
       ): void;
@@ -1661,10 +1661,10 @@ namespace db {
       /**
        * Drop one favorite by id; its markdown body stays cached
        */
-      @route("/{positional_id}")
+      @route("/{id}")
       @post
-      op db_favorite_delete(
-        @path("positional_id") id: string
+      op delete(
+        @path id: string
       ): void;
 
     }
@@ -1678,7 +1678,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_sync(
+    op sync(
 
     ): void;
 
@@ -1689,7 +1689,7 @@ namespace db {
        */
       @route("/")
       @post
-      op db_sync_create(
+      op create(
         @query rebuild?: boolean,
         /**
            * Keep syncing on a poll instead of returning
@@ -1712,7 +1712,7 @@ namespace db {
      */
     @route("/")
     @post
-    op db_sync_cursor(
+    op sync_cursor(
 
     ): void;
 
@@ -1723,9 +1723,9 @@ namespace db {
        */
       @route("/")
       @post
-      op db_sync_cursor_list(
-        ...SharedFlags73,
-        ...SharedFlags62
+      op list(
+        ...LimitFlag,
+        ...FormatFlag
       ): void;
 
     }
@@ -1737,21 +1737,21 @@ namespace db {
     /**
      * Search every harness's turns for a text, newest first; `--days 7` is the default window. Answers "who talked about X" without SQL
      */
-    @route("/{positional_text}")
+    @route("/{text}")
     @post
-    op db_search(
+    op search(
       /**
          * Text to find, case-insensitive
          */
-        @path("positional_text") text: string,
-      ...SharedFlags82,
-      ...SharedFlags83,
+        @path text: string,
+      ...DaysFlag,
+      ...HarnessOnlyThisHarnessClaudeFlag,
       /**
          * Return only turns classified as direct human input
          */
         @query human?: boolean,
-      ...SharedFlags84,
-      ...SharedFlags62
+      ...LimitUint64Optional50Flag,
+      ...FormatFlag
     ): void;
 
   }
@@ -1763,11 +1763,11 @@ namespace db {
      */
     @route("/")
     @post
-    op db_sessions(
-      ...SharedFlags82,
-      ...SharedFlags83,
-      ...SharedFlags84,
-      ...SharedFlags62
+    op sessions(
+      ...DaysFlag,
+      ...HarnessOnlyThisHarnessClaudeFlag,
+      ...LimitUint64Optional50Flag,
+      ...FormatFlag
     ): void;
 
   }
@@ -1779,10 +1779,10 @@ namespace db {
      */
     @route("/")
     @post
-    op db_lanes(
-      ...SharedFlags82,
-      ...SharedFlags84,
-      ...SharedFlags62
+    op lanes(
+      ...DaysFlag,
+      ...LimitUint64Optional50Flag,
+      ...FormatFlag
     ): void;
 
   }
@@ -1792,19 +1792,19 @@ namespace db {
     /**
      * Mail to or from one route, newest first
      */
-    @route("/{positional_route}")
+    @route("/{route}")
     @post
-    op db_mail(
+    op mail(
       /**
          * Lane, coordinator or native route name
          */
-        @path("positional_route") route: string,
+        @path route: string,
       /**
          * Only this kind: dispatch, result, request, completion, yield, note
          */
         @query kind?: string,
-      ...SharedFlags84,
-      ...SharedFlags62
+      ...LimitUint64Optional50Flag,
+      ...FormatFlag
     ): void;
 
   }
@@ -1816,8 +1816,8 @@ namespace db {
      */
     @route("/")
     @post
-    op db_schema(
-      ...SharedFlags62
+    op schema(
+      ...FormatFlag
     ): void;
 
   }
@@ -1829,12 +1829,12 @@ namespace db {
      */
     @route("/")
     @post
-    op db_status(
+    op status(
       /**
          * Window in minutes
          */
         @query window: uint64 = 10,
-      ...SharedFlags62
+      ...FormatFlag
     ): void;
 
   }
@@ -1846,13 +1846,13 @@ namespace debug {
   /**
    * What just went wrong: recent WARN/ERROR across the lane trails and the store's error events, grouped by lane
    */
-  @route("/{positional_lane}")
+  @route("/{lane_arg}")
   @post
   op debug(
     /**
        * One lane, answered in full: route, mail, worktree, transcript, alerts. Without it, the WARN/ERROR window across every lane
        */
-      @path("positional_lane") lane?: LaneName,
+      @path lane_arg?: LaneName,
     /**
        * Window to read back, as `Ns`, `Nm`, `Nh` or a count of seconds
        */
@@ -1860,12 +1860,12 @@ namespace debug {
     /**
        * One lane only, for the alert window
        */
-      @query("lane") lane_flag?: LaneName,
+      @query lane?: LaneName,
     /**
        * One JSON document, `alerts` and `sync`, instead of the grouped text
        */
       @query json?: boolean,
-    ...SharedFlags42
+    ...MailDirStringOptionalFlag
   ): void;
 
 }
@@ -1879,7 +1879,7 @@ namespace me {
   @route("/")
   @post
   op me(
-    ...SharedFlags42
+    ...MailDirStringOptionalFlag
   ): void;
 
   @route("/whoami")
@@ -1889,9 +1889,9 @@ namespace me {
      */
     @route("/")
     @post
-    op me_whoami(
-      ...SharedFlags85,
-      ...SharedFlags58
+    op whoami(
+      ...JsonBooleanOptionalFlag,
+      ...AsFlag
     ): void;
 
   }
@@ -1901,11 +1901,11 @@ namespace me {
     /**
      * Register a pane-less route for a native coordinator or subagent
      */
-    @route("/{positional_name}")
+    @route("/{name}")
     @post
-    op me_register(
-      @path("positional_name") name: string,
-      ...SharedFlags45,
+    op register(
+      @path name: string,
+      ...HarnessStringOptionalFlag,
       @query parent?: string
     ): void;
 
@@ -1916,13 +1916,13 @@ namespace me {
     /**
      * Read or set the format agents mail this session in. No name prints the effective mood and the session that set it
      */
-    @route("/{positional_name}")
+    @route("/{name}")
     @post
-    op me_mood(
+    op mood(
       /**
          * A stored mood name; `boop db "select * from mood"` lists them
          */
-        @path("positional_name") name?: string,
+        @path name?: string,
       /**
          * Drop this session's own mood row, so it inherits again
          */
@@ -1940,13 +1940,13 @@ namespace me {
     /**
      * Save one assistant turn from the caller's conversation as a favorite
      */
-    @route("/{positional_index}")
+    @route("/{index}")
     @post
-    op me_favorite(
+    op favorite(
       /**
          * Assistant turn position: -1 is newest, -2 is the one before it
          */
-        @path("positional_index") index: int64 = -1,
+        @path index: int64 = -1,
       /**
          * Why this message is kept
          */
@@ -1975,7 +1975,7 @@ namespace config {
      */
     @route("/")
     @post
-    op config_path(
+    op path(
 
     ): void;
 
@@ -1988,7 +1988,7 @@ namespace config {
      */
     @route("/")
     @post
-    op config_show(
+    op show(
 
     ): void;
 
@@ -2001,7 +2001,7 @@ namespace config {
      */
     @route("/")
     @post
-    op config_presets(
+    op presets(
       @query format: Values4 = Values4.table
     ): void;
 
@@ -2028,9 +2028,9 @@ namespace agent {
      */
     @route("/")
     @post
-    op agent_summary(
-      ...SharedFlags72,
-      ...SharedFlags42
+    op summary(
+      ...FormatTextJsonOptionalJsonFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -2042,7 +2042,7 @@ namespace agent {
      */
     @route("/")
     @post
-    op agent_sessions(
+    op sessions(
       /**
          * Restrict session and shell rows to one working directory
          */
@@ -2063,7 +2063,7 @@ namespace agent {
          * The public graph contract currently emits JSON
          */
         @query format: Values5 = Values5.json,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -2079,7 +2079,7 @@ namespace beep {
    */
   @extension("x-clap-args-conflicts-with-subcommands", true)
   @extension("x-clap-hidden", true)
-  @route("/{positional_route}/{positional_body}")
+  @route("/{route}/{body}")
   @post
   op beep(
     /**
@@ -2087,11 +2087,11 @@ namespace beep {
        * 
        * Clap cannot mark this required: `subcommand_negates_reqs` does not clear a parent positional once a `beep` subcommand matches, so `beep lane list` would fail on a missing `<ROUTE>`. The dispatch raises clap's own missing-argument error instead.
        */
-      @path("positional_route") route?: string,
+      @path route?: string,
     /**
        * The message
        */
-      @path("positional_body") body?: string,
+      @path body?: string,
     /**
        * Who the row is from, when the whoami ladder cannot say
        */
@@ -2108,7 +2108,7 @@ namespace beep {
        * Send and return, instead of blocking for the answer
        */
       @query no_wait?: boolean,
-    ...SharedFlags42
+    ...MailDirStringOptionalFlag
   ): void;
 
   @route("/remind")
@@ -2118,7 +2118,7 @@ namespace beep {
      */
     @route("/")
     @post
-    op beep_remind(
+    op remind(
 
     ): void;
 
@@ -2127,15 +2127,15 @@ namespace beep {
       /**
        * Persist a named schedule. First delivery is one interval from now
        */
-      @route("/{positional_name}/{positional_route}/{positional_body}")
+      @route("/{name}/{route}/{body}")
       @post
-      op beep_remind_add(
-        @path("positional_name") name: string,
+      op add(
+        @path name: string,
         /**
            * Existing explicit route name (no parent/children aliases)
            */
-          @path("positional_route") route: string,
-        @path("positional_body") body: string,
+          @path route: string,
+        @path body: string,
         /**
            * Positive interval: seconds, or suffix s/m/h (for example 30m)
            */
@@ -2144,7 +2144,7 @@ namespace beep {
            * Required exclusive expiry: Unix seconds or RFC3339 with offset
            */
           @query until: string,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2156,8 +2156,8 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_remind_list(
-        ...SharedFlags42
+      op list(
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2167,11 +2167,11 @@ namespace beep {
       /**
        * Stop future delivery. Already accepted harness work cannot be retracted
        */
-      @route("/{positional_name}")
+      @route("/{name}")
       @post
-      op beep_remind_cancel(
-        @path("positional_name") name: string,
-        ...SharedFlags42
+      op cancel(
+        @path name: string,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2183,9 +2183,9 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_remind_run(
+      op run(
         @query once?: boolean,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2199,7 +2199,7 @@ namespace beep {
      */
     @route("/")
     @post
-    op beep_harness(
+    op harness(
 
     ): void;
 
@@ -2207,7 +2207,7 @@ namespace beep {
     namespace list {
       @route("/")
       @post
-      op beep_harness_list(
+      op list(
 
       ): void;
 
@@ -2215,10 +2215,10 @@ namespace beep {
 
     @route("/get")
     namespace get {
-      @route("/{positional_harness}")
+      @route("/{harness}")
       @post
-      op beep_harness_get(
-        @path("positional_harness") harness: string
+      op get(
+        @path harness: string
       ): void;
 
     }
@@ -2232,7 +2232,7 @@ namespace beep {
      */
     @route("/")
     @post
-    op beep_lane(
+    op lane(
 
     ): void;
 
@@ -2243,14 +2243,14 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_lane_list(
-        ...SharedFlags0,
-        ...SharedFlags1,
-        ...SharedFlags2,
-        ...SharedFlags3,
-        ...SharedFlags4,
-        ...SharedFlags5,
-        ...SharedFlags6
+      op list(
+        ...StateFlag,
+        ...HarnessFlag,
+        ...AllFlag,
+        ...JsonFlag,
+        ...NoHeaderFlag,
+        ...SocketFlag,
+        ...MailDirFlag
       ): void;
 
     }
@@ -2260,11 +2260,11 @@ namespace beep {
       /**
        * Continue an agent process group paused by the RSS guard
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_resume(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags6
+      op resume(
+        @path lane: LaneName,
+        ...MailDirFlag
       ): void;
 
     }
@@ -2276,37 +2276,37 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_lane_create(
-        ...SharedFlags7,
-        ...SharedFlags8,
-        ...SharedFlags9,
-        ...SharedFlags10,
-        ...SharedFlags11,
-        ...SharedFlags12,
-        ...SharedFlags13,
-        ...SharedFlags14,
-        ...SharedFlags15,
-        ...SharedFlags16,
-        ...SharedFlags17,
-        ...SharedFlags18,
-        ...SharedFlags19,
-        ...SharedFlags20,
-        ...SharedFlags21,
-        ...SharedFlags22,
-        ...SharedFlags23,
-        ...SharedFlags24,
-        ...SharedFlags25,
-        ...SharedFlags26,
-        ...SharedFlags27,
-        ...SharedFlags28,
-        ...SharedFlags29,
-        ...SharedFlags30,
-        ...SharedFlags31,
-        ...SharedFlags32,
-        ...SharedFlags33,
-        ...SharedFlags6,
-        ...SharedFlags34,
-        ...SharedFlags35
+      op create(
+        ...BranchFlag,
+        ...BriefFlag,
+        ...GoalFlag,
+        ...MoodFlag,
+        ...TraceFlag,
+        ...NoStartFlag,
+        ...CwdFlag,
+        ...BaseShaFlag,
+        ...ExpectPathFlag,
+        ...ExpectCommitSubjectFlag,
+        ...ExpectCommitsAtLeastFlag,
+        ...VerifyFlag,
+        ...EnvFlag,
+        ...CommitPushFlag,
+        ...PostPrFlag,
+        ...NoPostPrFlag,
+        ...PrBaseFlag,
+        ...ParentFlag,
+        ...OnParentDeathFlag,
+        ...PresetFlag,
+        ...VariantFlag,
+        ...BinFlag,
+        ...WaitTimeoutFlag,
+        ...TimeoutFlag,
+        ...LaneFlag,
+        ...TmuxFlag,
+        ...SocketTmuxSocketToSpawnFlag,
+        ...MailDirFlag,
+        ...DryRunFlag,
+        ...ReclaimFlag
       ): void;
 
     }
@@ -2316,20 +2316,20 @@ namespace beep {
       /**
        * Bring a dead `boop tui` coordinator pane back on its own session. Its route must carry harness, session_id and cwd; a live target refuses
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_revive(
+      op revive(
         /**
            * The dead route to revive. Omit for `--dead` or `--list`
            */
-          @path("positional_lane") lane?: LaneName,
-        ...SharedFlags36,
-        ...SharedFlags37,
-        ...SharedFlags38,
-        ...SharedFlags39,
-        ...SharedFlags40,
-        ...SharedFlags41,
-        ...SharedFlags42
+          @path lane?: LaneName,
+        ...DeadFlag,
+        ...ListFlag,
+        ...JsonListAsJSONUncutFlag,
+        ...YesFlag,
+        ...SinceFlag,
+        ...SocketTmuxSocketThePaneFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2339,12 +2339,12 @@ namespace beep {
       /**
        * One lane's route and state
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_get(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags43,
-        ...SharedFlags42
+      op get(
+        @path lane: LaneName,
+        ...TouchedFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2354,11 +2354,11 @@ namespace beep {
       /**
        * The lane's worktree path alone, for `cd "$(boop beep lane where x)"`
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_where(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags42
+      op where(
+        @path lane: LaneName,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2368,19 +2368,19 @@ namespace beep {
       /**
        * Compatibility spelling for rebinding a registered route to an existing pane. Preserves its kind; fresh interactive registration uses agent register
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_patch(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags44,
-        ...SharedFlags45,
-        ...SharedFlags46,
-        ...SharedFlags47,
-        ...SharedFlags48,
-        ...SharedFlags49,
-        ...SharedFlags50,
-        ...SharedFlags51,
-        ...SharedFlags42
+      op patch(
+        @path lane: LaneName,
+        ...TmuxStringRequiredFlag,
+        ...HarnessStringOptionalFlag,
+        ...SessionIdFlag,
+        ...CwdStringOptionalFlag,
+        ...ModelFlag,
+        ...ModeFlag,
+        ...ParentTheLaneThatSummonedFlag,
+        ...GoalStringOptionalFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2390,18 +2390,18 @@ namespace beep {
       /**
        * Stop a lane and forget it, or bulk-delete by state
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_delete(
+      op delete(
         /**
            * One lane: kill its pane and drop its route. Omit for a bulk delete by `--state`
            */
-          @path("positional_lane") lane?: LaneName,
-        ...SharedFlags52,
-        ...SharedFlags53,
-        ...SharedFlags54,
-        ...SharedFlags55,
-        ...SharedFlags42
+          @path lane?: LaneName,
+        ...RouteOnlyFlag,
+        ...StateBulkDeleteDeadRemovesFlag,
+        ...DryRunPrintWhatASingleFlag,
+        ...MergedIntoFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2411,11 +2411,11 @@ namespace beep {
       /**
        * Forget a stopped job's route and keep its worktree and history
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_rm(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags42
+      op rm(
+        @path lane: LaneName,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2425,11 +2425,11 @@ namespace beep {
       /**
        * Stop a lane process and retain its route and result history
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_kill(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags42
+      op kill(
+        @path lane: LaneName,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2439,12 +2439,12 @@ namespace beep {
       /**
        * Wait for a job's result row
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_wait(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags56,
-        ...SharedFlags42
+      op wait(
+        @path lane: LaneName,
+        ...TimeoutUint64Optional540Flag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2454,11 +2454,11 @@ namespace beep {
       /**
        * Attach to a job's tmux session
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_attach(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags42
+      op attach(
+        @path lane: LaneName,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2468,13 +2468,13 @@ namespace beep {
       /**
        * Send a POSIX signal to this job or its direct children
        */
-      @route("/{positional_signal}")
+      @route("/{signal}")
       @post
-      op beep_lane_signal(
-        @path("positional_signal") signal: string,
-        ...SharedFlags57,
-        ...SharedFlags58,
-        ...SharedFlags42
+      op signal(
+        @path signal: string,
+        ...ChildrenFlag,
+        ...AsFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2486,9 +2486,9 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_lane_prune(
-        ...SharedFlags59,
-        ...SharedFlags42
+      op prune(
+        ...DryRunPrintWhatWouldBeFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2498,11 +2498,11 @@ namespace beep {
       /**
        * Which tmux pane and harness session id. Folded (audit 2026-08-25): `beep lane get` prints the same route row
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_route(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags42
+      op route(
+        @path lane: LaneName,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2512,13 +2512,13 @@ namespace beep {
       /**
        * Show the lane's screen
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_pane(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags60,
-        ...SharedFlags61,
-        ...SharedFlags42
+      op pane(
+        @path lane: LaneName,
+        ...LinesFlag,
+        ...SocketStringOptionalFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2528,13 +2528,13 @@ namespace beep {
       /**
        * The user/agent squares on the lane's screen: one per visible turn, in screen order, each with the viewport rows it sits on. Reads the pane through the multiplexer and reports the pane's own geometry, so a renderer drawing the right-margin navigator asks one verb for both
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_lane_squares(
-        @path("positional_lane") lane: LaneName,
-        ...SharedFlags62,
-        ...SharedFlags61,
-        ...SharedFlags42
+      op squares(
+        @path lane: LaneName,
+        ...FormatFlag,
+        ...SocketStringOptionalFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2546,7 +2546,7 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_lane_message(
+      op message(
 
       ): void;
 
@@ -2555,11 +2555,11 @@ namespace beep {
         /**
          * Every mail row addressed to or sent by the lane, oldest first
          */
-        @route("/{positional_lane}")
+        @route("/{lane}")
         @post
-        op beep_lane_message_list(
-          @path("positional_lane") lane: LaneName,
-          ...SharedFlags6
+        op list(
+          @path lane: LaneName,
+          ...MailDirFlag
         ): void;
 
       }
@@ -2574,17 +2574,17 @@ namespace beep {
       @extension("x-clap-hidden", true)
       @route("/")
       @post
-      op beep_lane_run(
-        ...SharedFlags63,
-        ...SharedFlags64,
-        ...SharedFlags65,
-        ...SharedFlags48,
-        ...SharedFlags66,
-        ...SharedFlags67,
-        ...SharedFlags68,
-        ...SharedFlags69,
-        ...SharedFlags70,
-        ...SharedFlags42
+      op run(
+        ...LaneLaneNameRequiredFlag,
+        ...HarnessStringRequiredFlag,
+        ...BriefAbsolutePathToTheFlag,
+        ...ModelFlag,
+        ...EffortFlag,
+        ...ResumeFlag,
+        ...VariantOpencodeReasoningEffortVariantFlag,
+        ...BinTheExecutableTheHarnessFlag,
+        ...VerifyValidationCommandCarriedFromFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2598,7 +2598,7 @@ namespace beep {
      */
     @route("/")
     @post
-    op beep_agent(
+    op agent(
 
     ): void;
 
@@ -2609,7 +2609,7 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_agent_waterfall(
+      op waterfall(
         /**
            * Inclusive epoch milliseconds, or a duration such as `24h`
            */
@@ -2628,13 +2628,13 @@ namespace beep {
       /**
        * Register or update a native/coordinator route. Omitted fields are preserved
        */
-      @route("/{positional_name}")
+      @route("/{name}")
       @post
-      op beep_agent_register(
+      op register(
         /**
            * The route name. Every boop call this agent makes then carries `--as <name>`: it shares its spawner's process, so no env stamp can name it
            */
-          @path("positional_name") name: string,
+          @path name: string,
         /**
            * `native` (a subagent inside a lane or coordinator process) or `coordinator` (an interactive session that owns lanes). Defaults to native for a new route; preserves the kind of an existing route
            */
@@ -2667,7 +2667,7 @@ namespace beep {
            * The tree this agent works in. Warmed like a lane spawn's worktree, with the preamble printed here: a native has no injected first turn
            */
           @query worktree?: string,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2677,12 +2677,12 @@ namespace beep {
       /**
        * Append a completion row and remove the registry row
        */
-      @route("/{positional_name}")
+      @route("/{name}")
       @post
-      op beep_agent_done(
-        @path("positional_name") name: string,
+      op done(
+        @path name: string,
         @query rc: uint64 = 0,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2692,19 +2692,19 @@ namespace beep {
       /**
        * Receive a lane's commits as pushes. `<lane>` names one lane, `children` every current child plus a wildcard, `'*'` every lane the caller parents
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_agent_subscribe(
+      op subscribe(
         /**
            * A lane, or the `children` / `'*'` alias
            */
-          @path("positional_lane") lane: LaneName,
+          @path lane: LaneName,
         /**
            * How a commit reaches the subscriber: `door` or `mailbox`
            */
           @query mode: string = "door",
-        ...SharedFlags86,
-        ...SharedFlags42
+        ...AsTheSubscriberDefaultsToFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2714,15 +2714,15 @@ namespace beep {
       /**
        * Stop receiving a lane's commit pushes
        */
-      @route("/{positional_lane}")
+      @route("/{lane}")
       @post
-      op beep_agent_unsubscribe(
+      op unsubscribe(
         /**
            * A lane, or the `children` / `'*'` alias
            */
-          @path("positional_lane") lane: LaneName,
-        ...SharedFlags86,
-        ...SharedFlags42
+          @path lane: LaneName,
+        ...AsTheSubscriberDefaultsToFlag,
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2736,7 +2736,7 @@ namespace beep {
      */
     @route("/")
     @post
-    op beep_message(
+    op message(
 
     ): void;
 
@@ -2747,12 +2747,12 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_message_ack(
+      op ack(
         @query lane?: LaneName,
         @query box?: string,
         @query close_routeless?: boolean,
         @query max_age_days: uint64 = 7,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2765,13 +2765,13 @@ namespace beep {
      * Fork a lane off a stored terminal comment: the quoted turns and the note become the brief, the lane runs on `--preset` from the caller's repo, and the link is kept in `agent_turn_comment_fork`. The `join` and `diff` verbs bring the fork back
      */
     @extension("x-clap-args-conflicts-with-subcommands", true)
-    @route("/{positional_comment}")
+    @route("/{comment}")
     @post
-    op beep_fork(
+    op fork(
       /**
          * `comment_id` in `agent_turn_comment`. Required by the bare spawn spelling `boop beep fork <id>`; `join` and `diff` take their own
          */
-        @path("positional_comment") comment?: string,
+        @path comment?: string,
       /**
          * The config preset the lane spawns from: harness, model, effort
          */
@@ -2784,12 +2784,12 @@ namespace beep {
          * Repo to branch from; defaults to the repo the caller stands in
          */
         @query cwd?: string,
-      ...SharedFlags24,
+      ...ParentFlag,
       /**
          * Print the brief path and the lane's `cmd:` line without spawning
          */
         @query dry_run?: boolean,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
     @route("/join")
@@ -2797,14 +2797,14 @@ namespace beep {
       /**
        * Merge the fork's branch into the caller's repo and deliver the lane's last assistant turn to the fork's parent
        */
-      @route("/{positional_comment}")
+      @route("/{comment}")
       @post
-      op beep_fork_join(
+      op join(
         /**
            * `comment_id` in `agent_turn_comment`
            */
-          @path("positional_comment") comment: string,
-        ...SharedFlags87,
+          @path comment: string,
+        ...LaneTheForkedLaneWhenFlag,
         /**
            * Skip the merge; only write and deliver the reply
            */
@@ -2817,7 +2817,7 @@ namespace beep {
            * Print the git command and the recipient, run nothing
            */
           @query dry_run?: boolean,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2827,19 +2827,19 @@ namespace beep {
       /**
        * Print `git diff <base>..<branch>` for the fork
        */
-      @route("/{positional_comment}")
+      @route("/{comment}")
       @post
-      op beep_fork_diff(
+      op diff(
         /**
            * `comment_id` in `agent_turn_comment`
            */
-          @path("positional_comment") comment: string,
-        ...SharedFlags87,
+          @path comment: string,
+        ...LaneTheForkedLaneWhenFlag,
         /**
            * Print `--stat` instead of the full diff
            */
           @query stat?: boolean,
-        ...SharedFlags42
+        ...MailDirStringOptionalFlag
       ): void;
 
     }
@@ -2851,13 +2851,13 @@ namespace beep {
     /**
      * Put a file on the OS pasteboard and press the recipient's paste key in its pane, so a TUI that reads images off the pasteboard (claude, codex: Ctrl+V) takes the picture the way a hand paste would. Text and files the harness cannot read that way land as a quoted path instead
      */
-    @route("/{positional_path}")
+    @route("/{path}")
     @post
-    op beep_paste(
+    op paste(
       /**
          * The file to paste
          */
-        @path("positional_path") path: string,
+        @path path: string,
       /**
          * Recipient route; its registered pane and harness pick the key
          */
@@ -2874,7 +2874,7 @@ namespace beep {
          * Type the quoted path even for an image
          */
         @query as_path?: boolean,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -2884,15 +2884,15 @@ namespace beep {
     /**
      * pid, rss, cpu, uptime, child count per live lane
      */
-    @route("/{positional_lane}")
+    @route("/{lane}")
     @post
-    op beep_ps(
-      @path("positional_lane") lane?: LaneName,
+    op ps(
+      @path lane?: LaneName,
       /**
          * Include dead routes (no live process behind the pane)
          */
         @query all?: boolean,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -2904,13 +2904,13 @@ namespace beep {
      */
     @route("/")
     @post
-    op beep_pstree(
+    op pstree(
       /**
          * Include dead lanes; default is live-only
          */
         @query all?: boolean,
       @query format: Values7 = Values7.text,
-      ...SharedFlags42
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -2923,8 +2923,8 @@ namespace beep {
     @extension("x-clap-subcommand-required", true)
     @route("/")
     @post
-    op beep_selection(
-      ...SharedFlags42
+    op selection(
+      ...MailDirStringOptionalFlag
     ): void;
 
     @route("/list")
@@ -2934,7 +2934,7 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_selection_list(
+      op list(
 
       ): void;
 
@@ -2945,10 +2945,10 @@ namespace beep {
       /**
        * Change one route's checkbox without replacing other selections
        */
-      @route("/{positional_route}")
+      @route("/{route}")
       @post
-      op beep_selection_set(
-        @path("positional_route") route: string,
+      op set(
+        @path route: string,
         @query checked?: boolean
       ): void;
 
@@ -2959,10 +2959,10 @@ namespace beep {
       /**
        * Record a human focus event for a tmux session or pane
        */
-      @route("/{positional_target}")
+      @route("/{target}")
       @post
-      op beep_selection_focus(
-        @path("positional_target") target: string,
+      op focus(
+        @path target: string,
         @query at?: string
       ): void;
 
@@ -2975,7 +2975,7 @@ namespace beep {
        */
       @route("/")
       @post
-      op beep_selection_clear(
+      op clear(
 
       ): void;
 
@@ -2988,13 +2988,13 @@ namespace beep {
     /**
      * One row to every connected agent (live panes and registered pane-less routes), the caller excepted. The stop-gap broadcast
      */
-    @route("/{positional_body}")
+    @route("/{body}")
     @post
-    op beep_shout(
+    op shout(
       /**
          * The message; omitted sends "stahp what ur doing please"
          */
-        @path("positional_body") body?: string,
+        @path body?: string,
       /**
          * Send only to the persisted checkbox selection
          */
@@ -3003,14 +3003,14 @@ namespace beep {
          * Explicit recipient routes; repeat for a one-time recipient set
          */
         @query to?: string,
-      ...SharedFlags88,
+      ...AsWhoTheRowsAreFlag,
       /**
          * The mail kind the rows wear
          */
         @query kind: string = "hail",
-      ...SharedFlags89,
-      ...SharedFlags90,
-      ...SharedFlags42
+      ...VerboseFlag,
+      ...JsonPrintOneJSONResultFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -3020,17 +3020,17 @@ namespace beep {
     /**
      * Interrupt busy agents with one declared harness key before delivering the message. Idle and unknown TUIs take no keys; lanes take cancel rows
      */
-    @route("/{positional_body}")
+    @route("/{body}")
     @post
-    op beep_scream(
+    op scream(
       /**
          * The message; omitted sends "stop what ur doing check ps"
          */
-        @path("positional_body") body?: string,
-      ...SharedFlags88,
-      ...SharedFlags89,
-      ...SharedFlags90,
-      ...SharedFlags42
+        @path body?: string,
+      ...AsWhoTheRowsAreFlag,
+      ...VerboseFlag,
+      ...JsonPrintOneJSONResultFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -3056,13 +3056,13 @@ namespace inbox {
      */
     @route("/")
     @post
-    op inbox_drain(
+    op drain(
       /**
          * Whose inbox to drain; defaults to the identity ladder's answer
          */
         @query("as") name?: string,
-      ...SharedFlags71,
-      ...SharedFlags42
+      ...HookFlag,
+      ...MailDirStringOptionalFlag
     ): void;
 
   }
@@ -3074,7 +3074,7 @@ namespace inbox {
      */
     @route("/")
     @post
-    op inbox_hooks(
+    op hooks(
       @query name: string,
       /**
          * The project whose settings carry the hooks; defaults to this dir
@@ -3093,13 +3093,13 @@ namespace remind {
    * Print the newest user messages from the caller's tracked conversation
    */
   @extension("x-clap-hidden", true)
-  @route("/{positional_count}")
+  @route("/{count}")
   @post
   op remind(
     /**
        * Number of user messages to print, newest window first in chronology
        */
-      @path("positional_count") count: string
+      @path count: string
   ): void;
 
 }
@@ -3110,10 +3110,10 @@ namespace shell_init {
    * Print shell functions that route interactive harnesses through Boop. Folded (one-pane-register-path): `boop tui <harness>` is the spelling
    */
   @extension("x-clap-hidden", true)
-  @route("/{positional_shell}")
+  @route("/{shell}")
   @post
   op shell_init(
-    @path("positional_shell") shell: Values8
+    @path shell: Values8
   ): void;
 
 }
@@ -3135,11 +3135,11 @@ namespace tag {
     /**
      * Apply one or more tags to a source
      */
-    @route("/{positional_tag}")
+    @route("/{tag}")
     @post
-    op tag_add(
+    op add(
       @minItems(1)
-        @path("positional_tag") tag: string[],
+        @path tag: string[],
       /**
          * What the tags hang on: favorite:<id>, comment:<id>, lane:<name>, or any spelling the caller keeps. Defaults to the caller's route
          */
@@ -3155,10 +3155,10 @@ namespace tag {
      */
     @route("/")
     @post
-    op tag_recent(
+    op recent(
       @extension("x-clap-short", "n")
         @query limit: uint64 = 5,
-      ...SharedFlags91
+      ...FormatTextJsonOptionalTextFlag
     ): void;
 
   }
@@ -3168,13 +3168,13 @@ namespace tag {
     /**
      * Substring match on the tag column; no message body is read
      */
-    @route("/{positional_query}")
+    @route("/{query}")
     @post
-    op tag_search(
-      @path("positional_query") query: string,
+    op search(
+      @path query: string,
       @extension("x-clap-short", "n")
         @query limit: uint64 = 20,
-      ...SharedFlags91
+      ...FormatTextJsonOptionalTextFlag
     ): void;
 
   }
@@ -3186,8 +3186,8 @@ namespace tag {
      */
     @route("/")
     @post
-    op tag_list(
-      ...SharedFlags91
+    op list(
+      ...FormatTextJsonOptionalTextFlag
     ): void;
 
   }
@@ -3197,10 +3197,10 @@ namespace tag {
     /**
      * The tags one source carries
      */
-    @route("/{positional_source}")
+    @route("/{source}")
     @post
-    op tag_of(
-      @path("positional_source") source: string
+    op of(
+      @path source: string
     ): void;
 
   }
@@ -3210,12 +3210,12 @@ namespace tag {
     /**
      * The tags several sources carry, one read for the batch
      */
-    @route("/{positional_source}")
+    @route("/{source}")
     @post
-    op tag_for(
+    op for(
       @minItems(1)
-        @path("positional_source") source: string[],
-      ...SharedFlags91
+        @path source: string[],
+      ...FormatTextJsonOptionalTextFlag
     ): void;
 
   }
@@ -3225,10 +3225,10 @@ namespace tag {
     /**
      * The sources one tag hangs on
      */
-    @route("/{positional_tag}")
+    @route("/{tag}")
     @post
-    op tag_sources(
-      @path("positional_tag") tag: string
+    op sources(
+      @path tag: string
     ): void;
 
   }
@@ -3238,10 +3238,10 @@ namespace tag {
     /**
      * Take one tag off one source
      */
-    @route("/{positional_tag}")
+    @route("/{tag}")
     @post
-    op tag_rm(
-      @path("positional_tag") tag: string,
+    op rm(
+      @path tag: string,
       @query source: string
     ): void;
 
@@ -3254,7 +3254,7 @@ namespace tag {
      */
     @route("/")
     @post
-    op tag_backfill(
+    op backfill(
 
     ): void;
 
@@ -3268,13 +3268,13 @@ namespace tui {
    * Launch an ordinary interactive harness TUI and register this pane
    */
   @extension("x-clap-hidden", true)
-  @route("/{positional_harness}")
+  @route("/{harness}")
   @post
   op tui(
     /**
        * Registered harness adapter: claude, codex, kimi, or opencode
        */
-      @path("positional_harness") harness: string,
+      @path harness: string,
     /**
        * Arguments forwarded to the ordinary harness TUI
        */
@@ -3287,8 +3287,8 @@ namespace tui {
        * Stable route name for later resumes; refuses an existing live owner
        */
       @query name?: string,
-    ...SharedFlags47,
-    ...SharedFlags42,
+    ...CwdStringOptionalFlag,
+    ...MailDirStringOptionalFlag,
     /**
        * Submit once the native composer is ready (requires tmux)
        */
@@ -3307,13 +3307,13 @@ namespace wait {
    * Block until mail lands: the reply to <id>, a lane's result row, or the next unread row addressed to you with --me
    */
   @extension("x-clap-hidden", true)
-  @route("/{positional_id_or_lane}")
+  @route("/{id_or_lane}")
   @post
   op wait(
     /**
        * A message id or lane name. Omit to wait for all child lanes; use --me for the inbox
        */
-      @path("positional_id_or_lane") id_or_lane?: MessageId | LaneName,
+      @path id_or_lane?: MessageId | LaneName,
     /**
        * Wait for the next unread mail addressed to the caller
        */
@@ -3326,7 +3326,7 @@ namespace wait {
        * Seconds to block before exiting 124
        */
       @query wait_timeout: uint64 = 540,
-    ...SharedFlags42
+    ...MailDirStringOptionalFlag
   ): void;
 
 }
@@ -3340,12 +3340,12 @@ namespace whoami {
   @route("/")
   @post
   op whoami(
-    ...SharedFlags85,
+    ...JsonBooleanOptionalFlag,
     /**
        * Who is calling. The first rung; `--from` is the same flag
        */
       @query("as") name?: string,
-    ...SharedFlags42
+    ...MailDirStringOptionalFlag
   ): void;
 
 }

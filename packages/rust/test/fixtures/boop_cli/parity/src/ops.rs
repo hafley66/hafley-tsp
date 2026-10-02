@@ -1,20 +1,20 @@
 use crate::ops_auto::AgentArgs;
 use crate::ops_auto::AgentSessionsArgs;
-use crate::ops_auto::AgentSummaryArgs;
+use crate::ops_auto::SummaryArgs;
 use crate::ops_auto::BeepAgentArgs;
-use crate::ops_auto::BeepAgentDoneArgs;
+use crate::ops_auto::DoneArgs;
 use crate::ops_auto::BeepAgentRegisterArgs;
-use crate::ops_auto::BeepAgentSubscribeArgs;
-use crate::ops_auto::BeepAgentUnsubscribeArgs;
-use crate::ops_auto::BeepAgentWaterfallArgs;
+use crate::ops_auto::SubscribeArgs;
+use crate::ops_auto::UnsubscribeArgs;
+use crate::ops_auto::WaterfallArgs;
 use crate::ops_auto::BeepArgs;
-use crate::ops_auto::BeepForkArgs;
-use crate::ops_auto::BeepForkDiffArgs;
-use crate::ops_auto::BeepForkJoinArgs;
-use crate::ops_auto::BeepHarnessArgs;
+use crate::ops_auto::ForkArgs;
+use crate::ops_auto::DiffArgs;
+use crate::ops_auto::JoinArgs;
+use crate::ops_auto::HarnessArgs;
 use crate::ops_auto::BeepHarnessGetArgs;
 use crate::ops_auto::BeepHarnessListArgs;
-use crate::ops_auto::BeepLaneArgs;
+use crate::ops_auto::LaneArgs;
 use crate::ops_auto::BeepLaneAttachArgs;
 use crate::ops_auto::BeepLaneCreateArgs;
 use crate::ops_auto::BeepLaneDeleteArgs;
@@ -35,77 +35,77 @@ use crate::ops_auto::BeepLaneSignalArgs;
 use crate::ops_auto::BeepLaneSquaresArgs;
 use crate::ops_auto::BeepLaneWaitArgs;
 use crate::ops_auto::BeepLaneWhereArgs;
-use crate::ops_auto::BeepMessageAckArgs;
+use crate::ops_auto::AckArgs;
 use crate::ops_auto::BeepMessageArgs;
-use crate::ops_auto::BeepPasteArgs;
-use crate::ops_auto::BeepPsArgs;
-use crate::ops_auto::BeepPstreeArgs;
+use crate::ops_auto::PasteArgs;
+use crate::ops_auto::PsArgs;
+use crate::ops_auto::PstreeArgs;
 use crate::ops_auto::BeepRemindAddArgs;
 use crate::ops_auto::BeepRemindArgs;
-use crate::ops_auto::BeepRemindCancelArgs;
+use crate::ops_auto::CancelArgs;
 use crate::ops_auto::BeepRemindListArgs;
 use crate::ops_auto::BeepRemindRunArgs;
-use crate::ops_auto::BeepScreamArgs;
-use crate::ops_auto::BeepSelectionArgs;
-use crate::ops_auto::BeepSelectionClearArgs;
-use crate::ops_auto::BeepSelectionFocusArgs;
+use crate::ops_auto::ScreamArgs;
+use crate::ops_auto::SelectionArgs;
+use crate::ops_auto::ClearArgs;
+use crate::ops_auto::FocusArgs;
 use crate::ops_auto::BeepSelectionListArgs;
 use crate::ops_auto::BeepSelectionSetArgs;
-use crate::ops_auto::BeepShoutArgs;
+use crate::ops_auto::ShoutArgs;
 use crate::ops_auto::ConfigArgs;
-use crate::ops_auto::ConfigPathArgs;
-use crate::ops_auto::ConfigPresetsArgs;
+use crate::ops_auto::PathArgs;
+use crate::ops_auto::PresetsArgs;
 use crate::ops_auto::ConfigShowArgs;
-use crate::ops_auto::DbAgentSummaryArgs;
+use crate::ops_auto::AgentSummaryArgs;
 use crate::ops_auto::DbArgs;
-use crate::ops_auto::DbChatArgs;
+use crate::ops_auto::ChatArgs;
 use crate::ops_auto::DbChatListArgs;
-use crate::ops_auto::DbCommandArgs;
+use crate::ops_auto::CommandArgs;
 use crate::ops_auto::DbCommandListArgs;
-use crate::ops_auto::DbEdgeArgs;
+use crate::ops_auto::EdgeArgs;
 use crate::ops_auto::DbEdgeListArgs;
 use crate::ops_auto::DbFavoriteAddArgs;
 use crate::ops_auto::DbFavoriteArgs;
 use crate::ops_auto::DbFavoriteDeleteArgs;
-use crate::ops_auto::DbFavoriteEditArgs;
+use crate::ops_auto::EditArgs;
 use crate::ops_auto::DbFavoriteListArgs;
 use crate::ops_auto::DbFavoriteShowArgs;
-use crate::ops_auto::DbFetchArgs;
+use crate::ops_auto::FetchArgs;
 use crate::ops_auto::DbFetchListArgs;
-use crate::ops_auto::DbLanesArgs;
+use crate::ops_auto::LanesArgs;
 use crate::ops_auto::DbMailArgs;
-use crate::ops_auto::DbPrArgs;
+use crate::ops_auto::PrArgs;
 use crate::ops_auto::DbPrListArgs;
-use crate::ops_auto::DbPriceArgs;
+use crate::ops_auto::PriceArgs;
 use crate::ops_auto::DbPriceListArgs;
 use crate::ops_auto::DbPriceSetArgs;
-use crate::ops_auto::DbSchemaArgs;
+use crate::ops_auto::SchemaArgs;
 use crate::ops_auto::DbSearchArgs;
-use crate::ops_auto::DbSessionArgs;
+use crate::ops_auto::SessionArgs;
 use crate::ops_auto::DbSessionGetArgs;
 use crate::ops_auto::DbSessionListArgs;
 use crate::ops_auto::DbSessionsArgs;
-use crate::ops_auto::DbSkillArgs;
+use crate::ops_auto::SkillArgs;
 use crate::ops_auto::DbSkillListArgs;
-use crate::ops_auto::DbSpanArgs;
+use crate::ops_auto::SpanArgs;
 use crate::ops_auto::DbSpanListArgs;
-use crate::ops_auto::DbStatusArgs;
-use crate::ops_auto::DbSyncArgs;
+use crate::ops_auto::StatusArgs;
+use crate::ops_auto::SyncArgs;
 use crate::ops_auto::DbSyncCreateArgs;
-use crate::ops_auto::DbSyncCursorArgs;
+use crate::ops_auto::SyncCursorArgs;
 use crate::ops_auto::DbSyncCursorListArgs;
-use crate::ops_auto::DbTouchArgs;
+use crate::ops_auto::TouchArgs;
 use crate::ops_auto::DbTouchListArgs;
-use crate::ops_auto::DbTurnArgs;
+use crate::ops_auto::TurnArgs;
 use crate::ops_auto::DbTurnGetArgs;
 use crate::ops_auto::DbTurnListArgs;
-use crate::ops_auto::DbUsageArgs;
-use crate::ops_auto::DbUsageBlocksArgs;
-use crate::ops_auto::DbUsageBurnRateArgs;
+use crate::ops_auto::UsageArgs;
+use crate::ops_auto::BlocksArgs;
+use crate::ops_auto::BurnRateArgs;
 use crate::ops_auto::DebugArgs;
 use crate::ops_auto::InboxArgs;
-use crate::ops_auto::InboxDrainArgs;
-use crate::ops_auto::InboxHooksArgs;
+use crate::ops_auto::DrainArgs;
+use crate::ops_auto::HooksArgs;
 use crate::ops_auto::JobArgs;
 use crate::ops_auto::JobAttachArgs;
 use crate::ops_auto::JobCreateArgs;
@@ -128,13 +128,13 @@ use crate::ops_auto::JobSquaresArgs;
 use crate::ops_auto::JobWaitArgs;
 use crate::ops_auto::JobWhereArgs;
 use crate::ops_auto::MailArgs;
-use crate::ops_auto::MailRecvArgs;
-use crate::ops_auto::MailSendArgs;
+use crate::ops_auto::RecvArgs;
+use crate::ops_auto::SendArgs;
 use crate::ops_auto::MailWaitArgs;
-use crate::ops_auto::MailWatchArgs;
+use crate::ops_auto::WatchArgs;
 use crate::ops_auto::MeArgs;
 use crate::ops_auto::MeFavoriteArgs;
-use crate::ops_auto::MeMoodArgs;
+use crate::ops_auto::MoodArgs;
 use crate::ops_auto::MeRegisterArgs;
 use crate::ops_auto::MeWhoamiArgs;
 use crate::ops_auto::OpResult;
@@ -143,14 +143,14 @@ use crate::ops_auto::RootArgs;
 use crate::ops_auto::ShellInitArgs;
 use crate::ops_auto::TagAddArgs;
 use crate::ops_auto::TagArgs;
-use crate::ops_auto::TagBackfillArgs;
-use crate::ops_auto::TagForArgs;
+use crate::ops_auto::BackfillArgs;
+use crate::ops_auto::ForArgs;
 use crate::ops_auto::TagListArgs;
-use crate::ops_auto::TagOfArgs;
-use crate::ops_auto::TagRecentArgs;
+use crate::ops_auto::OfArgs;
+use crate::ops_auto::RecentArgs;
 use crate::ops_auto::TagRmArgs;
 use crate::ops_auto::TagSearchArgs;
-use crate::ops_auto::TagSourcesArgs;
+use crate::ops_auto::SourcesArgs;
 use crate::ops_auto::TuiArgs;
 use crate::ops_auto::WaitArgs;
 use crate::ops_auto::WhoamiArgs;
@@ -270,12 +270,12 @@ pub fn mail(args: &MailArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn mail_send(args: &MailSendArgs) -> OpResult<()> {
+pub fn send(args: &SendArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn mail_recv(args: &MailRecvArgs) -> OpResult<()> {
+pub fn recv(args: &RecvArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -285,7 +285,7 @@ pub fn mail_wait(args: &MailWaitArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn mail_watch(args: &MailWatchArgs) -> OpResult<()> {
+pub fn watch(args: &WatchArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -295,12 +295,12 @@ pub fn db(args: &DbArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_agent_summary(args: &DbAgentSummaryArgs) -> OpResult<()> {
+pub fn agent_summary(args: &AgentSummaryArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn db_session(args: &DbSessionArgs) -> OpResult<()> {
+pub fn session(args: &SessionArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -315,7 +315,7 @@ pub fn db_session_get(args: &DbSessionGetArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_turn(args: &DbTurnArgs) -> OpResult<()> {
+pub fn turn(args: &TurnArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -330,7 +330,7 @@ pub fn db_turn_get(args: &DbTurnGetArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_chat(args: &DbChatArgs) -> OpResult<()> {
+pub fn chat(args: &ChatArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -340,7 +340,7 @@ pub fn db_chat_list(args: &DbChatListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_touch(args: &DbTouchArgs) -> OpResult<()> {
+pub fn touch(args: &TouchArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -350,7 +350,7 @@ pub fn db_touch_list(args: &DbTouchListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_command(args: &DbCommandArgs) -> OpResult<()> {
+pub fn command(args: &CommandArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -360,7 +360,7 @@ pub fn db_command_list(args: &DbCommandListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_fetch(args: &DbFetchArgs) -> OpResult<()> {
+pub fn fetch(args: &FetchArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -370,7 +370,7 @@ pub fn db_fetch_list(args: &DbFetchListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_skill(args: &DbSkillArgs) -> OpResult<()> {
+pub fn skill(args: &SkillArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -380,7 +380,7 @@ pub fn db_skill_list(args: &DbSkillListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_pr(args: &DbPrArgs) -> OpResult<()> {
+pub fn pr(args: &PrArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -390,7 +390,7 @@ pub fn db_pr_list(args: &DbPrListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_span(args: &DbSpanArgs) -> OpResult<()> {
+pub fn span(args: &SpanArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -400,7 +400,7 @@ pub fn db_span_list(args: &DbSpanListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_edge(args: &DbEdgeArgs) -> OpResult<()> {
+pub fn edge(args: &EdgeArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -410,22 +410,22 @@ pub fn db_edge_list(args: &DbEdgeListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_usage(args: &DbUsageArgs) -> OpResult<()> {
+pub fn usage(args: &UsageArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn db_usage_blocks(args: &DbUsageBlocksArgs) -> OpResult<()> {
+pub fn blocks(args: &BlocksArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn db_usage_burn_rate(args: &DbUsageBurnRateArgs) -> OpResult<()> {
+pub fn burn_rate(args: &BurnRateArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn db_price(args: &DbPriceArgs) -> OpResult<()> {
+pub fn price(args: &PriceArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -460,7 +460,7 @@ pub fn db_favorite_show(args: &DbFavoriteShowArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_favorite_edit(args: &DbFavoriteEditArgs) -> OpResult<()> {
+pub fn edit(args: &EditArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -470,7 +470,7 @@ pub fn db_favorite_delete(args: &DbFavoriteDeleteArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_sync(args: &DbSyncArgs) -> OpResult<()> {
+pub fn sync(args: &SyncArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -480,7 +480,7 @@ pub fn db_sync_create(args: &DbSyncCreateArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_sync_cursor(args: &DbSyncCursorArgs) -> OpResult<()> {
+pub fn sync_cursor(args: &SyncCursorArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -500,7 +500,7 @@ pub fn db_sessions(args: &DbSessionsArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_lanes(args: &DbLanesArgs) -> OpResult<()> {
+pub fn lanes(args: &LanesArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -510,12 +510,12 @@ pub fn db_mail(args: &DbMailArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn db_schema(args: &DbSchemaArgs) -> OpResult<()> {
+pub fn schema(args: &SchemaArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn db_status(args: &DbStatusArgs) -> OpResult<()> {
+pub fn status(args: &StatusArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -540,7 +540,7 @@ pub fn me_register(args: &MeRegisterArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn me_mood(args: &MeMoodArgs) -> OpResult<()> {
+pub fn mood(args: &MoodArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -555,7 +555,7 @@ pub fn config(args: &ConfigArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn config_path(args: &ConfigPathArgs) -> OpResult<()> {
+pub fn path(args: &PathArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -565,7 +565,7 @@ pub fn config_show(args: &ConfigShowArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn config_presets(args: &ConfigPresetsArgs) -> OpResult<()> {
+pub fn presets(args: &PresetsArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -575,7 +575,7 @@ pub fn agent(args: &AgentArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn agent_summary(args: &AgentSummaryArgs) -> OpResult<()> {
+pub fn summary(args: &SummaryArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -605,7 +605,7 @@ pub fn beep_remind_list(args: &BeepRemindListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_remind_cancel(args: &BeepRemindCancelArgs) -> OpResult<()> {
+pub fn cancel(args: &CancelArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -615,7 +615,7 @@ pub fn beep_remind_run(args: &BeepRemindRunArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_harness(args: &BeepHarnessArgs) -> OpResult<()> {
+pub fn harness(args: &HarnessArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -630,7 +630,7 @@ pub fn beep_harness_get(args: &BeepHarnessGetArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_lane(args: &BeepLaneArgs) -> OpResult<()> {
+pub fn lane(args: &LaneArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -740,7 +740,7 @@ pub fn beep_agent(args: &BeepAgentArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_agent_waterfall(args: &BeepAgentWaterfallArgs) -> OpResult<()> {
+pub fn waterfall(args: &WaterfallArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -750,17 +750,17 @@ pub fn beep_agent_register(args: &BeepAgentRegisterArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_agent_done(args: &BeepAgentDoneArgs) -> OpResult<()> {
+pub fn done(args: &DoneArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_agent_subscribe(args: &BeepAgentSubscribeArgs) -> OpResult<()> {
+pub fn subscribe(args: &SubscribeArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_agent_unsubscribe(args: &BeepAgentUnsubscribeArgs) -> OpResult<()> {
+pub fn unsubscribe(args: &UnsubscribeArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -770,42 +770,42 @@ pub fn beep_message(args: &BeepMessageArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_message_ack(args: &BeepMessageAckArgs) -> OpResult<()> {
+pub fn ack(args: &AckArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_fork(args: &BeepForkArgs) -> OpResult<()> {
+pub fn fork(args: &ForkArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_fork_join(args: &BeepForkJoinArgs) -> OpResult<()> {
+pub fn join(args: &JoinArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_fork_diff(args: &BeepForkDiffArgs) -> OpResult<()> {
+pub fn diff(args: &DiffArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_paste(args: &BeepPasteArgs) -> OpResult<()> {
+pub fn paste(args: &PasteArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_ps(args: &BeepPsArgs) -> OpResult<()> {
+pub fn ps(args: &PsArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_pstree(args: &BeepPstreeArgs) -> OpResult<()> {
+pub fn pstree(args: &PstreeArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_selection(args: &BeepSelectionArgs) -> OpResult<()> {
+pub fn selection(args: &SelectionArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -820,22 +820,22 @@ pub fn beep_selection_set(args: &BeepSelectionSetArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn beep_selection_focus(args: &BeepSelectionFocusArgs) -> OpResult<()> {
+pub fn focus(args: &FocusArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_selection_clear(args: &BeepSelectionClearArgs) -> OpResult<()> {
+pub fn clear(args: &ClearArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_shout(args: &BeepShoutArgs) -> OpResult<()> {
+pub fn shout(args: &ShoutArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn beep_scream(args: &BeepScreamArgs) -> OpResult<()> {
+pub fn scream(args: &ScreamArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -845,12 +845,12 @@ pub fn inbox(args: &InboxArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn inbox_drain(args: &InboxDrainArgs) -> OpResult<()> {
+pub fn drain(args: &DrainArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn inbox_hooks(args: &InboxHooksArgs) -> OpResult<()> {
+pub fn hooks(args: &HooksArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -875,7 +875,7 @@ pub fn tag_add(args: &TagAddArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn tag_recent(args: &TagRecentArgs) -> OpResult<()> {
+pub fn recent(args: &RecentArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -890,17 +890,17 @@ pub fn tag_list(args: &TagListArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn tag_of(args: &TagOfArgs) -> OpResult<()> {
+pub fn of(args: &OfArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn tag_for(args: &TagForArgs) -> OpResult<()> {
+pub fn r#for(args: &ForArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
 
-pub fn tag_sources(args: &TagSourcesArgs) -> OpResult<()> {
+pub fn sources(args: &SourcesArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }
@@ -910,7 +910,7 @@ pub fn tag_rm(args: &TagRmArgs) -> OpResult<()> {
   todo!()
 }
 
-pub fn tag_backfill(args: &TagBackfillArgs) -> OpResult<()> {
+pub fn backfill(args: &BackfillArgs) -> OpResult<()> {
   let _ = args;
   todo!()
 }

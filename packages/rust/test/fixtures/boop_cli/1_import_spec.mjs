@@ -4,6 +4,7 @@ import { orderedCommands } from "./0_help_inputs.mjs";
 const ident = name => /^[a-zA-Z_]\w*$/.test(name) && !["model", "namespace", "op", "enum", "scalar", "extends", "is", "valueof", "true", "false"].includes(name) ? name : `\`${name}\``;
 const field = value => value.toLowerCase().replace(/[- =|]/g, "_");
 const doc = (text, indent = "") => text ? `${indent}/**\n${text.split("\n").map(line => `${indent} * ${line}`).join("\n")}\n${indent} */\n` : "";
+const pascal = text => (text.match(/[a-zA-Z0-9]+/g) ?? []).map(word => word[0].toUpperCase() + word.slice(1)).join("");
 const models = new Map();
 const enums = new Map();
 const records = [];
@@ -14,6 +15,7 @@ for (const c of orderedCommands()) {
     if (["--help", "--version"].includes(row.long)) return;
     const label = positional ? row.arg.replace(/[<>\[\]]|\.\.\./g, "") : row.value;
     let name = field(label ?? row.long.slice(2));
+    if (positional && c.options.some(option => field(option.long.slice(2)) === name)) name += "_arg";
     if (used.has(name)) name = field(row.long.slice(2)) + "_flag";
     used.add(name);
     let about = row.about;
@@ -46,8 +48,8 @@ for (const c of orderedCommands()) {
     const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
     const trailing = positional && c.usage.includes(`[-- <${label}>`);
-    const wire = trailing ? "@body" : positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
-    fields.push({ name, text: doc(about, "  ") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, trailing, required });
+    const wire = trailing ? "@body" : positional ? "@path" : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
+    fields.push({ name, text: doc(about, "  ") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, trailing, required, type, defaultValue, about, wireName: positional ? name : row.long.slice(2) });
   };
   c.arguments.forEach(r => add(r, true));
   c.options.forEach(r => add(r, false));
@@ -57,7 +59,21 @@ for (const c of orderedCommands()) {
 // its original declaration position, so clap's help order follows the source.
 const counts = new Map();
 for (const { fields } of records) for (const f of fields) if (!f.positional) counts.set(f.text, (counts.get(f.text) ?? 0) + 1);
-for (const [text, count] of counts) if (count > 1) models.set(text, `SharedFlags${models.size}`);
+const modelNames = new Set();
+for (const [text, count] of counts) {
+  if (count <= 1) continue;
+  const f = records.flatMap(r => r.fields).find(f => f.text === text);
+  const base = pascal(f.wireName);
+  let name = base + "Flag";
+  if (modelNames.has(name)) {
+    const type = [...enums].find(([, value]) => value.name === f.type)?.[0] ?? f.type;
+    const qualifier = f.about ? f.about.replace(/[^a-zA-Z0-9 ]/g, " ").trim().split(/\s+/).slice(0, 4).join(" ") : type + " " + (f.required ? "required" : "optional") + " " + (f.defaultValue ?? "");
+    name = base + pascal(qualifier) + "Flag";
+  }
+  if (modelNames.has(name)) throw new Error(`Shared flag name collision: ${name}`);
+  modelNames.add(name);
+  models.set(text, name);
+}
 const footer = records[0].c.text.slice(records[0].c.text.indexOf("\n\nDOCTRINE") + 2).trimEnd();
 let out = `// Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs\nimport "@typespec/http";\nimport "@typespec/openapi";\nusing Http;\nusing OpenAPI;\n\n${doc(records[0].c.about)}@service\n@extension("x-clap-after-help", ${JSON.stringify(footer)})\nnamespace Boop;\n\n`;
 out += "scalar MessageId extends string;\nscalar Job extends string;\nscalar LaneName extends string;\nscalar GitBranch extends string;\n\n";
@@ -75,8 +91,8 @@ const emit = (path, indent = "") => {
   const parent = records.find(r => r.c.path.join("/") === path.slice(0, -1).join("/"))?.c;
   if (path.length && !parent.subcommands.some(v => v.name === path.at(-1))) out += `${pad}@extension("x-clap-hidden", true)\n`;
   const params = fields.map(f => models.has(f.text) ? `...${models.get(f.text)}` : f.text.trim().replace(/;$/, "")).map(f => f.split("\n").map(line => pad + "  " + line).join("\n"));
-  const routeParams = fields.filter(f => f.positional && !f.trailing).map(f => `{positional_${f.name}}`).join("/");
-  out += `${pad}@route(${JSON.stringify(routeParams ? "/" + routeParams : "/")})\n${pad}@post\n${pad}op ${ident(path.length ? path.join("_").replaceAll("-", "_") : "root")}(\n${params.join(",\n")}\n${pad}): void;\n\n`;
+  const routeParams = fields.filter(f => f.positional && !f.trailing).map(f => `{${f.name}}`).join("/");
+  out += `${pad}@route(${JSON.stringify(routeParams ? "/" + routeParams : "/")})\n${pad}@post\n${pad}op ${ident(path.length ? field(path.at(-1)) : "root")}(\n${params.join(",\n")}\n${pad}): void;\n\n`;
   for (const { c: child } of children) emit(child.path, pad);
   if (path.length) out += `${indent}}\n\n`;
 };

@@ -6,6 +6,8 @@ import { join } from "node:path";
 import { emitCrate } from "./03_emit-crate.js";
 import { writeCrate } from "./05_write-crate.js";
 import type { ServiceDef, TypeDef } from "./00_types.js";
+import { planOps } from "./04_ops-plan.js";
+import { refkey } from "@alloy-js/core";
 
 function file(node: any, path: string): string {
   for (const item of node.contents) {
@@ -98,4 +100,34 @@ it("routes build nested enums, drop parameter segments, and dispatch group-local
     ],
   };
   expect(file(emitCrate([], { ops: { service, bin: "tree", http: false } }), "cli_auto.rs")).toMatchSnapshot();
+});
+
+it("qualifies repeated local operation names with route context", () => {
+  const service: ServiceDef = {
+    name: "Tree",
+    operations: [
+      { name: "list", verb: "post", path: "/db/session/{session_id}/list", params: [] },
+      { name: "list", verb: "post", path: "/job/list", params: [] },
+      { name: "status", verb: "post", path: "/status", params: [] },
+    ],
+  };
+  expect(planOps(service, new Map(), refkey).map(p => [p.op.name, p.fn, p.argsName])).toMatchInlineSnapshot(`
+    [
+      [
+        "list",
+        "db_session_list",
+        "DbSessionListArgs",
+      ],
+      [
+        "list",
+        "job_list",
+        "JobListArgs",
+      ],
+      [
+        "status",
+        "status",
+        "StatusArgs",
+      ],
+    ]
+  `);
 });

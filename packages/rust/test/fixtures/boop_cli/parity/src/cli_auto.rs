@@ -1,17 +1,11 @@
 use std::io::BufRead;
 use std::io::Write;
 
+use crate::ops_auto::AckArgs;
 use crate::ops_auto::AgentSessionsArgs;
 use crate::ops_auto::AgentSummaryArgs;
-use crate::ops_auto::BeepAgentDoneArgs;
 use crate::ops_auto::BeepAgentRegisterArgs;
-use crate::ops_auto::BeepAgentSubscribeArgs;
-use crate::ops_auto::BeepAgentUnsubscribeArgs;
-use crate::ops_auto::BeepAgentWaterfallArgs;
 use crate::ops_auto::BeepArgs;
-use crate::ops_auto::BeepForkArgs;
-use crate::ops_auto::BeepForkDiffArgs;
-use crate::ops_auto::BeepForkJoinArgs;
 use crate::ops_auto::BeepHarnessGetArgs;
 use crate::ops_auto::BeepLaneAttachArgs;
 use crate::ops_auto::BeepLaneCreateArgs;
@@ -32,54 +26,45 @@ use crate::ops_auto::BeepLaneSignalArgs;
 use crate::ops_auto::BeepLaneSquaresArgs;
 use crate::ops_auto::BeepLaneWaitArgs;
 use crate::ops_auto::BeepLaneWhereArgs;
-use crate::ops_auto::BeepMessageAckArgs;
-use crate::ops_auto::BeepPasteArgs;
-use crate::ops_auto::BeepPsArgs;
-use crate::ops_auto::BeepPstreeArgs;
 use crate::ops_auto::BeepRemindAddArgs;
-use crate::ops_auto::BeepRemindCancelArgs;
 use crate::ops_auto::BeepRemindListArgs;
 use crate::ops_auto::BeepRemindRunArgs;
-use crate::ops_auto::BeepScreamArgs;
-use crate::ops_auto::BeepSelectionArgs;
-use crate::ops_auto::BeepSelectionFocusArgs;
 use crate::ops_auto::BeepSelectionSetArgs;
-use crate::ops_auto::BeepShoutArgs;
-use crate::ops_auto::ConfigPresetsArgs;
-use crate::ops_auto::DbAgentSummaryArgs;
+use crate::ops_auto::BlocksArgs;
+use crate::ops_auto::BurnRateArgs;
+use crate::ops_auto::CancelArgs;
 use crate::ops_auto::DbArgs;
 use crate::ops_auto::DbChatListArgs;
 use crate::ops_auto::DbCommandListArgs;
 use crate::ops_auto::DbEdgeListArgs;
 use crate::ops_auto::DbFavoriteAddArgs;
 use crate::ops_auto::DbFavoriteDeleteArgs;
-use crate::ops_auto::DbFavoriteEditArgs;
 use crate::ops_auto::DbFavoriteListArgs;
 use crate::ops_auto::DbFavoriteShowArgs;
 use crate::ops_auto::DbFetchListArgs;
-use crate::ops_auto::DbLanesArgs;
 use crate::ops_auto::DbMailArgs;
 use crate::ops_auto::DbPrListArgs;
 use crate::ops_auto::DbPriceSetArgs;
-use crate::ops_auto::DbSchemaArgs;
 use crate::ops_auto::DbSearchArgs;
 use crate::ops_auto::DbSessionGetArgs;
 use crate::ops_auto::DbSessionListArgs;
 use crate::ops_auto::DbSessionsArgs;
 use crate::ops_auto::DbSkillListArgs;
 use crate::ops_auto::DbSpanListArgs;
-use crate::ops_auto::DbStatusArgs;
 use crate::ops_auto::DbSyncCreateArgs;
 use crate::ops_auto::DbSyncCursorListArgs;
 use crate::ops_auto::DbTouchListArgs;
 use crate::ops_auto::DbTurnGetArgs;
 use crate::ops_auto::DbTurnListArgs;
-use crate::ops_auto::DbUsageArgs;
-use crate::ops_auto::DbUsageBlocksArgs;
-use crate::ops_auto::DbUsageBurnRateArgs;
 use crate::ops_auto::DebugArgs;
-use crate::ops_auto::InboxDrainArgs;
-use crate::ops_auto::InboxHooksArgs;
+use crate::ops_auto::DiffArgs;
+use crate::ops_auto::DoneArgs;
+use crate::ops_auto::DrainArgs;
+use crate::ops_auto::EditArgs;
+use crate::ops_auto::FocusArgs;
+use crate::ops_auto::ForArgs;
+use crate::ops_auto::ForkArgs;
+use crate::ops_auto::HooksArgs;
 use crate::ops_auto::JobAttachArgs;
 use crate::ops_auto::JobCreateArgs;
 use crate::ops_auto::JobDeleteArgs;
@@ -99,29 +84,44 @@ use crate::ops_auto::JobSignalArgs;
 use crate::ops_auto::JobSquaresArgs;
 use crate::ops_auto::JobWaitArgs;
 use crate::ops_auto::JobWhereArgs;
-use crate::ops_auto::MailRecvArgs;
-use crate::ops_auto::MailSendArgs;
+use crate::ops_auto::JoinArgs;
+use crate::ops_auto::LanesArgs;
 use crate::ops_auto::MailWaitArgs;
-use crate::ops_auto::MailWatchArgs;
 use crate::ops_auto::MeArgs;
 use crate::ops_auto::MeFavoriteArgs;
-use crate::ops_auto::MeMoodArgs;
 use crate::ops_auto::MeRegisterArgs;
 use crate::ops_auto::MeWhoamiArgs;
+use crate::ops_auto::MoodArgs;
+use crate::ops_auto::OfArgs;
 use crate::ops_auto::OpResult;
+use crate::ops_auto::PasteArgs;
+use crate::ops_auto::PresetsArgs;
+use crate::ops_auto::PsArgs;
+use crate::ops_auto::PstreeArgs;
+use crate::ops_auto::RecentArgs;
+use crate::ops_auto::RecvArgs;
 use crate::ops_auto::RemindArgs;
 use crate::ops_auto::RootArgs;
+use crate::ops_auto::SchemaArgs;
+use crate::ops_auto::ScreamArgs;
+use crate::ops_auto::SelectionArgs;
+use crate::ops_auto::SendArgs;
 use crate::ops_auto::ShellInitArgs;
+use crate::ops_auto::ShoutArgs;
+use crate::ops_auto::SourcesArgs;
+use crate::ops_auto::StatusArgs;
+use crate::ops_auto::SubscribeArgs;
+use crate::ops_auto::SummaryArgs;
 use crate::ops_auto::TagAddArgs;
-use crate::ops_auto::TagForArgs;
 use crate::ops_auto::TagListArgs;
-use crate::ops_auto::TagOfArgs;
-use crate::ops_auto::TagRecentArgs;
 use crate::ops_auto::TagRmArgs;
 use crate::ops_auto::TagSearchArgs;
-use crate::ops_auto::TagSourcesArgs;
 use crate::ops_auto::TuiArgs;
+use crate::ops_auto::UnsubscribeArgs;
+use crate::ops_auto::UsageArgs;
 use crate::ops_auto::WaitArgs;
+use crate::ops_auto::WatchArgs;
+use crate::ops_auto::WaterfallArgs;
 use crate::ops_auto::WhoamiArgs;
 
 #[derive(clap::Parser, Debug)]
@@ -245,13 +245,13 @@ pub struct MailCommand {
 #[derive(clap::Subcommand, Debug)]
 pub enum MailCmd {
   #[doc = "Deliver a message to a registered route"]
-  Send(MailSendArgs),
+  Send(SendArgs),
   #[doc = "Drain mail addressed to the caller and mark each row handed over"]
-  Recv(MailRecvArgs),
+  Recv(RecvArgs),
   #[doc = "Wait for a reply, job result, or the next row addressed to --me"]
   Wait(MailWaitArgs),
   #[doc = "Import ready Markdown messages from a directory until stopped"]
-  Watch(MailWatchArgs),
+  Watch(WatchArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -265,7 +265,7 @@ pub struct DbCommand {
 #[derive(clap::Subcommand, Debug)]
 pub enum DbCmd {
   #[doc = "Versioned CASS-compatible agent/runtime/activity summary. CASS issue, reservation, and provider records are separate contracts"]
-  AgentSummary(DbAgentSummaryArgs),
+  AgentSummary(AgentSummaryArgs),
   #[doc = "Rows from `agent_session`: one row per transcript session. Folded (audit 2026-08-25): one-table dump; `boop db \"SELECT * FROM agent_session\"` answers it"]
   Session(DbSessionCommand),
   #[doc = "Rows from `agent_turn`: one row per user/assistant turn. Folded (audit 2026-08-25): one-table dump; `boop db \"SELECT * FROM agent_turn\"` answers it"]
@@ -301,13 +301,13 @@ pub enum DbCmd {
   #[doc = "Sessions across every harness that moved in the window, newest first"]
   Sessions(DbSessionsArgs),
   #[doc = "Lanes spawned in the window, newest first, with the rc of each one's result row"]
-  Lanes(DbLanesArgs),
+  Lanes(LanesArgs),
   #[doc = "Mail to or from one route, newest first"]
   Mail(DbMailArgs),
   #[doc = "Every table and view with its columns and join keys, so a query never starts with a probe of `sqlite_master`"]
-  Schema(DbSchemaArgs),
+  Schema(SchemaArgs),
   #[doc = "Who is alive, who moved recently, and what it cost"]
-  Status(DbStatusArgs),
+  Status(StatusArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -438,16 +438,16 @@ pub enum DbEdgeCmd {
 #[command(subcommand_negates_reqs = true, args_conflicts_with_subcommands = true)]
 pub struct DbUsageCommand {
   #[command(flatten)]
-  pub args: DbUsageArgs,#[command(subcommand)]
+  pub args: UsageArgs,#[command(subcommand)]
   pub cmd: Option<DbUsageCmd>,
 }
 
 #[derive(clap::Subcommand, Debug)]
 pub enum DbUsageCmd {
   #[doc = "Gap-aware billing windows"]
-  Blocks(DbUsageBlocksArgs),
+  Blocks(BlocksArgs),
   #[doc = "Tokens per minute and dollars per hour over a trailing window"]
-  BurnRate(DbUsageBurnRateArgs),
+  BurnRate(BurnRateArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -479,7 +479,7 @@ pub enum DbFavoriteCmd {
   #[doc = "One favorite by id, body included"]
   Show(DbFavoriteShowArgs),
   #[doc = "Rewrite the note and/or source of one favorite; the body is immutable"]
-  Edit(DbFavoriteEditArgs),
+  Edit(EditArgs),
   #[doc = "Drop one favorite by id; its markdown body stays cached"]
   Delete(DbFavoriteDeleteArgs),
 }
@@ -523,7 +523,7 @@ pub enum MeCmd {
   #[doc = "Register a pane-less route for a native coordinator or subagent"]
   Register(MeRegisterArgs),
   #[doc = "Read or set the format agents mail this session in. No name prints the effective mood and the session that set it"]
-  Mood(MeMoodArgs),
+  Mood(MoodArgs),
   #[doc = "Save one assistant turn from the caller's conversation as a favorite"]
   Favorite(MeFavoriteArgs),
 }
@@ -541,7 +541,7 @@ pub enum ConfigCmd {
   #[doc = "Print the loaded config as pretty JSON, including the defaults a missing file produces"]
   Show,
   #[doc = "One row per model preset: name, model, variant, the harness the model spelling names, and which row `default-model-preset` points at"]
-  Presets(ConfigPresetsArgs),
+  Presets(PresetsArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -553,7 +553,7 @@ pub struct AgentCommand {
 #[derive(clap::Subcommand, Debug)]
 pub enum AgentCmd {
   #[doc = "Synchronize incremental transcript facts, then emit the versioned CASS-compatible Boop agent summary"]
-  Summary(AgentSummaryArgs),
+  Summary(SummaryArgs),
   #[doc = "Synchronize transcripts, then emit the native session graph"]
   Sessions(AgentSessionsArgs),
 }
@@ -581,17 +581,17 @@ pub enum BeepCmd {
   #[doc = "Fork a lane off a stored terminal comment: the quoted turns and the note become the brief, the lane runs on `--preset` from the caller's repo, and the link is kept in `agent_turn_comment_fork`. The `join` and `diff` verbs bring the fork back"]
   Fork(BeepForkCommand),
   #[doc = "Put a file on the OS pasteboard and press the recipient's paste key in its pane, so a TUI that reads images off the pasteboard (claude, codex: Ctrl+V) takes the picture the way a hand paste would. Text and files the harness cannot read that way land as a quoted path instead"]
-  Paste(BeepPasteArgs),
+  Paste(PasteArgs),
   #[doc = "pid, rss, cpu, uptime, child count per live lane"]
-  Ps(BeepPsArgs),
+  Ps(PsArgs),
   #[doc = "Filesystem-style tree of lanes by parent edge. Folded (audit 2026-08-25): `beep lane list` carries the parent column"]
-  Pstree(BeepPstreeArgs),
+  Pstree(PstreeArgs),
   #[doc = "Persistent recipient selection: list live harness panes, tick one route, record focus, or clear the set"]
   Selection(BeepSelectionCommand),
   #[doc = "One row to every connected agent (live panes and registered pane-less routes), the caller excepted. The stop-gap broadcast"]
-  Shout(BeepShoutArgs),
+  Shout(ShoutArgs),
   #[doc = "Interrupt busy agents with one declared harness key before delivering the message. Idle and unknown TUIs take no keys; lanes take cancel rows"]
-  Scream(BeepScreamArgs),
+  Scream(ScreamArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -607,7 +607,7 @@ pub enum BeepRemindCmd {
   #[doc = "JSON schedules, outstanding message ids and latest scheduler detail"]
   List(BeepRemindListArgs),
   #[doc = "Stop future delivery. Already accepted harness work cannot be retracted"]
-  Cancel(BeepRemindCancelArgs),
+  Cancel(CancelArgs),
   #[doc = "Foreground runner, one per mail dir; restart resumes persisted due times. At most one outstanding occurrence per route; a turn-end or threaded reply releases it. Unknown/crashed delivery stays outstanding (inspect with db). Missed intervals collapse to one. No agents are spawned. Prefer foreground for native doors; --once needs separately persisted completion receipts"]
   Run(BeepRemindRunArgs),
 }
@@ -694,15 +694,15 @@ pub struct BeepAgentCommand {
 #[derive(clap::Subcommand, Debug)]
 pub enum BeepAgentCmd {
   #[doc = "One row set of lane lifespans, events, live spans and parent edges"]
-  Waterfall(BeepAgentWaterfallArgs),
+  Waterfall(WaterfallArgs),
   #[doc = "Register or update a native/coordinator route. Omitted fields are preserved"]
   Register(BeepAgentRegisterArgs),
   #[doc = "Append a completion row and remove the registry row"]
-  Done(BeepAgentDoneArgs),
+  Done(DoneArgs),
   #[doc = "Receive a lane's commits as pushes. `<lane>` names one lane, `children` every current child plus a wildcard, `'*'` every lane the caller parents"]
-  Subscribe(BeepAgentSubscribeArgs),
+  Subscribe(SubscribeArgs),
   #[doc = "Stop receiving a lane's commit pushes"]
-  Unsubscribe(BeepAgentUnsubscribeArgs),
+  Unsubscribe(UnsubscribeArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -714,30 +714,30 @@ pub struct BeepMessageCommand {
 #[derive(clap::Subcommand, Debug)]
 pub enum BeepMessageCmd {
   #[doc = "Mark mail handled, in bulk. Folded (audit 2026-08-25): age-based bulk-mark proves no read and no compliance"]
-  Ack(BeepMessageAckArgs),
+  Ack(AckArgs),
 }
 
 #[derive(clap::Args, Debug)]
 #[command(subcommand_negates_reqs = true, args_conflicts_with_subcommands = true)]
 pub struct BeepForkCommand {
   #[command(flatten)]
-  pub args: BeepForkArgs,#[command(subcommand)]
+  pub args: ForkArgs,#[command(subcommand)]
   pub cmd: Option<BeepForkCmd>,
 }
 
 #[derive(clap::Subcommand, Debug)]
 pub enum BeepForkCmd {
   #[doc = "Merge the fork's branch into the caller's repo and deliver the lane's last assistant turn to the fork's parent"]
-  Join(BeepForkJoinArgs),
+  Join(JoinArgs),
   #[doc = "Print `git diff <base>..<branch>` for the fork"]
-  Diff(BeepForkDiffArgs),
+  Diff(DiffArgs),
 }
 
 #[derive(clap::Args, Debug)]
 #[command(subcommand_required = true)]
 pub struct BeepSelectionCommand {
   #[command(flatten)]
-  pub args: BeepSelectionArgs,#[command(subcommand)]
+  pub args: SelectionArgs,#[command(subcommand)]
   pub cmd: Option<BeepSelectionCmd>,
 }
 
@@ -748,7 +748,7 @@ pub enum BeepSelectionCmd {
   #[doc = "Change one route's checkbox without replacing other selections"]
   Set(BeepSelectionSetArgs),
   #[doc = "Record a human focus event for a tmux session or pane"]
-  Focus(BeepSelectionFocusArgs),
+  Focus(FocusArgs),
   #[doc = "Clear the selected recipient set"]
   Clear,
 }
@@ -762,9 +762,9 @@ pub struct InboxCommand {
 #[derive(clap::Subcommand, Debug)]
 pub enum InboxCmd {
   #[doc = "Print the unread mail addressed to a coordinator and record it as handed over. Silent with an empty inbox, so a hook that runs on every turn costs one line of nothing"]
-  Drain(InboxDrainArgs),
+  Drain(DrainArgs),
   #[doc = "Install (or remove) the two drain hooks in <cwd>/.claude/settings.json. Route registration is separate: `boop beep agent register NAME`"]
-  Hooks(InboxHooksArgs),
+  Hooks(HooksArgs),
 }
 
 #[derive(clap::Args, Debug)]
@@ -778,17 +778,17 @@ pub enum TagCmd {
   #[doc = "Apply one or more tags to a source"]
   Add(TagAddArgs),
   #[doc = "The recently used tags, newest use first"]
-  Recent(TagRecentArgs),
+  Recent(RecentArgs),
   #[doc = "Substring match on the tag column; no message body is read"]
   Search(TagSearchArgs),
   #[doc = "Every tag, most used first"]
   List(TagListArgs),
   #[doc = "The tags one source carries"]
-  Of(TagOfArgs),
+  Of(OfArgs),
   #[doc = "The tags several sources carry, one read for the batch"]
-  For(TagForArgs),
+  For(ForArgs),
   #[doc = "The sources one tag hangs on"]
-  Sources(TagSourcesArgs),
+  Sources(SourcesArgs),
   #[doc = "Take one tag off one source"]
   Rm(TagRmArgs),
   #[doc = "Favorite notes become tags, once"]
@@ -827,15 +827,15 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(Cmd::Mail(group)) => {
   match group.cmd {
-          MailCmd::Send(args) => { crate::ops::mail_send(&args)?; }
-          MailCmd::Recv(args) => { crate::ops::mail_recv(&args)?; }
+          MailCmd::Send(args) => { crate::ops::send(&args)?; }
+          MailCmd::Recv(args) => { crate::ops::recv(&args)?; }
           MailCmd::Wait(args) => { crate::ops::mail_wait(&args)?; }
-          MailCmd::Watch(args) => { crate::ops::mail_watch(&args)?; }
+          MailCmd::Watch(args) => { crate::ops::watch(&args)?; }
   }
   }
           Some(Cmd::Db(group)) => {
   match group.cmd {
-          Some(DbCmd::AgentSummary(args)) => { crate::ops::db_agent_summary(&args)?; }
+          Some(DbCmd::AgentSummary(args)) => { crate::ops::agent_summary(&args)?; }
           Some(DbCmd::Session(group)) => {
   match group.cmd {
           DbSessionCmd::List(args) => { crate::ops::db_session_list(&args)?; }
@@ -890,9 +890,9 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(DbCmd::Usage(group)) => {
   match group.cmd {
-          Some(DbUsageCmd::Blocks(args)) => { crate::ops::db_usage_blocks(&args)?; }
-          Some(DbUsageCmd::BurnRate(args)) => { crate::ops::db_usage_burn_rate(&args)?; }
-          None => { let args = group.args; crate::ops::db_usage(&args)?; }
+          Some(DbUsageCmd::Blocks(args)) => { crate::ops::blocks(&args)?; }
+          Some(DbUsageCmd::BurnRate(args)) => { crate::ops::burn_rate(&args)?; }
+          None => { let args = group.args; crate::ops::usage(&args)?; }
   }
   }
           Some(DbCmd::Price(group)) => {
@@ -906,7 +906,7 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
           DbFavoriteCmd::Add(args) => { crate::ops::db_favorite_add(&args)?; }
           DbFavoriteCmd::List(args) => { crate::ops::db_favorite_list(&args)?; }
           DbFavoriteCmd::Show(args) => { crate::ops::db_favorite_show(&args)?; }
-          DbFavoriteCmd::Edit(args) => { crate::ops::db_favorite_edit(&args)?; }
+          DbFavoriteCmd::Edit(args) => { crate::ops::edit(&args)?; }
           DbFavoriteCmd::Delete(args) => { crate::ops::db_favorite_delete(&args)?; }
   }
   }
@@ -922,10 +922,10 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(DbCmd::Search(args)) => { crate::ops::db_search(&args)?; }
           Some(DbCmd::Sessions(args)) => { crate::ops::db_sessions(&args)?; }
-          Some(DbCmd::Lanes(args)) => { crate::ops::db_lanes(&args)?; }
+          Some(DbCmd::Lanes(args)) => { crate::ops::lanes(&args)?; }
           Some(DbCmd::Mail(args)) => { crate::ops::db_mail(&args)?; }
-          Some(DbCmd::Schema(args)) => { crate::ops::db_schema(&args)?; }
-          Some(DbCmd::Status(args)) => { crate::ops::db_status(&args)?; }
+          Some(DbCmd::Schema(args)) => { crate::ops::schema(&args)?; }
+          Some(DbCmd::Status(args)) => { crate::ops::status(&args)?; }
           None => { let args = group.args; crate::ops::db(&args)?; }
   }
   }
@@ -934,21 +934,21 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   match group.cmd {
           Some(MeCmd::Whoami(args)) => { crate::ops::me_whoami(&args)?; }
           Some(MeCmd::Register(args)) => { crate::ops::me_register(&args)?; }
-          Some(MeCmd::Mood(args)) => { crate::ops::me_mood(&args)?; }
+          Some(MeCmd::Mood(args)) => { crate::ops::mood(&args)?; }
           Some(MeCmd::Favorite(args)) => { crate::ops::me_favorite(&args)?; }
           None => { let args = group.args; crate::ops::me(&args)?; }
   }
   }
           Some(Cmd::Config(group)) => {
   match group.cmd {
-          ConfigCmd::Path => { let args = Default::default(); crate::ops::config_path(&args)?; }
+          ConfigCmd::Path => { let args = Default::default(); crate::ops::path(&args)?; }
           ConfigCmd::Show => { let args = Default::default(); crate::ops::config_show(&args)?; }
-          ConfigCmd::Presets(args) => { crate::ops::config_presets(&args)?; }
+          ConfigCmd::Presets(args) => { crate::ops::presets(&args)?; }
   }
   }
           Some(Cmd::Agent(group)) => {
   match group.cmd {
-          AgentCmd::Summary(args) => { crate::ops::agent_summary(&args)?; }
+          AgentCmd::Summary(args) => { crate::ops::summary(&args)?; }
           AgentCmd::Sessions(args) => { crate::ops::agent_sessions(&args)?; }
   }
   }
@@ -958,7 +958,7 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   match group.cmd {
           BeepRemindCmd::Add(args) => { crate::ops::beep_remind_add(&args)?; }
           BeepRemindCmd::List(args) => { crate::ops::beep_remind_list(&args)?; }
-          BeepRemindCmd::Cancel(args) => { crate::ops::beep_remind_cancel(&args)?; }
+          BeepRemindCmd::Cancel(args) => { crate::ops::cancel(&args)?; }
           BeepRemindCmd::Run(args) => { crate::ops::beep_remind_run(&args)?; }
   }
   }
@@ -997,46 +997,46 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(BeepCmd::Agent(group)) => {
   match group.cmd {
-          BeepAgentCmd::Waterfall(args) => { crate::ops::beep_agent_waterfall(&args)?; }
+          BeepAgentCmd::Waterfall(args) => { crate::ops::waterfall(&args)?; }
           BeepAgentCmd::Register(args) => { crate::ops::beep_agent_register(&args)?; }
-          BeepAgentCmd::Done(args) => { crate::ops::beep_agent_done(&args)?; }
-          BeepAgentCmd::Subscribe(args) => { crate::ops::beep_agent_subscribe(&args)?; }
-          BeepAgentCmd::Unsubscribe(args) => { crate::ops::beep_agent_unsubscribe(&args)?; }
+          BeepAgentCmd::Done(args) => { crate::ops::done(&args)?; }
+          BeepAgentCmd::Subscribe(args) => { crate::ops::subscribe(&args)?; }
+          BeepAgentCmd::Unsubscribe(args) => { crate::ops::unsubscribe(&args)?; }
   }
   }
           Some(BeepCmd::Message(group)) => {
   match group.cmd {
-          BeepMessageCmd::Ack(args) => { crate::ops::beep_message_ack(&args)?; }
+          BeepMessageCmd::Ack(args) => { crate::ops::ack(&args)?; }
   }
   }
           Some(BeepCmd::Fork(group)) => {
   match group.cmd {
-          Some(BeepForkCmd::Join(args)) => { crate::ops::beep_fork_join(&args)?; }
-          Some(BeepForkCmd::Diff(args)) => { crate::ops::beep_fork_diff(&args)?; }
-          None => { let args = group.args; crate::ops::beep_fork(&args)?; }
+          Some(BeepForkCmd::Join(args)) => { crate::ops::join(&args)?; }
+          Some(BeepForkCmd::Diff(args)) => { crate::ops::diff(&args)?; }
+          None => { let args = group.args; crate::ops::fork(&args)?; }
   }
   }
-          Some(BeepCmd::Paste(args)) => { crate::ops::beep_paste(&args)?; }
-          Some(BeepCmd::Ps(args)) => { crate::ops::beep_ps(&args)?; }
-          Some(BeepCmd::Pstree(args)) => { crate::ops::beep_pstree(&args)?; }
+          Some(BeepCmd::Paste(args)) => { crate::ops::paste(&args)?; }
+          Some(BeepCmd::Ps(args)) => { crate::ops::ps(&args)?; }
+          Some(BeepCmd::Pstree(args)) => { crate::ops::pstree(&args)?; }
           Some(BeepCmd::Selection(group)) => {
   match group.cmd {
           Some(BeepSelectionCmd::List) => { let args = Default::default(); crate::ops::beep_selection_list(&args)?; }
           Some(BeepSelectionCmd::Set(args)) => { crate::ops::beep_selection_set(&args)?; }
-          Some(BeepSelectionCmd::Focus(args)) => { crate::ops::beep_selection_focus(&args)?; }
-          Some(BeepSelectionCmd::Clear) => { let args = Default::default(); crate::ops::beep_selection_clear(&args)?; }
-          None => { let args = group.args; crate::ops::beep_selection(&args)?; }
+          Some(BeepSelectionCmd::Focus(args)) => { crate::ops::focus(&args)?; }
+          Some(BeepSelectionCmd::Clear) => { let args = Default::default(); crate::ops::clear(&args)?; }
+          None => { let args = group.args; crate::ops::selection(&args)?; }
   }
   }
-          Some(BeepCmd::Shout(args)) => { crate::ops::beep_shout(&args)?; }
-          Some(BeepCmd::Scream(args)) => { crate::ops::beep_scream(&args)?; }
+          Some(BeepCmd::Shout(args)) => { crate::ops::shout(&args)?; }
+          Some(BeepCmd::Scream(args)) => { crate::ops::scream(&args)?; }
           None => { let args = group.args; crate::ops::beep(&args)?; }
   }
   }
           Some(Cmd::Inbox(group)) => {
   match group.cmd {
-          InboxCmd::Drain(args) => { crate::ops::inbox_drain(&args)?; }
-          InboxCmd::Hooks(args) => { crate::ops::inbox_hooks(&args)?; }
+          InboxCmd::Drain(args) => { crate::ops::drain(&args)?; }
+          InboxCmd::Hooks(args) => { crate::ops::hooks(&args)?; }
   }
   }
           Some(Cmd::Remind(args)) => { crate::ops::remind(&args)?; }
@@ -1044,14 +1044,14 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
           Some(Cmd::Tag(group)) => {
   match group.cmd {
           TagCmd::Add(args) => { crate::ops::tag_add(&args)?; }
-          TagCmd::Recent(args) => { crate::ops::tag_recent(&args)?; }
+          TagCmd::Recent(args) => { crate::ops::recent(&args)?; }
           TagCmd::Search(args) => { crate::ops::tag_search(&args)?; }
           TagCmd::List(args) => { crate::ops::tag_list(&args)?; }
-          TagCmd::Of(args) => { crate::ops::tag_of(&args)?; }
-          TagCmd::For(args) => { crate::ops::tag_for(&args)?; }
-          TagCmd::Sources(args) => { crate::ops::tag_sources(&args)?; }
+          TagCmd::Of(args) => { crate::ops::of(&args)?; }
+          TagCmd::For(args) => { crate::ops::r#for(&args)?; }
+          TagCmd::Sources(args) => { crate::ops::sources(&args)?; }
           TagCmd::Rm(args) => { crate::ops::tag_rm(&args)?; }
-          TagCmd::Backfill => { let args = Default::default(); crate::ops::tag_backfill(&args)?; }
+          TagCmd::Backfill => { let args = Default::default(); crate::ops::backfill(&args)?; }
   }
   }
           Some(Cmd::Tui(args)) => { crate::ops::tui(&args)?; }

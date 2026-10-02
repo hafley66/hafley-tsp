@@ -1,57 +1,62 @@
-# Boop clap parity
+# Boop clap type derivation
 
-Baseline after route-tree emission: **91/155** byte-identical help captures.
-The baseline uses zero `Clap.*` imports or decorators.
+Base: `main` at `5381dcc`. Final help parity: **155/155**. No help capture changed.
 
-The gate builds the parity crate and executes its generated parser as `boop <path> --help`. It compares stdout bytes with the read-only boop2 captures, checks exit status, and retains diffs and stderr in `parity/help-results/`.
+| Extension kind | Before | After |
+| --- | ---: | ---: |
+| `x-clap-value-name` | 6 | 0 |
+| `x-clap-last` | 1 | 0 |
+| `x-clap-short` | 3 | 3 |
+| `x-clap-hidden` | 11 | 11 |
+| `x-clap-after-help` | 1 | 1 |
+| `x-clap-args-conflicts-with-subcommands` | 4 | 4 |
+| `x-clap-subcommand-required` | 2 | 2 |
+| **Declarations** | **28** | **21** |
+| **Distinct kinds** | **7** | **5** |
 
-```sh
-BOOP_EMIT=1 pnpm -C packages/rust exec vitest run src/emitter/08_boop-cli.test.tsx
-CARGO_BUILD_JOBS=4 node packages/rust/test/fixtures/boop_cli/2_check_help.mjs
-```
+The base contains two kinds targeted for removal, `value-name` and `last`. The five explicitly retained kinds account for all remaining declarations. The task title's count of four removable kinds does not match this base.
 
-The fixture directory defaults to `/Users/chrishafley/projects/boop2/fixtures/help`; override it with `BOOP_HELP_FIXTURES`. The gate supports `BOOP_PARITY_BIN`, `BOOP_PARITY_OUTPUT`, and `--no-build`.
+## Step 1: labels and records
 
-| Concept | Fixtures needing it (count + names) | Native form used or decorator added | Why native failed |
-| --- | --- | --- | --- |
-| Command nesting | 155: tree.json inventory | HTTP namespaces and `@route`; trie drops parameter segments | Existing emitter flattened operation names |
-| Positional and flag classification | 155: tree.json inventory | `@path`, `@query`, model spreads | Shared model bool fields required clap switch types |
-| Help paragraphs and enum choices | Fixtures with captured help or possible values | Doc comments, enums, native defaults | Enum member docs still need emitter support |
-| Different wire flag and field label | See retained diffs | Explicit `@query(name)` | Emitter does not yet read query wire names |
-| Required repeated positionals | tag add, tag for | Native `@minItems(1)` planned | Rust Vec alone permits zero items |
-| Short flags | job revive, beep lane revive, tag recent, tag search | Pending native-form evaluation | HTTP placement does not carry a short option |
-| Hidden commands | boop, job, beep lane | Pending native-form evaluation | Property visibility cannot target an operation |
-| Group own-form and child-form usage | Group captures in retained diffs | Pending native-form evaluation | Required children and local args need separate clap settings |
-| Trailing args | tui | Pending native-form evaluation | An HTTP path array does not specify `--` placement |
-| Nonstandard metavariables | beep agent waterfall, job create, beep lane create, debug, mail wait, wait | Pending native-form evaluation | Some captures use punctuation or duplicate labels |
-| Root and group extra help | boop, beep | Pending native-form evaluation | Doc extraction currently supplies the leading paragraph only |
+All six value-name extensions are replaced by native types. Named scalar labels use the final PascalCase component after removing a trailing `Name`: `MessageId` → `ID`, `LaneName` → `LANE`, `GitBranch` → `BRANCH`. Primitive fields retain clap's field-derived labels; existing `Clap.*` metadata remains supported.
 
-Aliases, conflicts, requires, hyphen values, and custom parsers affect acceptance. Help captures alone cannot establish every parser behavior. The prior attempt's gap table and repros are read-only evidence for the acceptance audit.
+| Captured label | Type |
+| --- | --- |
+| `ID-OR-JOB` | `MessageId \| Job` |
+| `ID-OR-LANE` | `MessageId \| LaneName` |
+| `MS\|DURATION` | `int64 \| duration` |
+| `LANE` | `LaneName` |
+| `BRANCH` | `GitBranch` |
+| `KEY=VAL` | `Record<string>` |
 
-Native metadata pass: **135/155**. Query wire names, enum-member docs, required arrays (`@minItems(1)`), complete operation docs, and groups with zero args account for 44 additional matching captures. No custom decorator was added.
+Union member labels join with `-OR-`. The ordered `int64 | duration` pair derives `MS|DURATION`, preserving the epoch-millisecond/duration capture. Union values retain the adapter's existing string representation.
 
-Short flags: `@extension("x-clap-short", "y" | "n")` on native query fields. Required by 4 captures: job revive, beep lane revive, tag recent, tag search. HTTP parameter names have no independent one-character flag slot; OpenAPI extensions retain the metadata without a custom decorator.
+String records emit repeatable arguments with a generated `KEY=VAL` parser. The clap field stores `Vec<(String, String)>`, retaining order and duplicate keys. Parsing splits the first `=`, accepts empty values, and rejects absent `=` or empty keys. HTTP query maps are collected into that argument representation. Models without clap derives retain `HashMap` fields.
 
-Hidden commands: `@extension("x-clap-hidden", true)` on operations omitted from their parent's visible command roster. This addresses the boop, job, and beep lane parent captures. `@visibility` accepts model properties, so it cannot mark an operation hidden. No custom decorator was added.
+Step 1 parity: **155/155**.
 
-Group args versus child commands: `@extension("x-clap-args-conflicts-with-subcommands", true)` on 4 operations: beep, beep fork, db, db usage. The captures contain two usage forms with args omitted from the child-command form. HTTP routes locate fields but have no rule forbidding their use with a child command.
+## Step 2: trailing arguments
 
-Required child commands: `@extension("x-clap-subcommand-required", true)` on 2 operations: me, beep selection. Both have local flags and require `<COMMAND>`. HTTP parameter optionality describes the flags, not the presence of a nested CLI command.
+`tui` declares `@body args?: string[]`. The adapter derives positional placement and `last = true` from a body string array. Its route includes only the `harness` path parameter. The parser accepts omitted arguments and forwards flags after `--`; values before the separator are rejected.
 
-Exceptional value labels: `@extension("x-clap-value-name", ...)` on 6 captured forms: beep agent waterfall, job create, beep lane create, debug, mail wait, wait. Uppercased field names cover ordinary labels. The exceptions contain punctuation (`MS|DURATION`, `KEY=VAL`, `ID-OR-*`) or a label already used by another field (`BRANCH`, `LANE`). No `@valueName` decorator is used.
+Step 2 parity: **155/155**.
 
-Trailing args: `@extension("x-clap-last", true)` on tui's `@path args?: string[]`, required by 1 capture: tui. The native array type specifies repetition; it does not require the `--` separator shown in the capture.
+## Step 3: importer and source naming
 
-Extra help: `@extension("x-clap-after-help", ...)` on the service namespace, required by 1 capture: boop. A doc comment is printed before usage; this text must follow options. Extension text is emitted literally, including `$PWD`, while existing ryi afterHelp keeps its build-variable expansion. Final help parity: **155/155**.
+Shared flag models use flag names, such as `MailDirFlag`. Repeated wire names with different declarations add qualifiers from documentation or type, requiredness, and defaults. Name collisions fail the importer rather than adding ordinal suffixes.
 
-## Type-derived labels (feature/clap-derive-labels, step 1)
+Path parameters use their field names with bare `@path`. Operation names use the local route segment, such as `mail` inside `db`; repeated local names receive route context in flat Rust symbols. The fixture's existing implementation stubs were migrated to the corresponding symbols. Obsolete generated `shared_flags*.rs` files were removed.
 
-All six `x-clap-value-name` declarations are removed. Help parity remains **155/155**; no capture changed. Named scalar labels use the final PascalCase component after removing a trailing `Name`: `MessageId` → `ID`, `LaneName` → `LANE`, `GitBranch` → `BRANCH`. Scalar alternatives join with `-OR-`; the `int64 | duration` pair uses `MS|DURATION` to retain the epoch-millisecond/duration capture. Union values retain the adapter's existing string representation.
+`debug` has a positional lane and a `--lane` flag. Their source fields are `lane_arg: LaneName` and `lane: LaneName`, preventing an HTTP path/query name collision. Both labels remain `LANE` in help.
 
-`Record<string>` query fields emit repeatable `KEY=VAL` arguments with a generated parser. The clap field stores `Vec<(String, String)>`, preserving occurrence order and duplicate keys. Parsing splits the first `=`, permits empty values, and rejects absent `=` or empty keys. HTTP query maps are collected into that argument representation. Models without clap derives retain their `HashMap` fields.
+Step 3 parity: **155/155**.
 
-Validation: help parity **155/155**; Rust package tests **162 passed, 4 skipped**; TypeScript checking passed; generated parser acceptance test passed. The ryi regeneration test remains byte-identical.
+## Validation
 
-## Type-derived trailing arguments (step 2)
+- `CARGO_BUILD_JOBS=4 node packages/rust/test/fixtures/boop_cli/2_check_help.mjs`: **155/155**.
+- `pnpm -C packages/rust test`: **163 passed, 4 skipped**, including byte-identical ryi regeneration.
+- `pnpm -C packages/rust exec tsc --noEmit -p tsconfig.build.json`: passed.
+- Generated Rust parser tests cover repeated and malformed record entries and trailing separator behavior.
+- Importer regeneration produces identical `ops.tsp` bytes.
 
-`tui` uses `@body args?: string[]`; the adapter derives positional placement and `last = true` from a body string array. Its route contains only the `harness` path parameter. The single `x-clap-last` declaration and adapter handling are removed. Help parity remains **155/155**, with no changed captures. Parser tests confirm forwarding flags after `--`, omission of the optional array, and rejection of trailing values before the separator. Rust package tests: **162 passed, 4 skipped**; ryi regeneration remains byte-identical.
+The help gate executes the generated parser and compares stdout bytes and exit status against the boop2 captures. Results are stored under `parity/help-results/`. `BOOP_HELP_FIXTURES` can override the default capture directory, `/Users/chrishafley/projects/boop2/fixtures/help`.

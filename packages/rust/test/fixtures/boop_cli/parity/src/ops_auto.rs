@@ -1,95 +1,88 @@
-use crate::models::shared_flags0::SharedFlags0;
-use crate::models::shared_flags10::SharedFlags10;
-use crate::models::shared_flags11::SharedFlags11;
-use crate::models::shared_flags12::SharedFlags12;
-use crate::models::shared_flags13::SharedFlags13;
-use crate::models::shared_flags14::SharedFlags14;
-use crate::models::shared_flags15::SharedFlags15;
-use crate::models::shared_flags16::SharedFlags16;
-use crate::models::shared_flags17::SharedFlags17;
-use crate::models::shared_flags18::SharedFlags18;
-use crate::models::shared_flags19::SharedFlags19;
-use crate::models::shared_flags1::SharedFlags1;
-use crate::models::shared_flags20::SharedFlags20;
-use crate::models::shared_flags21::SharedFlags21;
-use crate::models::shared_flags22::SharedFlags22;
-use crate::models::shared_flags23::SharedFlags23;
-use crate::models::shared_flags24::SharedFlags24;
-use crate::models::shared_flags25::SharedFlags25;
-use crate::models::shared_flags26::SharedFlags26;
-use crate::models::shared_flags27::SharedFlags27;
-use crate::models::shared_flags28::SharedFlags28;
-use crate::models::shared_flags29::SharedFlags29;
-use crate::models::shared_flags2::SharedFlags2;
-use crate::models::shared_flags30::SharedFlags30;
-use crate::models::shared_flags31::SharedFlags31;
-use crate::models::shared_flags32::SharedFlags32;
-use crate::models::shared_flags33::SharedFlags33;
-use crate::models::shared_flags34::SharedFlags34;
-use crate::models::shared_flags35::SharedFlags35;
-use crate::models::shared_flags36::SharedFlags36;
-use crate::models::shared_flags37::SharedFlags37;
-use crate::models::shared_flags38::SharedFlags38;
-use crate::models::shared_flags39::SharedFlags39;
-use crate::models::shared_flags3::SharedFlags3;
-use crate::models::shared_flags40::SharedFlags40;
-use crate::models::shared_flags41::SharedFlags41;
-use crate::models::shared_flags42::SharedFlags42;
-use crate::models::shared_flags43::SharedFlags43;
-use crate::models::shared_flags44::SharedFlags44;
-use crate::models::shared_flags45::SharedFlags45;
-use crate::models::shared_flags46::SharedFlags46;
-use crate::models::shared_flags47::SharedFlags47;
-use crate::models::shared_flags48::SharedFlags48;
-use crate::models::shared_flags49::SharedFlags49;
-use crate::models::shared_flags4::SharedFlags4;
-use crate::models::shared_flags50::SharedFlags50;
-use crate::models::shared_flags51::SharedFlags51;
-use crate::models::shared_flags52::SharedFlags52;
-use crate::models::shared_flags53::SharedFlags53;
-use crate::models::shared_flags54::SharedFlags54;
-use crate::models::shared_flags55::SharedFlags55;
-use crate::models::shared_flags56::SharedFlags56;
-use crate::models::shared_flags57::SharedFlags57;
-use crate::models::shared_flags58::SharedFlags58;
-use crate::models::shared_flags59::SharedFlags59;
-use crate::models::shared_flags5::SharedFlags5;
-use crate::models::shared_flags60::SharedFlags60;
-use crate::models::shared_flags61::SharedFlags61;
-use crate::models::shared_flags62::SharedFlags62;
-use crate::models::shared_flags63::SharedFlags63;
-use crate::models::shared_flags64::SharedFlags64;
-use crate::models::shared_flags65::SharedFlags65;
-use crate::models::shared_flags66::SharedFlags66;
-use crate::models::shared_flags67::SharedFlags67;
-use crate::models::shared_flags68::SharedFlags68;
-use crate::models::shared_flags69::SharedFlags69;
-use crate::models::shared_flags6::SharedFlags6;
-use crate::models::shared_flags70::SharedFlags70;
-use crate::models::shared_flags71::SharedFlags71;
-use crate::models::shared_flags72::SharedFlags72;
-use crate::models::shared_flags73::SharedFlags73;
-use crate::models::shared_flags74::SharedFlags74;
-use crate::models::shared_flags75::SharedFlags75;
-use crate::models::shared_flags76::SharedFlags76;
-use crate::models::shared_flags77::SharedFlags77;
-use crate::models::shared_flags78::SharedFlags78;
-use crate::models::shared_flags79::SharedFlags79;
-use crate::models::shared_flags7::SharedFlags7;
-use crate::models::shared_flags80::SharedFlags80;
-use crate::models::shared_flags81::SharedFlags81;
-use crate::models::shared_flags82::SharedFlags82;
-use crate::models::shared_flags83::SharedFlags83;
-use crate::models::shared_flags84::SharedFlags84;
-use crate::models::shared_flags85::SharedFlags85;
-use crate::models::shared_flags86::SharedFlags86;
-use crate::models::shared_flags87::SharedFlags87;
-use crate::models::shared_flags88::SharedFlags88;
-use crate::models::shared_flags89::SharedFlags89;
-use crate::models::shared_flags8::SharedFlags8;
-use crate::models::shared_flags90::SharedFlags90;
-use crate::models::shared_flags91::SharedFlags91;
-use crate::models::shared_flags9::SharedFlags9;
+use crate::models::all_flag::AllFlag;
+use crate::models::as_flag::AsFlag;
+use crate::models::as_the_subscriber_defaults_to_flag::AsTheSubscriberDefaultsToFlag;
+use crate::models::as_who_the_rows_are_flag::AsWhoTheRowsAreFlag;
+use crate::models::base_sha_flag::BaseShaFlag;
+use crate::models::bin_flag::BinFlag;
+use crate::models::bin_the_executable_the_harness_flag::BinTheExecutableTheHarnessFlag;
+use crate::models::branch_flag::BranchFlag;
+use crate::models::brief_absolute_path_to_the_flag::BriefAbsolutePathToTheFlag;
+use crate::models::brief_flag::BriefFlag;
+use crate::models::children_flag::ChildrenFlag;
+use crate::models::commit_push_flag::CommitPushFlag;
+use crate::models::cwd_flag::CwdFlag;
+use crate::models::cwd_string_optional_flag::CwdStringOptionalFlag;
+use crate::models::days_flag::DaysFlag;
+use crate::models::dead_flag::DeadFlag;
+use crate::models::dry_run_flag::DryRunFlag;
+use crate::models::dry_run_print_what_a_single_flag::DryRunPrintWhatASingleFlag;
+use crate::models::dry_run_print_what_would_be_flag::DryRunPrintWhatWouldBeFlag;
+use crate::models::effort_flag::EffortFlag;
+use crate::models::env_flag::EnvFlag;
+use crate::models::expect_commit_subject_flag::ExpectCommitSubjectFlag;
+use crate::models::expect_commits_at_least_flag::ExpectCommitsAtLeastFlag;
+use crate::models::expect_path_flag::ExpectPathFlag;
+use crate::models::format_flag::FormatFlag;
+use crate::models::format_text_json_optional_json_flag::FormatTextJsonOptionalJsonFlag;
+use crate::models::format_text_json_optional_text_flag::FormatTextJsonOptionalTextFlag;
+use crate::models::goal_flag::GoalFlag;
+use crate::models::goal_string_optional_flag::GoalStringOptionalFlag;
+use crate::models::harness_flag::HarnessFlag;
+use crate::models::harness_only_this_harness_claude_flag::HarnessOnlyThisHarnessClaudeFlag;
+use crate::models::harness_string_optional_flag::HarnessStringOptionalFlag;
+use crate::models::harness_string_required_flag::HarnessStringRequiredFlag;
+use crate::models::hook_flag::HookFlag;
+use crate::models::json_boolean_optional_flag::JsonBooleanOptionalFlag;
+use crate::models::json_flag::JsonFlag;
+use crate::models::json_list_as_json_uncut_flag::JsonListAsJSONUncutFlag;
+use crate::models::json_print_one_json_result_flag::JsonPrintOneJSONResultFlag;
+use crate::models::lane_flag::LaneFlag;
+use crate::models::lane_lane_name_required_flag::LaneLaneNameRequiredFlag;
+use crate::models::lane_the_forked_lane_when_flag::LaneTheForkedLaneWhenFlag;
+use crate::models::like_flag::LikeFlag;
+use crate::models::limit_flag::LimitFlag;
+use crate::models::limit_uint64_optional50_flag::LimitUint64Optional50Flag;
+use crate::models::lines_flag::LinesFlag;
+use crate::models::list_flag::ListFlag;
+use crate::models::mail_dir_flag::MailDirFlag;
+use crate::models::mail_dir_string_optional_flag::MailDirStringOptionalFlag;
+use crate::models::merged_into_flag::MergedIntoFlag;
+use crate::models::mode_flag::ModeFlag;
+use crate::models::model_flag::ModelFlag;
+use crate::models::mood_flag::MoodFlag;
+use crate::models::no_header_flag::NoHeaderFlag;
+use crate::models::no_post_pr_flag::NoPostPrFlag;
+use crate::models::no_start_flag::NoStartFlag;
+use crate::models::on_parent_death_flag::OnParentDeathFlag;
+use crate::models::parent_flag::ParentFlag;
+use crate::models::parent_the_lane_that_summoned_flag::ParentTheLaneThatSummonedFlag;
+use crate::models::path_flag::PathFlag;
+use crate::models::post_pr_flag::PostPrFlag;
+use crate::models::pr_base_flag::PrBaseFlag;
+use crate::models::preset_flag::PresetFlag;
+use crate::models::reclaim_flag::ReclaimFlag;
+use crate::models::resume_flag::ResumeFlag;
+use crate::models::role_flag::RoleFlag;
+use crate::models::route_only_flag::RouteOnlyFlag;
+use crate::models::session_flag::SessionFlag;
+use crate::models::session_id_flag::SessionIdFlag;
+use crate::models::since_flag::SinceFlag;
+use crate::models::since_string_optional_flag::SinceStringOptionalFlag;
+use crate::models::socket_flag::SocketFlag;
+use crate::models::socket_string_optional_flag::SocketStringOptionalFlag;
+use crate::models::socket_tmux_socket_the_pane_flag::SocketTmuxSocketThePaneFlag;
+use crate::models::socket_tmux_socket_to_spawn_flag::SocketTmuxSocketToSpawnFlag;
+use crate::models::state_bulk_delete_dead_removes_flag::StateBulkDeleteDeadRemovesFlag;
+use crate::models::state_flag::StateFlag;
+use crate::models::timeout_flag::TimeoutFlag;
+use crate::models::timeout_uint64_optional540_flag::TimeoutUint64Optional540Flag;
+use crate::models::tmux_flag::TmuxFlag;
+use crate::models::tmux_string_required_flag::TmuxStringRequiredFlag;
+use crate::models::touched_flag::TouchedFlag;
+use crate::models::trace_flag::TraceFlag;
+use crate::models::turn_from_flag::TurnFromFlag;
+use crate::models::turn_to_flag::TurnToFlag;
+use crate::models::until_flag::UntilFlag;
 use crate::models::values0::Values0;
 use crate::models::values1::Values1;
 use crate::models::values4::Values4;
@@ -97,6 +90,13 @@ use crate::models::values5::Values5;
 use crate::models::values6::Values6;
 use crate::models::values7::Values7;
 use crate::models::values8::Values8;
+use crate::models::variant_flag::VariantFlag;
+use crate::models::variant_opencode_reasoning_effort_variant_flag::VariantOpencodeReasoningEffortVariantFlag;
+use crate::models::verbose_flag::VerboseFlag;
+use crate::models::verify_flag::VerifyFlag;
+use crate::models::verify_validation_command_carried_from_flag::VerifyValidationCommandCarriedFromFlag;
+use crate::models::wait_timeout_flag::WaitTimeoutFlag;
+use crate::models::yes_flag::YesFlag;
 
 #[derive(Debug)]
 pub struct OpError(pub String);
@@ -134,19 +134,19 @@ pub struct JobArgs {}
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobListArgs {
   #[command(flatten)]
-  pub sharedFlags0: SharedFlags0,
+  pub stateFlag: StateFlag,
   #[command(flatten)]
-  pub sharedFlags1: SharedFlags1,
+  pub harnessFlag: HarnessFlag,
   #[command(flatten)]
-  pub sharedFlags2: SharedFlags2,
+  pub allFlag: AllFlag,
   #[command(flatten)]
-  pub sharedFlags3: SharedFlags3,
+  pub jsonFlag: JsonFlag,
   #[command(flatten)]
-  pub sharedFlags4: SharedFlags4,
+  pub noHeaderFlag: NoHeaderFlag,
   #[command(flatten)]
-  pub sharedFlags5: SharedFlags5,
+  pub socketFlag: SocketFlag,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -154,71 +154,71 @@ pub struct JobResumeArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobCreateArgs {
   #[command(flatten)]
-  pub sharedFlags7: SharedFlags7,
+  pub branchFlag: BranchFlag,
   #[command(flatten)]
-  pub sharedFlags8: SharedFlags8,
+  pub briefFlag: BriefFlag,
   #[command(flatten)]
-  pub sharedFlags9: SharedFlags9,
+  pub goalFlag: GoalFlag,
   #[command(flatten)]
-  pub sharedFlags10: SharedFlags10,
+  pub moodFlag: MoodFlag,
   #[command(flatten)]
-  pub sharedFlags11: SharedFlags11,
+  pub traceFlag: TraceFlag,
   #[command(flatten)]
-  pub sharedFlags12: SharedFlags12,
+  pub noStartFlag: NoStartFlag,
   #[command(flatten)]
-  pub sharedFlags13: SharedFlags13,
+  pub cwdFlag: CwdFlag,
   #[command(flatten)]
-  pub sharedFlags14: SharedFlags14,
+  pub baseShaFlag: BaseShaFlag,
   #[command(flatten)]
-  pub sharedFlags15: SharedFlags15,
+  pub expectPathFlag: ExpectPathFlag,
   #[command(flatten)]
-  pub sharedFlags16: SharedFlags16,
+  pub expectCommitSubjectFlag: ExpectCommitSubjectFlag,
   #[command(flatten)]
-  pub sharedFlags17: SharedFlags17,
+  pub expectCommitsAtLeastFlag: ExpectCommitsAtLeastFlag,
   #[command(flatten)]
-  pub sharedFlags18: SharedFlags18,
+  pub verifyFlag: VerifyFlag,
   #[command(flatten)]
-  pub sharedFlags19: SharedFlags19,
+  pub envFlag: EnvFlag,
   #[command(flatten)]
-  pub sharedFlags20: SharedFlags20,
+  pub commitPushFlag: CommitPushFlag,
   #[command(flatten)]
-  pub sharedFlags21: SharedFlags21,
+  pub postPrFlag: PostPrFlag,
   #[command(flatten)]
-  pub sharedFlags22: SharedFlags22,
+  pub noPostPrFlag: NoPostPrFlag,
   #[command(flatten)]
-  pub sharedFlags23: SharedFlags23,
+  pub prBaseFlag: PrBaseFlag,
   #[command(flatten)]
-  pub sharedFlags24: SharedFlags24,
+  pub parentFlag: ParentFlag,
   #[command(flatten)]
-  pub sharedFlags25: SharedFlags25,
+  pub onParentDeathFlag: OnParentDeathFlag,
   #[command(flatten)]
-  pub sharedFlags26: SharedFlags26,
+  pub presetFlag: PresetFlag,
   #[command(flatten)]
-  pub sharedFlags27: SharedFlags27,
+  pub variantFlag: VariantFlag,
   #[command(flatten)]
-  pub sharedFlags28: SharedFlags28,
+  pub binFlag: BinFlag,
   #[command(flatten)]
-  pub sharedFlags29: SharedFlags29,
+  pub waitTimeoutFlag: WaitTimeoutFlag,
   #[command(flatten)]
-  pub sharedFlags30: SharedFlags30,
+  pub timeoutFlag: TimeoutFlag,
   #[command(flatten)]
-  pub sharedFlags31: SharedFlags31,
+  pub laneFlag: LaneFlag,
   #[command(flatten)]
-  pub sharedFlags32: SharedFlags32,
+  pub tmuxFlag: TmuxFlag,
   #[command(flatten)]
-  pub sharedFlags33: SharedFlags33,
+  pub socketTmuxSocketToSpawnFlag: SocketTmuxSocketToSpawnFlag,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
   #[command(flatten)]
-  pub sharedFlags34: SharedFlags34,
+  pub dryRunFlag: DryRunFlag,
   #[command(flatten)]
-  pub sharedFlags35: SharedFlags35,
+  pub reclaimFlag: ReclaimFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -227,19 +227,19 @@ pub struct JobReviveArgs {
   #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
-  pub sharedFlags36: SharedFlags36,
+  pub deadFlag: DeadFlag,
   #[command(flatten)]
-  pub sharedFlags37: SharedFlags37,
+  pub listFlag: ListFlag,
   #[command(flatten)]
-  pub sharedFlags38: SharedFlags38,
+  pub jsonListAsJSONUncutFlag: JsonListAsJSONUncutFlag,
   #[command(flatten)]
-  pub sharedFlags39: SharedFlags39,
+  pub yesFlag: YesFlag,
   #[command(flatten)]
-  pub sharedFlags40: SharedFlags40,
+  pub sinceFlag: SinceFlag,
   #[command(flatten)]
-  pub sharedFlags41: SharedFlags41,
+  pub socketTmuxSocketThePaneFlag: SocketTmuxSocketThePaneFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -247,9 +247,9 @@ pub struct JobGetArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags43: SharedFlags43,
+  pub touchedFlag: TouchedFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -257,7 +257,7 @@ pub struct JobWhereArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -265,23 +265,23 @@ pub struct JobPatchArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags44: SharedFlags44,
+  pub tmuxStringRequiredFlag: TmuxStringRequiredFlag,
   #[command(flatten)]
-  pub sharedFlags45: SharedFlags45,
+  pub harnessStringOptionalFlag: HarnessStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags46: SharedFlags46,
+  pub sessionIdFlag: SessionIdFlag,
   #[command(flatten)]
-  pub sharedFlags47: SharedFlags47,
+  pub cwdStringOptionalFlag: CwdStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags48: SharedFlags48,
+  pub modelFlag: ModelFlag,
   #[command(flatten)]
-  pub sharedFlags49: SharedFlags49,
+  pub modeFlag: ModeFlag,
   #[command(flatten)]
-  pub sharedFlags50: SharedFlags50,
+  pub parentTheLaneThatSummonedFlag: ParentTheLaneThatSummonedFlag,
   #[command(flatten)]
-  pub sharedFlags51: SharedFlags51,
+  pub goalStringOptionalFlag: GoalStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -290,15 +290,15 @@ pub struct JobDeleteArgs {
   #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
-  pub sharedFlags52: SharedFlags52,
+  pub routeOnlyFlag: RouteOnlyFlag,
   #[command(flatten)]
-  pub sharedFlags53: SharedFlags53,
+  pub stateBulkDeleteDeadRemovesFlag: StateBulkDeleteDeadRemovesFlag,
   #[command(flatten)]
-  pub sharedFlags54: SharedFlags54,
+  pub dryRunPrintWhatASingleFlag: DryRunPrintWhatASingleFlag,
   #[command(flatten)]
-  pub sharedFlags55: SharedFlags55,
+  pub mergedIntoFlag: MergedIntoFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -306,7 +306,7 @@ pub struct JobRmArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -314,7 +314,7 @@ pub struct JobKillArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -322,9 +322,9 @@ pub struct JobWaitArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags56: SharedFlags56,
+  pub timeoutUint64Optional540Flag: TimeoutUint64Optional540Flag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -332,7 +332,7 @@ pub struct JobAttachArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -340,19 +340,19 @@ pub struct JobSignalArgs {
   #[arg()]
   pub signal: String,
   #[command(flatten)]
-  pub sharedFlags57: SharedFlags57,
+  pub childrenFlag: ChildrenFlag,
   #[command(flatten)]
-  pub sharedFlags58: SharedFlags58,
+  pub asFlag: AsFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobPruneArgs {
   #[command(flatten)]
-  pub sharedFlags59: SharedFlags59,
+  pub dryRunPrintWhatWouldBeFlag: DryRunPrintWhatWouldBeFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -360,7 +360,7 @@ pub struct JobRouteArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -368,11 +368,11 @@ pub struct JobPaneArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags60: SharedFlags60,
+  pub linesFlag: LinesFlag,
   #[command(flatten)]
-  pub sharedFlags61: SharedFlags61,
+  pub socketStringOptionalFlag: SocketStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -380,11 +380,11 @@ pub struct JobSquaresArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
   #[command(flatten)]
-  pub sharedFlags61: SharedFlags61,
+  pub socketStringOptionalFlag: SocketStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
@@ -395,62 +395,62 @@ pub struct JobMessageListArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobRunArgs {
   #[command(flatten)]
-  pub sharedFlags63: SharedFlags63,
+  pub laneLaneNameRequiredFlag: LaneLaneNameRequiredFlag,
   #[command(flatten)]
-  pub sharedFlags64: SharedFlags64,
+  pub harnessStringRequiredFlag: HarnessStringRequiredFlag,
   #[command(flatten)]
-  pub sharedFlags65: SharedFlags65,
+  pub briefAbsolutePathToTheFlag: BriefAbsolutePathToTheFlag,
   #[command(flatten)]
-  pub sharedFlags48: SharedFlags48,
+  pub modelFlag: ModelFlag,
   #[command(flatten)]
-  pub sharedFlags66: SharedFlags66,
+  pub effortFlag: EffortFlag,
   #[command(flatten)]
-  pub sharedFlags67: SharedFlags67,
+  pub resumeFlag: ResumeFlag,
   #[command(flatten)]
-  pub sharedFlags68: SharedFlags68,
+  pub variantOpencodeReasoningEffortVariantFlag: VariantOpencodeReasoningEffortVariantFlag,
   #[command(flatten)]
-  pub sharedFlags69: SharedFlags69,
+  pub binTheExecutableTheHarnessFlag: BinTheExecutableTheHarnessFlag,
   #[command(flatten)]
-  pub sharedFlags70: SharedFlags70,
+  pub verifyValidationCommandCarriedFromFlag: VerifyValidationCommandCarriedFromFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct MailArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct MailSendArgs {
+pub struct SendArgs {
   #[arg()]
   pub body: String,
   #[arg(long = "to")]
   pub job: String,
   #[command(flatten)]
-  pub sharedFlags58: SharedFlags58,
+  pub asFlag: AsFlag,
   #[arg(long, default_value = "request")]
   pub kind: String,
   #[command(flatten)]
-  pub sharedFlags56: SharedFlags56,
+  pub timeoutUint64Optional540Flag: TimeoutUint64Optional540Flag,
   #[arg(long)]
   pub no_wait: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct MailRecvArgs {
+pub struct RecvArgs {
   #[command(flatten)]
-  pub sharedFlags58: SharedFlags58,
+  pub asFlag: AsFlag,
   #[command(flatten)]
-  pub sharedFlags71: SharedFlags71,
+  pub hookFlag: HookFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -460,15 +460,15 @@ pub struct MailWaitArgs {
   #[arg(long)]
   pub me: bool,
   #[command(flatten)]
-  pub sharedFlags58: SharedFlags58,
+  pub asFlag: AsFlag,
   #[command(flatten)]
-  pub sharedFlags56: SharedFlags56,
+  pub timeoutUint64Optional540Flag: TimeoutUint64Optional540Flag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct MailWatchArgs {
+pub struct WatchArgs {
   #[doc = "Directory containing ready `.md` files"]
   #[arg()]
   pub directory: String,
@@ -476,7 +476,7 @@ pub struct MailWatchArgs {
   #[arg(long)]
   pub once: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -490,22 +490,22 @@ pub struct DbArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbAgentSummaryArgs {
+pub struct AgentSummaryArgs {
   #[command(flatten)]
-  pub sharedFlags72: SharedFlags72,
+  pub formatTextJsonOptionalJsonFlag: FormatTextJsonOptionalJsonFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbSessionArgs {}
+pub struct SessionArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbSessionListArgs {
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -513,34 +513,34 @@ pub struct DbSessionGetArgs {
   #[arg()]
   pub session: String,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbTurnArgs {}
+pub struct TurnArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbTurnListArgs {
   #[command(flatten)]
-  pub sharedFlags45: SharedFlags45,
+  pub harnessStringOptionalFlag: HarnessStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags75: SharedFlags75,
+  pub roleFlag: RoleFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags78: SharedFlags78,
+  pub turnFromFlag: TurnFromFlag,
   #[command(flatten)]
-  pub sharedFlags79: SharedFlags79,
+  pub turnToFlag: TurnToFlag,
   #[command(flatten)]
-  pub sharedFlags80: SharedFlags80,
+  pub pathFlag: PathFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -550,34 +550,34 @@ pub struct DbTurnGetArgs {
   #[arg()]
   pub turn: String,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbChatArgs {}
+pub struct ChatArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbChatListArgs {
   #[command(flatten)]
-  pub sharedFlags45: SharedFlags45,
+  pub harnessStringOptionalFlag: HarnessStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags75: SharedFlags75,
+  pub roleFlag: RoleFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags78: SharedFlags78,
+  pub turnFromFlag: TurnFromFlag,
   #[command(flatten)]
-  pub sharedFlags79: SharedFlags79,
+  pub turnToFlag: TurnToFlag,
   #[command(flatten)]
-  pub sharedFlags80: SharedFlags80,
+  pub pathFlag: PathFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
   #[arg(long)]
   pub all: bool,
   #[arg(long)]
@@ -585,160 +585,160 @@ pub struct DbChatListArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbTouchArgs {}
+pub struct TouchArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbTouchListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags81: SharedFlags81,
+  pub likeFlag: LikeFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbCommandArgs {}
+pub struct CommandArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbCommandListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags81: SharedFlags81,
+  pub likeFlag: LikeFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbFetchArgs {}
+pub struct FetchArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbFetchListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags81: SharedFlags81,
+  pub likeFlag: LikeFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbSkillArgs {}
+pub struct SkillArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbSkillListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags81: SharedFlags81,
+  pub likeFlag: LikeFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbPrArgs {}
+pub struct PrArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbPrListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags81: SharedFlags81,
+  pub likeFlag: LikeFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbSpanArgs {}
+pub struct SpanArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbSpanListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags76: SharedFlags76,
+  pub sinceStringOptionalFlag: SinceStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags77: SharedFlags77,
+  pub untilFlag: UntilFlag,
   #[command(flatten)]
-  pub sharedFlags81: SharedFlags81,
+  pub likeFlag: LikeFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbEdgeArgs {}
+pub struct EdgeArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbEdgeListArgs {
   #[command(flatten)]
-  pub sharedFlags74: SharedFlags74,
+  pub sessionFlag: SessionFlag,
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbUsageArgs {
+pub struct UsageArgs {
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
   #[doc = "Print this alias's SQL and exit"]
   #[arg(long)]
   pub show_sql: bool,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbUsageBlocksArgs {
+pub struct BlocksArgs {
   #[arg(long, default_value_t = 5)]
   pub window_hours: u64,
   #[doc = "Only the window that is still open"]
   #[arg(long)]
   pub active: bool,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbUsageBurnRateArgs {
+pub struct BurnRateArgs {
   #[arg(long, default_value_t = 60)]
   pub window_minutes: u64,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbPriceArgs {}
+pub struct PriceArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct DbPriceListArgs {}
@@ -780,9 +780,9 @@ pub struct DbFavoriteAddArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbFavoriteListArgs {
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -790,11 +790,11 @@ pub struct DbFavoriteShowArgs {
   #[arg()]
   pub id: String,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbFavoriteEditArgs {
+pub struct EditArgs {
   #[arg()]
   pub id: String,
   #[arg(long)]
@@ -810,7 +810,7 @@ pub struct DbFavoriteDeleteArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbSyncArgs {}
+pub struct SyncArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbSyncCreateArgs {
@@ -825,14 +825,14 @@ pub struct DbSyncCreateArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct DbSyncCursorArgs {}
+pub struct SyncCursorArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbSyncCursorListArgs {
   #[command(flatten)]
-  pub sharedFlags73: SharedFlags73,
+  pub limitFlag: LimitFlag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -841,38 +841,38 @@ pub struct DbSearchArgs {
   #[arg()]
   pub text: String,
   #[command(flatten)]
-  pub sharedFlags82: SharedFlags82,
+  pub daysFlag: DaysFlag,
   #[command(flatten)]
-  pub sharedFlags83: SharedFlags83,
+  pub harnessOnlyThisHarnessClaudeFlag: HarnessOnlyThisHarnessClaudeFlag,
   #[doc = "Return only turns classified as direct human input"]
   #[arg(long)]
   pub human: bool,
   #[command(flatten)]
-  pub sharedFlags84: SharedFlags84,
+  pub limitUint64Optional50Flag: LimitUint64Optional50Flag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DbSessionsArgs {
   #[command(flatten)]
-  pub sharedFlags82: SharedFlags82,
+  pub daysFlag: DaysFlag,
   #[command(flatten)]
-  pub sharedFlags83: SharedFlags83,
+  pub harnessOnlyThisHarnessClaudeFlag: HarnessOnlyThisHarnessClaudeFlag,
   #[command(flatten)]
-  pub sharedFlags84: SharedFlags84,
+  pub limitUint64Optional50Flag: LimitUint64Optional50Flag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbLanesArgs {
+pub struct LanesArgs {
   #[command(flatten)]
-  pub sharedFlags82: SharedFlags82,
+  pub daysFlag: DaysFlag,
   #[command(flatten)]
-  pub sharedFlags84: SharedFlags84,
+  pub limitUint64Optional50Flag: LimitUint64Optional50Flag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -884,56 +884,56 @@ pub struct DbMailArgs {
   #[arg(long)]
   pub kind: Option<String>,
   #[command(flatten)]
-  pub sharedFlags84: SharedFlags84,
+  pub limitUint64Optional50Flag: LimitUint64Optional50Flag,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbSchemaArgs {
+pub struct SchemaArgs {
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct DbStatusArgs {
+pub struct StatusArgs {
   #[doc = "Window in minutes"]
   #[arg(long, default_value_t = 10)]
   pub window: u64,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DebugArgs {
   #[doc = "One lane, answered in full: route, mail, worktree, transcript, alerts. Without it, the WARN/ERROR window across every lane"]
   #[arg(value_name = "LANE")]
-  pub lane: Option<String>,
+  pub lane_arg: Option<String>,
   #[doc = "Window to read back, as `Ns`, `Nm`, `Nh` or a count of seconds"]
   #[arg(long, default_value = "2m")]
   pub since: String,
   #[doc = "One lane only, for the alert window"]
-  #[arg(long = "lane", value_name = "LANE")]
-  pub lane_flag: Option<String>,
+  #[arg(long, value_name = "LANE")]
+  pub lane: Option<String>,
   #[doc = "One JSON document, `alerts` and `sync`, instead of the grouped text"]
   #[arg(long)]
   pub json: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct MeArgs {
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct MeWhoamiArgs {
   #[command(flatten)]
-  pub sharedFlags85: SharedFlags85,
+  pub jsonBooleanOptionalFlag: JsonBooleanOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags58: SharedFlags58,
+  pub asFlag: AsFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -941,13 +941,13 @@ pub struct MeRegisterArgs {
   #[arg()]
   pub name: String,
   #[command(flatten)]
-  pub sharedFlags45: SharedFlags45,
+  pub harnessStringOptionalFlag: HarnessStringOptionalFlag,
   #[arg(long)]
   pub parent: Option<String>,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct MeMoodArgs {
+pub struct MoodArgs {
   #[doc = "A stored mood name; `boop db \"select * from mood\"` lists them"]
   #[arg()]
   pub name: Option<String>,
@@ -973,13 +973,13 @@ pub struct MeFavoriteArgs {
 pub struct ConfigArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct ConfigPathArgs {}
+pub struct PathArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct ConfigShowArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct ConfigPresetsArgs {
+pub struct PresetsArgs {
   #[arg(long, value_enum, default_value = "table")]
   pub format: Values4,
 }
@@ -988,11 +988,11 @@ pub struct ConfigPresetsArgs {
 pub struct AgentArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct AgentSummaryArgs {
+pub struct SummaryArgs {
   #[command(flatten)]
-  pub sharedFlags72: SharedFlags72,
+  pub formatTextJsonOptionalJsonFlag: FormatTextJsonOptionalJsonFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1013,7 +1013,7 @@ pub struct AgentSessionsArgs {
   #[arg(long, value_enum, default_value = "json")]
   pub format: Values5,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1037,7 +1037,7 @@ pub struct BeepArgs {
   #[arg(long)]
   pub no_wait: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
@@ -1059,21 +1059,21 @@ pub struct BeepRemindAddArgs {
   #[arg(long)]
   pub until: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepRemindListArgs {
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepRemindCancelArgs {
+pub struct CancelArgs {
   #[arg()]
   pub name: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1081,11 +1081,11 @@ pub struct BeepRemindRunArgs {
   #[arg(long)]
   pub once: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct BeepHarnessArgs {}
+pub struct HarnessArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct BeepHarnessListArgs {}
@@ -1097,24 +1097,24 @@ pub struct BeepHarnessGetArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct BeepLaneArgs {}
+pub struct LaneArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneListArgs {
   #[command(flatten)]
-  pub sharedFlags0: SharedFlags0,
+  pub stateFlag: StateFlag,
   #[command(flatten)]
-  pub sharedFlags1: SharedFlags1,
+  pub harnessFlag: HarnessFlag,
   #[command(flatten)]
-  pub sharedFlags2: SharedFlags2,
+  pub allFlag: AllFlag,
   #[command(flatten)]
-  pub sharedFlags3: SharedFlags3,
+  pub jsonFlag: JsonFlag,
   #[command(flatten)]
-  pub sharedFlags4: SharedFlags4,
+  pub noHeaderFlag: NoHeaderFlag,
   #[command(flatten)]
-  pub sharedFlags5: SharedFlags5,
+  pub socketFlag: SocketFlag,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1122,71 +1122,71 @@ pub struct BeepLaneResumeArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneCreateArgs {
   #[command(flatten)]
-  pub sharedFlags7: SharedFlags7,
+  pub branchFlag: BranchFlag,
   #[command(flatten)]
-  pub sharedFlags8: SharedFlags8,
+  pub briefFlag: BriefFlag,
   #[command(flatten)]
-  pub sharedFlags9: SharedFlags9,
+  pub goalFlag: GoalFlag,
   #[command(flatten)]
-  pub sharedFlags10: SharedFlags10,
+  pub moodFlag: MoodFlag,
   #[command(flatten)]
-  pub sharedFlags11: SharedFlags11,
+  pub traceFlag: TraceFlag,
   #[command(flatten)]
-  pub sharedFlags12: SharedFlags12,
+  pub noStartFlag: NoStartFlag,
   #[command(flatten)]
-  pub sharedFlags13: SharedFlags13,
+  pub cwdFlag: CwdFlag,
   #[command(flatten)]
-  pub sharedFlags14: SharedFlags14,
+  pub baseShaFlag: BaseShaFlag,
   #[command(flatten)]
-  pub sharedFlags15: SharedFlags15,
+  pub expectPathFlag: ExpectPathFlag,
   #[command(flatten)]
-  pub sharedFlags16: SharedFlags16,
+  pub expectCommitSubjectFlag: ExpectCommitSubjectFlag,
   #[command(flatten)]
-  pub sharedFlags17: SharedFlags17,
+  pub expectCommitsAtLeastFlag: ExpectCommitsAtLeastFlag,
   #[command(flatten)]
-  pub sharedFlags18: SharedFlags18,
+  pub verifyFlag: VerifyFlag,
   #[command(flatten)]
-  pub sharedFlags19: SharedFlags19,
+  pub envFlag: EnvFlag,
   #[command(flatten)]
-  pub sharedFlags20: SharedFlags20,
+  pub commitPushFlag: CommitPushFlag,
   #[command(flatten)]
-  pub sharedFlags21: SharedFlags21,
+  pub postPrFlag: PostPrFlag,
   #[command(flatten)]
-  pub sharedFlags22: SharedFlags22,
+  pub noPostPrFlag: NoPostPrFlag,
   #[command(flatten)]
-  pub sharedFlags23: SharedFlags23,
+  pub prBaseFlag: PrBaseFlag,
   #[command(flatten)]
-  pub sharedFlags24: SharedFlags24,
+  pub parentFlag: ParentFlag,
   #[command(flatten)]
-  pub sharedFlags25: SharedFlags25,
+  pub onParentDeathFlag: OnParentDeathFlag,
   #[command(flatten)]
-  pub sharedFlags26: SharedFlags26,
+  pub presetFlag: PresetFlag,
   #[command(flatten)]
-  pub sharedFlags27: SharedFlags27,
+  pub variantFlag: VariantFlag,
   #[command(flatten)]
-  pub sharedFlags28: SharedFlags28,
+  pub binFlag: BinFlag,
   #[command(flatten)]
-  pub sharedFlags29: SharedFlags29,
+  pub waitTimeoutFlag: WaitTimeoutFlag,
   #[command(flatten)]
-  pub sharedFlags30: SharedFlags30,
+  pub timeoutFlag: TimeoutFlag,
   #[command(flatten)]
-  pub sharedFlags31: SharedFlags31,
+  pub laneFlag: LaneFlag,
   #[command(flatten)]
-  pub sharedFlags32: SharedFlags32,
+  pub tmuxFlag: TmuxFlag,
   #[command(flatten)]
-  pub sharedFlags33: SharedFlags33,
+  pub socketTmuxSocketToSpawnFlag: SocketTmuxSocketToSpawnFlag,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
   #[command(flatten)]
-  pub sharedFlags34: SharedFlags34,
+  pub dryRunFlag: DryRunFlag,
   #[command(flatten)]
-  pub sharedFlags35: SharedFlags35,
+  pub reclaimFlag: ReclaimFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1195,19 +1195,19 @@ pub struct BeepLaneReviveArgs {
   #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
-  pub sharedFlags36: SharedFlags36,
+  pub deadFlag: DeadFlag,
   #[command(flatten)]
-  pub sharedFlags37: SharedFlags37,
+  pub listFlag: ListFlag,
   #[command(flatten)]
-  pub sharedFlags38: SharedFlags38,
+  pub jsonListAsJSONUncutFlag: JsonListAsJSONUncutFlag,
   #[command(flatten)]
-  pub sharedFlags39: SharedFlags39,
+  pub yesFlag: YesFlag,
   #[command(flatten)]
-  pub sharedFlags40: SharedFlags40,
+  pub sinceFlag: SinceFlag,
   #[command(flatten)]
-  pub sharedFlags41: SharedFlags41,
+  pub socketTmuxSocketThePaneFlag: SocketTmuxSocketThePaneFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1215,9 +1215,9 @@ pub struct BeepLaneGetArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags43: SharedFlags43,
+  pub touchedFlag: TouchedFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1225,7 +1225,7 @@ pub struct BeepLaneWhereArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1233,23 +1233,23 @@ pub struct BeepLanePatchArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags44: SharedFlags44,
+  pub tmuxStringRequiredFlag: TmuxStringRequiredFlag,
   #[command(flatten)]
-  pub sharedFlags45: SharedFlags45,
+  pub harnessStringOptionalFlag: HarnessStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags46: SharedFlags46,
+  pub sessionIdFlag: SessionIdFlag,
   #[command(flatten)]
-  pub sharedFlags47: SharedFlags47,
+  pub cwdStringOptionalFlag: CwdStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags48: SharedFlags48,
+  pub modelFlag: ModelFlag,
   #[command(flatten)]
-  pub sharedFlags49: SharedFlags49,
+  pub modeFlag: ModeFlag,
   #[command(flatten)]
-  pub sharedFlags50: SharedFlags50,
+  pub parentTheLaneThatSummonedFlag: ParentTheLaneThatSummonedFlag,
   #[command(flatten)]
-  pub sharedFlags51: SharedFlags51,
+  pub goalStringOptionalFlag: GoalStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1258,15 +1258,15 @@ pub struct BeepLaneDeleteArgs {
   #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
-  pub sharedFlags52: SharedFlags52,
+  pub routeOnlyFlag: RouteOnlyFlag,
   #[command(flatten)]
-  pub sharedFlags53: SharedFlags53,
+  pub stateBulkDeleteDeadRemovesFlag: StateBulkDeleteDeadRemovesFlag,
   #[command(flatten)]
-  pub sharedFlags54: SharedFlags54,
+  pub dryRunPrintWhatASingleFlag: DryRunPrintWhatASingleFlag,
   #[command(flatten)]
-  pub sharedFlags55: SharedFlags55,
+  pub mergedIntoFlag: MergedIntoFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1274,7 +1274,7 @@ pub struct BeepLaneRmArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1282,7 +1282,7 @@ pub struct BeepLaneKillArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1290,9 +1290,9 @@ pub struct BeepLaneWaitArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags56: SharedFlags56,
+  pub timeoutUint64Optional540Flag: TimeoutUint64Optional540Flag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1300,7 +1300,7 @@ pub struct BeepLaneAttachArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1308,19 +1308,19 @@ pub struct BeepLaneSignalArgs {
   #[arg()]
   pub signal: String,
   #[command(flatten)]
-  pub sharedFlags57: SharedFlags57,
+  pub childrenFlag: ChildrenFlag,
   #[command(flatten)]
-  pub sharedFlags58: SharedFlags58,
+  pub asFlag: AsFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLanePruneArgs {
   #[command(flatten)]
-  pub sharedFlags59: SharedFlags59,
+  pub dryRunPrintWhatWouldBeFlag: DryRunPrintWhatWouldBeFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1328,7 +1328,7 @@ pub struct BeepLaneRouteArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1336,11 +1336,11 @@ pub struct BeepLanePaneArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags60: SharedFlags60,
+  pub linesFlag: LinesFlag,
   #[command(flatten)]
-  pub sharedFlags61: SharedFlags61,
+  pub socketStringOptionalFlag: SocketStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1348,11 +1348,11 @@ pub struct BeepLaneSquaresArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags62: SharedFlags62,
+  pub formatFlag: FormatFlag,
   #[command(flatten)]
-  pub sharedFlags61: SharedFlags61,
+  pub socketStringOptionalFlag: SocketStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
@@ -1363,38 +1363,38 @@ pub struct BeepLaneMessageListArgs {
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags6: SharedFlags6,
+  pub mailDirFlag: MailDirFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneRunArgs {
   #[command(flatten)]
-  pub sharedFlags63: SharedFlags63,
+  pub laneLaneNameRequiredFlag: LaneLaneNameRequiredFlag,
   #[command(flatten)]
-  pub sharedFlags64: SharedFlags64,
+  pub harnessStringRequiredFlag: HarnessStringRequiredFlag,
   #[command(flatten)]
-  pub sharedFlags65: SharedFlags65,
+  pub briefAbsolutePathToTheFlag: BriefAbsolutePathToTheFlag,
   #[command(flatten)]
-  pub sharedFlags48: SharedFlags48,
+  pub modelFlag: ModelFlag,
   #[command(flatten)]
-  pub sharedFlags66: SharedFlags66,
+  pub effortFlag: EffortFlag,
   #[command(flatten)]
-  pub sharedFlags67: SharedFlags67,
+  pub resumeFlag: ResumeFlag,
   #[command(flatten)]
-  pub sharedFlags68: SharedFlags68,
+  pub variantOpencodeReasoningEffortVariantFlag: VariantOpencodeReasoningEffortVariantFlag,
   #[command(flatten)]
-  pub sharedFlags69: SharedFlags69,
+  pub binTheExecutableTheHarnessFlag: BinTheExecutableTheHarnessFlag,
   #[command(flatten)]
-  pub sharedFlags70: SharedFlags70,
+  pub verifyValidationCommandCarriedFromFlag: VerifyValidationCommandCarriedFromFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct BeepAgentArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepAgentWaterfallArgs {
+pub struct WaterfallArgs {
   #[doc = "Inclusive epoch milliseconds, or a duration such as `24h`"]
   #[arg(long = "since", value_name = "MS|DURATION")]
   pub ms_duration: String,
@@ -1435,21 +1435,21 @@ pub struct BeepAgentRegisterArgs {
   #[arg(long)]
   pub worktree: Option<String>,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepAgentDoneArgs {
+pub struct DoneArgs {
   #[arg()]
   pub name: String,
   #[arg(long, default_value_t = 0)]
   pub rc: u64,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepAgentSubscribeArgs {
+pub struct SubscribeArgs {
   #[doc = "A lane, or the `children` / `'*'` alias"]
   #[arg(value_name = "LANE")]
   pub lane: String,
@@ -1457,27 +1457,27 @@ pub struct BeepAgentSubscribeArgs {
   #[arg(long, default_value = "door")]
   pub mode: String,
   #[command(flatten)]
-  pub sharedFlags86: SharedFlags86,
+  pub asTheSubscriberDefaultsToFlag: AsTheSubscriberDefaultsToFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepAgentUnsubscribeArgs {
+pub struct UnsubscribeArgs {
   #[doc = "A lane, or the `children` / `'*'` alias"]
   #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
-  pub sharedFlags86: SharedFlags86,
+  pub asTheSubscriberDefaultsToFlag: AsTheSubscriberDefaultsToFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct BeepMessageArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepMessageAckArgs {
+pub struct AckArgs {
   #[arg(long, value_name = "LANE")]
   pub lane: Option<String>,
   #[arg(long)]
@@ -1487,11 +1487,11 @@ pub struct BeepMessageAckArgs {
   #[arg(long, default_value_t = 7)]
   pub max_age_days: u64,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepForkArgs {
+pub struct ForkArgs {
   #[doc = "`comment_id` in `agent_turn_comment`. Required by the bare spawn spelling `boop beep fork <id>`; `join` and `diff` take their own"]
   #[arg()]
   pub comment: Option<String>,
@@ -1505,21 +1505,21 @@ pub struct BeepForkArgs {
   #[arg(long)]
   pub cwd: Option<String>,
   #[command(flatten)]
-  pub sharedFlags24: SharedFlags24,
+  pub parentFlag: ParentFlag,
   #[doc = "Print the brief path and the lane's `cmd:` line without spawning"]
   #[arg(long)]
   pub dry_run: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepForkJoinArgs {
+pub struct JoinArgs {
   #[doc = "`comment_id` in `agent_turn_comment`"]
   #[arg()]
   pub comment: String,
   #[command(flatten)]
-  pub sharedFlags87: SharedFlags87,
+  pub laneTheForkedLaneWhenFlag: LaneTheForkedLaneWhenFlag,
   #[doc = "Skip the merge; only write and deliver the reply"]
   #[arg(long)]
   pub no_merge: bool,
@@ -1530,25 +1530,25 @@ pub struct BeepForkJoinArgs {
   #[arg(long)]
   pub dry_run: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepForkDiffArgs {
+pub struct DiffArgs {
   #[doc = "`comment_id` in `agent_turn_comment`"]
   #[arg()]
   pub comment: String,
   #[command(flatten)]
-  pub sharedFlags87: SharedFlags87,
+  pub laneTheForkedLaneWhenFlag: LaneTheForkedLaneWhenFlag,
   #[doc = "Print `--stat` instead of the full diff"]
   #[arg(long)]
   pub stat: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepPasteArgs {
+pub struct PasteArgs {
   #[doc = "The file to paste"]
   #[arg()]
   pub path: String,
@@ -1565,35 +1565,35 @@ pub struct BeepPasteArgs {
   #[arg(long)]
   pub as_path: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepPsArgs {
+pub struct PsArgs {
   #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[doc = "Include dead routes (no live process behind the pane)"]
   #[arg(long)]
   pub all: bool,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepPstreeArgs {
+pub struct PstreeArgs {
   #[doc = "Include dead lanes; default is live-only"]
   #[arg(long)]
   pub all: bool,
   #[arg(long, value_enum, default_value = "text")]
   pub format: Values7,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepSelectionArgs {
+pub struct SelectionArgs {
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
@@ -1608,7 +1608,7 @@ pub struct BeepSelectionSetArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepSelectionFocusArgs {
+pub struct FocusArgs {
   #[arg()]
   pub target: String,
   #[arg(long)]
@@ -1616,10 +1616,10 @@ pub struct BeepSelectionFocusArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct BeepSelectionClearArgs {}
+pub struct ClearArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepShoutArgs {
+pub struct ShoutArgs {
   #[doc = "The message; omitted sends \"stahp what ur doing please\""]
   #[arg()]
   pub body: Option<String>,
@@ -1630,49 +1630,49 @@ pub struct BeepShoutArgs {
   #[arg(long)]
   pub to: Option<String>,
   #[command(flatten)]
-  pub sharedFlags88: SharedFlags88,
+  pub asWhoTheRowsAreFlag: AsWhoTheRowsAreFlag,
   #[doc = "The mail kind the rows wear"]
   #[arg(long, default_value = "hail")]
   pub kind: String,
   #[command(flatten)]
-  pub sharedFlags89: SharedFlags89,
+  pub verboseFlag: VerboseFlag,
   #[command(flatten)]
-  pub sharedFlags90: SharedFlags90,
+  pub jsonPrintOneJSONResultFlag: JsonPrintOneJSONResultFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct BeepScreamArgs {
+pub struct ScreamArgs {
   #[doc = "The message; omitted sends \"stop what ur doing check ps\""]
   #[arg()]
   pub body: Option<String>,
   #[command(flatten)]
-  pub sharedFlags88: SharedFlags88,
+  pub asWhoTheRowsAreFlag: AsWhoTheRowsAreFlag,
   #[command(flatten)]
-  pub sharedFlags89: SharedFlags89,
+  pub verboseFlag: VerboseFlag,
   #[command(flatten)]
-  pub sharedFlags90: SharedFlags90,
+  pub jsonPrintOneJSONResultFlag: JsonPrintOneJSONResultFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
 pub struct InboxArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct InboxDrainArgs {
+pub struct DrainArgs {
   #[doc = "Whose inbox to drain; defaults to the identity ladder's answer"]
   #[arg(long = "as")]
   pub name: Option<String>,
   #[command(flatten)]
-  pub sharedFlags71: SharedFlags71,
+  pub hookFlag: HookFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct InboxHooksArgs {
+pub struct HooksArgs {
   #[arg(long)]
   pub name: String,
   #[doc = "The project whose settings carry the hooks; defaults to this dir"]
@@ -1708,11 +1708,11 @@ pub struct TagAddArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct TagRecentArgs {
+pub struct RecentArgs {
   #[arg(long, default_value_t = 5, short = 'n')]
   pub limit: u64,
   #[command(flatten)]
-  pub sharedFlags91: SharedFlags91,
+  pub formatTextJsonOptionalTextFlag: FormatTextJsonOptionalTextFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
@@ -1722,31 +1722,31 @@ pub struct TagSearchArgs {
   #[arg(long, default_value_t = 20, short = 'n')]
   pub limit: u64,
   #[command(flatten)]
-  pub sharedFlags91: SharedFlags91,
+  pub formatTextJsonOptionalTextFlag: FormatTextJsonOptionalTextFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct TagListArgs {
   #[command(flatten)]
-  pub sharedFlags91: SharedFlags91,
+  pub formatTextJsonOptionalTextFlag: FormatTextJsonOptionalTextFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct TagOfArgs {
+pub struct OfArgs {
   #[arg()]
   pub source: String,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct TagForArgs {
+pub struct ForArgs {
   #[arg(required = true)]
   pub source: Vec<String>,
   #[command(flatten)]
-  pub sharedFlags91: SharedFlags91,
+  pub formatTextJsonOptionalTextFlag: FormatTextJsonOptionalTextFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
-pub struct TagSourcesArgs {
+pub struct SourcesArgs {
   #[arg()]
   pub tag: String,
 }
@@ -1760,7 +1760,7 @@ pub struct TagRmArgs {
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize, Default)]
-pub struct TagBackfillArgs {}
+pub struct BackfillArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct TuiArgs {
@@ -1777,9 +1777,9 @@ pub struct TuiArgs {
   #[arg(long)]
   pub name: Option<String>,
   #[command(flatten)]
-  pub sharedFlags47: SharedFlags47,
+  pub cwdStringOptionalFlag: CwdStringOptionalFlag,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
   #[doc = "Submit once the native composer is ready (requires tmux)"]
   #[arg(long)]
   pub initial_prompt: Option<String>,
@@ -1803,16 +1803,16 @@ pub struct WaitArgs {
   #[arg(long, default_value_t = 540)]
   pub wait_timeout: u64,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct WhoamiArgs {
   #[command(flatten)]
-  pub sharedFlags85: SharedFlags85,
+  pub jsonBooleanOptionalFlag: JsonBooleanOptionalFlag,
   #[doc = "Who is calling. The first rung; `--from` is the same flag"]
   #[arg(long = "as")]
   pub name: Option<String>,
   #[command(flatten)]
-  pub sharedFlags42: SharedFlags42,
+  pub mailDirStringOptionalFlag: MailDirStringOptionalFlag,
 }
