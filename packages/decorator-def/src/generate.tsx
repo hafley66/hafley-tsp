@@ -27,20 +27,20 @@ function tsType(type: string): string {
 
 function TspDoc(props: { doc?: string; params?: ParamSpec[]; }) {
   if (!props.doc) return null;
-  return <>
-    {"/**"}{"\n"}
-    {" * "}{props.doc}{"\n"}
-    {props.params?.filter(p => p.doc).map(p =>
-      <>{" * @param "}{p.name}{" "}{p.doc}{"\n"}</>
-    )}
-    {" */"}
-  </>;
+  // Arrays instead of fragments: tsc's react-jsx output imports Fragment,
+  // which @alloy-js/core/jsx-runtime does not export.
+  return [
+    "/**", "\n",
+    " * ", props.doc, "\n",
+    props.params?.filter(p => p.doc).map(p => [" * @param ", p.name, " ", p.doc, "\n"]),
+    " */",
+  ];
 }
 
 function TspParam(props: { param: ParamSpec }) {
   const p = props.param;
   const opt = p.optional ? "?" : "";
-  return <>{p.name}{opt}: valueof {p.type}</>;
+  return [p.name, opt, ": valueof ", p.type];
 }
 
 function TspDeclarator(props: { dec: DecoratorSpec }) {
@@ -57,7 +57,7 @@ function TspDeclarator(props: { dec: DecoratorSpec }) {
     ? `/**\n * ${dec.doc}\n */\n`
     : "";
 
-  return <>{doc}extern dec {dec.name}({params.join(", ")});</>;
+  return [doc, "extern dec ", dec.name, "(", params.join(", "), ");"];
 }
 
 function TspFile(props: { spec: LibrarySpec }) {
@@ -70,8 +70,8 @@ function TspFile(props: { spec: LibrarySpec }) {
   return (
     <SourceFile path="decorators.tsp" filetype="tsp">
       {lines.join("\n")}
-      <For each={props.spec.decorators} joiner={<>{"\n"}</>}>
-        {(dec: DecoratorSpec) => <>{"\n"}<TspDeclarator dec={dec} /></>}
+      <For each={props.spec.decorators} joiner={"\n"}>
+        {(dec: DecoratorSpec) => ["\n", <TspDeclarator dec={dec} />]}
       </For>
       {"\n"}
     </SourceFile>
@@ -120,7 +120,7 @@ function TsStateInterfaces(props: { decorators: DecoratorSpec[] }) {
     return `export interface ${name} {\n${fields}\n}`;
   });
 
-  return <>{blocks.join("\n")}{"\n"}</>;
+  return [blocks.join("\n"), "\n"];
 }
 
 function TsConflictHandlers(props: { decorators: DecoratorSpec[] }) {
@@ -135,7 +135,7 @@ function TsConflictHandlers(props: { decorators: DecoratorSpec[] }) {
     `  reportDiagnostic(program, { code: "duplicate-${k}", format: { name }, target });\n}`
   );
 
-  return <>{"\n"}{handlers.join("\n")}{"\n"}</>;
+  return ["\n", handlers.join("\n"), "\n"];
 }
 
 function TsExclusiveGetters(props: { decorators: DecoratorSpec[] }) {
@@ -156,7 +156,7 @@ function TsExclusiveGetters(props: { decorators: DecoratorSpec[] }) {
     lines.push(`export const get${name} = _${decs[0].name}.get as (program: Program, target: Type) => ${name} | undefined;`);
   }
 
-  return <>{"\n"}{lines.join("\n")}{"\n"}</>;
+  return ["\n", lines.join("\n"), "\n"];
 }
 
 function TsFile(props: { spec: LibrarySpec; stateKeys: string }) {
