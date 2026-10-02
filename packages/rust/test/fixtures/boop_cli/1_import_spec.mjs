@@ -61,6 +61,7 @@ const emit = (path, indent = "") => {
   if (path.length) out += `${indent}@route(${JSON.stringify("/" + path.at(-1))})\n${indent}namespace ${ident(field(path.at(-1)))} {\n`;
   const pad = indent + (path.length ? "  " : "");
   out += doc(c.about, pad);
+  if (c.text.includes(`\n       boop ${path.join(" ")} <COMMAND>`)) out += `${pad}@extension("x-clap-args-conflicts-with-subcommands", true)\n`;
   const parent = records.find(r => r.c.path.join("/") === path.slice(0, -1).join("/"))?.c;
   if (path.length && !parent.subcommands.some(v => v.name === path.at(-1))) out += `${pad}@extension("x-clap-hidden", true)\n`;
   const params = fields.map(f => models.has(f.text) ? `...${models.get(f.text)}` : f.text.trim().replace(/;$/, "")).map(f => f.split("\n").map(line => pad + "  " + line).join("\n"));

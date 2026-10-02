@@ -255,7 +255,7 @@ pub enum MailCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
+#[command(subcommand_negates_reqs = true, args_conflicts_with_subcommands = true)]
 pub struct DbCommand {
   #[command(flatten)]
   pub args: DbArgs,#[command(subcommand)]
@@ -435,7 +435,7 @@ pub enum DbEdgeCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
+#[command(subcommand_negates_reqs = true, args_conflicts_with_subcommands = true)]
 pub struct DbUsageCommand {
   #[command(flatten)]
   pub args: DbUsageArgs,#[command(subcommand)]
@@ -559,7 +559,7 @@ pub enum AgentCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
+#[command(subcommand_negates_reqs = true, args_conflicts_with_subcommands = true)]
 pub struct BeepCommand {
   #[command(flatten)]
   pub args: BeepArgs,#[command(subcommand)]
@@ -718,7 +718,7 @@ pub enum BeepMessageCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
+#[command(subcommand_negates_reqs = true, args_conflicts_with_subcommands = true)]
 pub struct BeepForkCommand {
   #[command(flatten)]
   pub args: BeepForkArgs,#[command(subcommand)]

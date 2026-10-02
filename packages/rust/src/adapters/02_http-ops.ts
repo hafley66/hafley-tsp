@@ -62,6 +62,7 @@ function operationDef(program: Program, http: HttpOperation, daemon: boolean): O
   const clap = getClapOperation(program, http.operation);
   return {
     name: http.operation.name,
+    ...(getExtensions(program, http.operation).get("x-clap-args-conflicts-with-subcommands") === true ? { argsConflictsWithSubcommands: true } : {}),
     ...(getExtensions(program, http.operation).get("x-clap-hidden") === true ? { hidden: true } : {}),
     ...(doc !== undefined ? { doc } : {}),
     ...(clap?.afterHelp ? { afterHelp: clap.afterHelp } : {}),

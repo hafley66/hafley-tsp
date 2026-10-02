@@ -97,6 +97,7 @@ export type HttpVerb = "get" | "post" | "put" | "patch" | "delete" | "head";
 export interface OperationDef {
   name: string;
   hidden?: boolean;
+  argsConflictsWithSubcommands?: boolean;
   doc?: string;
   afterHelp?: string;
   requiredOneOf?: string[];

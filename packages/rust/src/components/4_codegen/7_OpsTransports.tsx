@@ -153,7 +153,7 @@ function ownsArgs(node: CliNode): boolean {
 
 function cliGroups(node: CliNode): Children[] {
   return [...node.children.values()].flatMap(child => child.children.size ? [
-    <StructDeclaration name={child.commandName} refkey={child.commandKey} derive={["clap::Args", "Debug"]} attrs={ownsArgs(child) ? ["command(subcommand_negates_reqs = true)"] : undefined}>
+    <StructDeclaration name={child.commandName} refkey={child.commandKey} derive={["clap::Args", "Debug"]} attrs={ownsArgs(child) ? [`command(subcommand_negates_reqs = true${child.plan?.op.argsConflictsWithSubcommands ? ", args_conflicts_with_subcommands = true" : ""})`] : undefined}>
       {ownsArgs(child) && <StructField name="args" type={child.plan!.argsKey} attrs={["command(flatten)"]} />}
       <StructField name="cmd" type={ownsArgs(child) ? <>Option{"<"}{child.key}{">"}</> : child.key} attrs={["command(subcommand)"]} />
     </StructDeclaration>,

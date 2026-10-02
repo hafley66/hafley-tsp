@@ -1108,6 +1108,7 @@ namespace db {
   /**
    * Run raw SQL read-only against the store (the default `db` form), or read/count what agents did through a `db` subcommand
    */
+  @extension("x-clap-args-conflicts-with-subcommands", true)
   @route("/{positional_sql}")
   @post
   op db(
@@ -1481,6 +1482,7 @@ namespace db {
     /**
      * Tokens and cost. A totals report the passthrough powers, and a parent of the row computations blocks and burn-rate; clap needs both attributes to accept the two forms
      */
+    @extension("x-clap-args-conflicts-with-subcommands", true)
     @route("/")
     @post
     op db_usage(
@@ -2068,6 +2070,7 @@ namespace beep {
    * 
    * `boop beep <route> <body>` is the one send. `<route>` is a lane, a coordinator, a native, `parent` (the caller's own parent edge) or `children` (every live child of the caller).
    */
+  @extension("x-clap-args-conflicts-with-subcommands", true)
   @extension("x-clap-hidden", true)
   @route("/{positional_route}/{positional_body}")
   @post
@@ -2754,6 +2757,7 @@ namespace beep {
     /**
      * Fork a lane off a stored terminal comment: the quoted turns and the note become the brief, the lane runs on `--preset` from the caller's repo, and the link is kept in `agent_turn_comment_fork`. The `join` and `diff` verbs bring the fork back
      */
+    @extension("x-clap-args-conflicts-with-subcommands", true)
     @route("/{positional_comment}")
     @post
     op beep_fork(
