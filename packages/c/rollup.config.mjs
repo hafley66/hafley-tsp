@@ -43,6 +43,7 @@ export default {
     "fs",
     "path",
     "node:fs",
+    "node:crypto",
     "node:path",
   ],
   plugins: [

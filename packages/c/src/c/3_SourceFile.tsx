@@ -28,11 +28,12 @@ export function Reference(props: { refkey: Refkey }) {
   });
 }
 
-export function SourceFile(props: { path: string; children?: Children }) {
+export function SourceFile(props: { path: string; preamble?: Children; children?: Children }) {
   const scope = createScope(CFileScope, props.path, useScope() as CScope);
   return <NamePolicyContext.Provider value={createCNamePolicy()}>
     <CoreSourceFile path={props.path} filetype="c" reference={Reference}>
       <Scope value={scope}>
+        {props.preamble}
         {computed(() => [...scope.includes].sort().map(path => `#include "${path}"\n`).join(""))}
         {props.children}
       </Scope>

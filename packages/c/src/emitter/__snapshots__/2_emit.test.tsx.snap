@@ -1,0 +1,286 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`emits scalars, structs, string tables, tagged unions and vtables 1`] = `
+[
+  {
+    "contents": "#pragma once
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <mimalloc.h>
+
+typedef int64_t Id;
+",
+    "path": "Probe/Id_auto.h",
+  },
+  {
+    "contents": "#include "Id_auto.h"
+#include <string.h>
+
+",
+    "path": "Probe/Id_auto.c",
+  },
+  {
+    "contents": "#pragma once
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <mimalloc.h>
+
+typedef char * Label;
+",
+    "path": "Probe/Label_auto.h",
+  },
+  {
+    "contents": "#include "Label_auto.h"
+#include <string.h>
+
+",
+    "path": "Probe/Label_auto.c",
+  },
+  {
+    "contents": "#pragma once
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <mimalloc.h>
+
+typedef enum State {
+  State_active,
+  State_inactive
+} State;
+const char *State_to_string(State value);
+State *State_from_string(mi_heap_t *arena, const char *text);
+typedef struct State_cases {
+  void (*active)(void *context);
+  void (*inactive)(void *context);
+} State_cases;
+#define State_cases_init(active, inactive) ((State_cases){ active, inactive })
+void State_match(State value, void *context, const State_cases *cases);
+",
+    "path": "Probe/State_auto.h",
+  },
+  {
+    "contents": "#include "State_auto.h"
+#include <string.h>
+
+static const struct { State value; const char *text; } State_strings[] = {
+  { State_active, "active" },
+  { State_inactive, "inactive" },
+};
+
+const char *State_to_string(State value) {
+  for (size_t i = 0; i < sizeof(State_strings) / sizeof(State_strings[0]); ++i) {
+    if (State_strings[i].value == value) return State_strings[i].text;
+  }
+  return NULL;
+}
+
+State *State_from_string(mi_heap_t *arena, const char *text) {
+  if (!arena || !text) return NULL;
+  for (size_t i = 0; i < sizeof(State_strings) / sizeof(State_strings[0]); ++i) {
+    if (strcmp(State_strings[i].text, text) == 0) {
+      State *out = mi_heap_malloc(arena, sizeof(*out));
+      if (out) *out = State_strings[i].value;
+      return out;
+    }
+  }
+  return NULL;
+}
+
+void State_match(State value, void *context, const State_cases *cases) {
+  switch (value) {
+    case State_active: cases->active(context); return;
+    case State_inactive: cases->inactive(context); return;
+  }
+}
+",
+    "path": "Probe/State_auto.c",
+  },
+  {
+    "contents": "#pragma once
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <mimalloc.h>
+
+typedef struct Item Item;
+#include "Id_auto.h"
+#include "Label_auto.h"
+#include "State_auto.h"
+struct Item {
+  Id id;
+  Label label;
+  State state;
+  bool has_note;
+  char * note;
+};
+Item *Item_create(mi_heap_t *arena, const Item *input);
+",
+    "path": "Probe/Item_auto.h",
+  },
+  {
+    "contents": "#include "Item_auto.h"
+#include <string.h>
+
+Item *Item_create(mi_heap_t *arena, const Item *input) {
+  if (!arena || !input) return NULL;
+  Item *out = mi_heap_zalloc(arena, sizeof(*out));
+  if (!out) return NULL;
+  out->id = input->id;
+  out->label = input->label ? mi_heap_strdup(arena, input->label) : NULL;
+  out->state = input->state;
+  out->has_note = input->has_note;
+  if (input->has_note) out->note = input->note ? mi_heap_strdup(arena, input->note) : NULL;
+  return out;
+}
+",
+    "path": "Probe/Item_auto.c",
+  },
+  {
+    "contents": "#pragma once
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <mimalloc.h>
+
+typedef struct Result Result;
+#include "Item_auto.h"
+typedef enum Result_tag {
+  Result_tag_item,
+  Result_tag_text,
+  Result_tag_count,
+  Result_tag_empty
+} Result_tag;
+typedef union Result_value {
+  Item * item;
+  char * text;
+  int64_t count;
+  unsigned char empty;
+} Result_value;
+struct Result {
+  Result_tag tag;
+  Result_value value;
+};
+const char *Result_tag_to_string(Result_tag tag);
+Result *Result_parse(mi_heap_t *arena, const char *tag, const Result_value *value);
+Result *Result_create(mi_heap_t *arena, const Result *input);
+Result *Result_create_item(mi_heap_t *arena, Item * value);
+Result *Result_create_text(mi_heap_t *arena, char * value);
+Result *Result_create_count(mi_heap_t *arena, int64_t value);
+Result *Result_create_empty(mi_heap_t *arena);
+typedef struct Result_cases {
+  void (*item)(void *context, Item * value);
+  void (*text)(void *context, char * value);
+  void (*count)(void *context, int64_t value);
+  void (*empty)(void *context);
+} Result_cases;
+#define Result_cases_init(item, text, count, empty) ((Result_cases){ item, text, count, empty })
+void Result_match(const Result *input, void *context, const Result_cases *cases);
+",
+    "path": "Probe/Result_auto.h",
+  },
+  {
+    "contents": "#include "Item_auto.h"
+#include "Result_auto.h"
+#include <string.h>
+
+const char *Result_tag_to_string(Result_tag tag) {
+  switch (tag) {
+    case Result_tag_item: return "item";
+    case Result_tag_text: return "text";
+    case Result_tag_count: return "count";
+    case Result_tag_empty: return "empty";
+  }
+  return NULL;
+}
+
+Result *Result_create(mi_heap_t *arena, const Result *input) {
+  if (!arena || !input) return NULL;
+  Result *out = mi_heap_zalloc(arena, sizeof(*out));
+  if (!out) return NULL;
+  out->tag = input->tag;
+  switch (input->tag) {
+    case Result_tag_item: out->value.item = Item_create(arena, input->value.item); break;
+    case Result_tag_text: out->value.text = input->value.text ? mi_heap_strdup(arena, input->value.text) : NULL; break;
+    case Result_tag_count: out->value.count = input->value.count; break;
+    case Result_tag_empty: out->value.empty = 0; break;
+    default: return NULL;
+  }
+  return out;
+}
+
+Result *Result_parse(mi_heap_t *arena, const char *tag, const Result_value *value) {
+  if (!arena || !tag || !value) return NULL;
+  Result input = {0};
+  if (strcmp(tag, "item") == 0) input.tag = Result_tag_item;
+  else if (strcmp(tag, "text") == 0) input.tag = Result_tag_text;
+  else if (strcmp(tag, "count") == 0) input.tag = Result_tag_count;
+  else if (strcmp(tag, "empty") == 0) input.tag = Result_tag_empty;
+  else return NULL;
+  input.value = *value;
+  return Result_create(arena, &input);
+}
+
+Result *Result_create_item(mi_heap_t *arena, Item * value) {
+  Result_value payload = { .item = value };
+  return Result_parse(arena, "item", &payload);
+}
+
+Result *Result_create_text(mi_heap_t *arena, char * value) {
+  Result_value payload = { .text = value };
+  return Result_parse(arena, "text", &payload);
+}
+
+Result *Result_create_count(mi_heap_t *arena, int64_t value) {
+  Result_value payload = { .count = value };
+  return Result_parse(arena, "count", &payload);
+}
+
+Result *Result_create_empty(mi_heap_t *arena) {
+  Result_value payload = { .empty = 0 };
+  return Result_parse(arena, "empty", &payload);
+}
+
+void Result_match(const Result *input, void *context, const Result_cases *cases) {
+  switch (input->tag) {
+    case Result_tag_item: cases->item(context, input->value.item); return;
+    case Result_tag_text: cases->text(context, input->value.text); return;
+    case Result_tag_count: cases->count(context, input->value.count); return;
+    case Result_tag_empty: cases->empty(context); return;
+  }
+}
+",
+    "path": "Probe/Result_auto.c",
+  },
+  {
+    "contents": "#pragma once
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <mimalloc.h>
+
+typedef struct Store Store;
+#include "Id_auto.h"
+#include "Item_auto.h"
+struct Store {
+  Item * (*read)(void * self, mi_heap_t * arena, Id id);
+  int64_t (*count)(void * self, mi_heap_t * arena);
+};
+Store Store_create(mi_heap_t *arena, const Store *input);
+",
+    "path": "Probe/Store_auto.h",
+  },
+  {
+    "contents": "#include "Store_auto.h"
+#include <string.h>
+
+Store Store_create(mi_heap_t *arena, const Store *input) {
+  (void)arena;
+  return input ? *input : (Store){0};
+}
+",
+    "path": "Probe/Store_auto.c",
+  },
+]
+`;
