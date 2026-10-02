@@ -1,12 +1,12 @@
 import { Output, Scope, createScope, render, type Children } from "@alloy-js/core";
-import { type Program, type Type, type UnionVariant } from "@typespec/compiler";
+import { type Model, type Program, type Type, type UnionVariant } from "@typespec/compiler";
 import { cIdentifier, assertDistinctIdentifiers, createCNamePolicy } from "../c/0_name-policy.js";
 import { CScope } from "../c/1_scope.js";
 import { SourceFile } from "../c/3_SourceFile.js";
 import { EnumSpecifier, Enumerator, EnumeratorList, FieldDeclaration, FieldDeclarationList, FieldIdentifier, FunctionDeclarator, ParameterDeclaration, ParameterList, ParenthesizedDeclarator, PointerDeclarator, StructSpecifier, TypeDefinition } from "../gen/0_nodes.js";
 import { WireFiles } from "./5_wire.js";
-import { declarations, pathOf, type Declaration } from "./0_types.js";
-import { copyValue, fieldsOf, isString, keyOf, typeOf, nullableInner, inlineCollection, collectionFields, copyCollection } from "./1_type_map.js";
+import { declarations, nameOf, pathOf, symbolOf, type Declaration } from "./0_types.js";
+import { copyValue, fieldsOf, isString, keyOf, typeOf, nullableInner, inlineCollection, collectionFields, copyCollection, copyTuple } from "./1_type_map.js";
 
 export interface CFile { path: string; contents: string; }
 const line = (children: Children) => <>{children}<hbr /></>;
@@ -22,24 +22,35 @@ function enumDecl(name: string, members: { name: string; value?: number }[]): Ch
   </EnumeratorList>} />} />;
 }
 function structDecl(type: Declaration, fields: Children[]): Children {
-  return <><StructSpecifier name={<>{cIdentifier(type.name!)}</>} body={<FieldDeclarationList>{fields.length ? fields : <FieldDeclaration type="unsigned char" declarator="_empty" />}</FieldDeclarationList>} />;</>;
+  return <><StructSpecifier name={<>{symbolOf(type)}</>} body={<FieldDeclarationList>{fields.length ? fields : <FieldDeclaration type="unsigned char" declarator="_empty" />}</FieldDeclarationList>} />;</>;
 }
 function variants(type: Extract<Declaration, { kind: "Union" }>): UnionVariant[] {
   return [...type.variants.values()].map(v => {
-    if (typeof v.name !== "string") throw new Error(`Union ${cIdentifier(type.name!)} requires named variants`);
+    if (typeof v.name !== "string") throw new Error(`Union ${symbolOf(type)} requires named variants`);
     return v;
   });
+}
+
+// Interface signatures name each inline collection by its site:
+// <Interface>_<op>_result and <Interface>_<op>_<param>.
+function interfaceSlots(type: Extract<Declaration, { kind: "Interface" }>): { name: string; type: Model & { indexer: NonNullable<Model["indexer"]> } }[] {
+  const base = symbolOf(type);
+  return [...type.operations.values()].flatMap(op => [
+    ...(inlineCollection(op.returnType) ? [{ name: `${base}_${cIdentifier(op.name)}_result`, type: op.returnType }] : []),
+    ...[...op.parameters.properties.values()].flatMap(p => inlineCollection(p.type) ? [{ name: `${base}_${cIdentifier(op.name)}_${cIdentifier(p.name)}`, type: p.type }] : []),
+  ]);
 }
 
 function needsMemdup(type: Type): boolean {
   const inner = nullableInner(type);
   if (inner) return !isString(inner) && inner.kind !== "Model" && inner.kind !== "Union";
   if (inlineCollection(type)) return needsMemdup(type.indexer.value);
+  if (type.kind === "Tuple") return type.values.some(needsMemdup);
   return false;
 }
 
 function header(program: Program, type: Declaration): Children {
-  const name = cIdentifier(type.name!);
+  const name = symbolOf(type);
   switch (type.kind) {
     case "Scalar":
       if (!type.baseScalar) throw new Error(`Scalar ${name} needs a base scalar`);
@@ -87,14 +98,16 @@ function header(program: Program, type: Declaration): Children {
       </>;
     }
     case "Interface": {
-      return <>{structDecl(type, [...type.operations.values()].map(op => <FieldDeclaration type={typeOf(program, op.returnType)} declarator={
+      const slots = interfaceSlots(type);
+      const slot = (t: Type, site: string) => inlineCollection(t) ? site : typeOf(program, t);
+      return <>{slots.map(s => line(<>typedef struct {"{"} {collectionFields(program, s.type)} {"}"} {s.name};</>))}{structDecl(type, [...type.operations.values()].map(op => <FieldDeclaration type={slot(op.returnType, `${name}_${cIdentifier(op.name)}_result`)} declarator={
         <FunctionDeclarator declarator={<ParenthesizedDeclarator><PointerDeclarator declarator={<FieldIdentifier>{cIdentifier(op.name)}</FieldIdentifier>} /></ParenthesizedDeclarator>} parameters={<ParameterList>
           {[
             <ParameterDeclaration type="void *" declarator="self" />,
             <ParameterDeclaration type="mi_heap_t *" declarator="arena" />,
             ...[...op.parameters.properties.values()].map(p => {
               if (p.optional) throw new Error(`Optional interface parameter: ${name}.${op.name}.${cIdentifier(p.name)}`);
-              return <ParameterDeclaration type={typeOf(program, p.type)} declarator={cIdentifier(p.name)} />;
+              return <ParameterDeclaration type={slot(p.type, `${name}_${cIdentifier(op.name)}_${cIdentifier(p.name)}`)} declarator={cIdentifier(p.name)} />;
             }),
           ]}
         </ParameterList>} />
@@ -103,7 +116,7 @@ function header(program: Program, type: Declaration): Children {
   }
 }
 function implementation(program: Program, type: Declaration): Children {
-  const name = cIdentifier(type.name!);
+  const name = symbolOf(type);
   switch (type.kind) {
     case "Scalar": return "";
     case "Enum": {
@@ -118,16 +131,28 @@ function implementation(program: Program, type: Declaration): Children {
         {"  if (!arena || !input) return NULL;"}<hbr />
         {`  ${name} *out = mi_heap_zalloc(arena, sizeof(*out));`}<hbr />
         {"  if (!out) return NULL;"}<hbr />
-        {fields.map(p => inlineCollection(p.type) ? <>
-          {p.optional && line(`  out->has_${cIdentifier(p.name)} = input->has_${cIdentifier(p.name)};`)}
-          {p.optional && line(`if (input->has_${cIdentifier(p.name)}) {`)}
-          {copyCollection(p.type, `input->${cIdentifier(p.name)}`, `out->${cIdentifier(p.name)}`)}
-          {p.optional && line("}")}
-        </> : <>
-          {p.optional && line(`  out->has_${cIdentifier(p.name)} = input->has_${cIdentifier(p.name)};`)}
-          {"  "}{p.optional ? `if (input->has_${cIdentifier(p.name)}) ` : ""}out-&gt;{cIdentifier(p.name)} = {copyValue(p.type, `input->${cIdentifier(p.name)}`)};<hbr />
-          {needsCopy(p.type) && line(`  if (${p.optional ? `input->has_${cIdentifier(p.name)} && ` : ""}input->${cIdentifier(p.name)} && !out->${cIdentifier(p.name)}) return NULL;`)}
-        </>)}
+        {fields.map(p => {
+          const inner = nullableInner(p.type), id = cIdentifier(p.name);
+          if (inner && inlineCollection(inner)) return <>
+            {p.optional && line(`  out->has_${id} = input->has_${id};`)}
+            {line(`if (${p.optional ? `input->has_${id} && ` : ""}input->${id}) {`)}
+            {line(`out->${id} = mi_heap_zalloc(arena, sizeof(*out->${id}));\nif (!out->${id}) return NULL;`)}
+            {copyCollection(inner, `(*input->${id})`, `(*out->${id})`)}
+            {line("}")}
+          </>;
+          const type = p.type;
+          if (inlineCollection(type) || type.kind === "Tuple") return <>
+            {p.optional && line(`  out->has_${id} = input->has_${id};`)}
+            {p.optional && line(`if (input->has_${id}) {`)}
+            {type.kind === "Tuple" ? copyTuple(type, `input->${id}`, `out->${id}`) : copyCollection(type, `input->${id}`, `out->${id}`)}
+            {p.optional && line("}")}
+          </>;
+          return <>
+            {p.optional && line(`  out->has_${id} = input->has_${id};`)}
+            {"  "}{p.optional ? `if (input->has_${id}) ` : ""}out-&gt;{id} = {copyValue(type, `input->${id}`)};<hbr />
+            {needsCopy(type) && line(`  if (${p.optional ? `input->has_${id} && ` : ""}input->${id} && !out->${id}) return NULL;`)}
+          </>;
+        })}
         {"  return out;"}<hbr />{"}"}<hbr />
       </>;
     }
@@ -171,32 +196,33 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
   const types = declarations(program);
   const policy = createCNamePolicy();
   const symbols = types.flatMap(type => {
-    const name = type.name!;
+    const name = symbolOf(type);
     const names = [name];
     if (type.kind === "Model" || type.kind === "Union" || type.kind === "Interface") names.push(`${name}_create`);
+    if (type.kind === "Interface") names.push(...interfaceSlots(type).map(s => s.name));
     if (type.kind === "Enum") names.push(`${name}_to_string`, `${name}_from_string`, `${name}_cases`, `${name}_cases_init`, `${name}_match`, ...[...type.members.keys()].map(m => `${name}_${m}`));
     if (type.kind === "Union") names.push(`${name}_tag`, `${name}_value`, `${name}_tag_to_string`, `${name}_parse`, `${name}_cases`, `${name}_cases_init`, `${name}_match`, ...variants(type).flatMap(v => [`${name}_tag_${v.name as string}`, `${name}_create_${v.name as string}`]));
     if (options.wire && (type.kind === "Model" || type.kind === "Union")) names.push(...["value", "read", "encode", "decode"].map(suffix => `${name}_json_${suffix}`));
     return names;
   });
   assertDistinctIdentifiers(symbols, "global C symbols");
-  assertDistinctIdentifiers(types.map(t => t.name!), "global C declarations");
+  assertDistinctIdentifiers(types.map(symbolOf), "global C declarations");
   if (new Set(types.map(pathOf)).size !== types.length) throw new Error("C output path collision");
   const namespaces = new Map<object | undefined, string[]>();
   for (const type of types) {
     const names = namespaces.get(type.namespace) ?? [];
-    names.push(type.name!);
+    names.push(nameOf(type));
     namespaces.set(type.namespace, names);
   }
   for (const names of namespaces.values()) assertDistinctIdentifiers(names, "declarations");
   for (const type of types) {
-    policy.getName(type.name!, "type_definition");
+    policy.getName(symbolOf(type), "type_definition");
     const names = type.kind === "Model" ? fieldsOf(type).map(p => p.name) : type.kind === "Enum" ? [...type.members.keys()] : type.kind === "Union" ? variants(type).map(v => v.name as string) : type.kind === "Interface" ? [...type.operations.keys()] : [];
-    assertDistinctIdentifiers(names, type.name!);
+    assertDistinctIdentifiers(names, nameOf(type));
     for (const name of names) policy.getName(name, "field_declaration");
     // Validate eagerly so unsupported types are reported before Alloy renders.
     if (type.kind === "Scalar") {
-      if (!type.baseScalar) throw new Error(`Scalar ${cIdentifier(type.name!)} needs a base scalar`);
+      if (!type.baseScalar) throw new Error(`Scalar ${symbolOf(type)} needs a base scalar`);
       typeOf(program, type.baseScalar);
     }
     if (type.kind === "Model") {
@@ -205,40 +231,38 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
       for (const field of fieldsOf(type)) {
         typeOf(program, field.type);
         for (const name of [field.name, ...(field.optional ? [`has_${field.name}`] : [])]) {
-          if (emitted.has(cIdentifier(name))) throw new Error(`Duplicate C field: ${cIdentifier(type.name!)}.${name}`);
+          if (emitted.has(cIdentifier(name))) throw new Error(`Duplicate C field: ${symbolOf(type)}.${name}`);
           emitted.add(cIdentifier(name));
         }
       }
     }
     if (type.kind === "Union") {
-      if (!type.variants.size) throw new Error(`Empty union: ${cIdentifier(type.name!)}`);
+      if (!type.variants.size) throw new Error(`Empty union: ${symbolOf(type)}`);
       for (const v of variants(type)) if (!isNull(v)) {
         if (inlineCollection(v.type)) throw new Error("Union collection variants require named models");
         typeOf(program, v.type);
       }
     }
     if (type.kind === "Enum") {
-      if (!type.members.size) throw new Error(`Empty enum: ${cIdentifier(type.name!)}`);
+      if (!type.members.size) throw new Error(`Empty enum: ${symbolOf(type)}`);
       let ordinal = 0;
       const ordinals = new Set<number>();
       const strings = new Set<string>();
       for (const member of type.members.values()) {
         const n = typeof member.value === "number" ? member.value : ordinal;
         const text = String(member.value ?? member.name);
-        if (!Number.isInteger(n) || n < -2147483648 || n > 2147483647) throw new Error(`Enum value outside C11 int range: ${cIdentifier(type.name!)}.${member.name}`);
-        if (ordinals.has(n) || strings.has(text)) throw new Error(`Ambiguous enum value: ${cIdentifier(type.name!)}.${member.name}`);
+        if (!Number.isInteger(n) || n < -2147483648 || n > 2147483647) throw new Error(`Enum value outside C11 int range: ${symbolOf(type)}.${member.name}`);
+        if (ordinals.has(n) || strings.has(text)) throw new Error(`Ambiguous enum value: ${symbolOf(type)}.${member.name}`);
         ordinals.add(n); strings.add(text); ordinal = n + 1;
       }
     }
     if (type.kind === "Interface") for (const op of type.operations.values()) {
-      if (inlineCollection(op.returnType)) throw new Error("Interface collections require named models");
-      assertDistinctIdentifiers([...op.parameters.properties.keys()], `${type.name}.${op.name} parameters`);
+      assertDistinctIdentifiers([...op.parameters.properties.keys()], `${nameOf(type)}.${op.name} parameters`);
       typeOf(program,op.returnType);
       for (const param of op.parameters.properties.values()) {
         policy.getName(param.name, "field_declaration");
-        if (param.name === "self" || param.name === "arena") throw new Error(`Reserved C parameter: ${cIdentifier(type.name!)}.${op.name}.${param.name}`);
-        if (param.optional) throw new Error(`Optional interface parameter: ${cIdentifier(type.name!)}.${op.name}.${param.name}`);
-        if (inlineCollection(param.type)) throw new Error("Interface collections require named models");
+        if (param.name === "self" || param.name === "arena") throw new Error(`Reserved C parameter: ${symbolOf(type)}.${op.name}.${param.name}`);
+        if (param.optional) throw new Error(`Optional interface parameter: ${symbolOf(type)}.${op.name}.${param.name}`);
         typeOf(program,param.type);
       }
     }
@@ -250,12 +274,12 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
         <SourceFile path={`${path}_auto.h`} preamble={<>
           {"#pragma once\n#include <stdbool.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <mimalloc.h>\n\n"}
           {(type.kind === "Model" && (type.indexer ? needsMemdup(type.indexer.value) : fieldsOf(type).some(p => needsMemdup(p.type))) || type.kind === "Union" && variants(type).some(v => needsMemdup(v.type))) && "#ifndef ALLOY_C_MEMDUP\n#define ALLOY_C_MEMDUP\n#include <string.h>\nstatic inline void *alloy_c_memdup(mi_heap_t *arena, const void *src, size_t size) {\n  void *out = mi_heap_malloc(arena, size);\n  if (out) memcpy(out, src, size);\n  return out;\n}\n#endif\n"}
-          {(type.kind === "Model" || type.kind === "Union" || type.kind === "Interface") && line(<TypeDefinition declarator={cIdentifier(type.name!)} refkey={keyOf(type)} type={<StructSpecifier name={cIdentifier(type.name!)} />} />)}
+          {(type.kind === "Model" || type.kind === "Union" || type.kind === "Interface") && line(<TypeDefinition declarator={symbolOf(type)} refkey={keyOf(type)} type={<StructSpecifier name={symbolOf(type)} />} />)}
         </>}>
           {header(program,type)}
         </SourceFile>,
         <SourceFile path={`${path}_auto.c`}>
-          {`#include "${cIdentifier(type.name!)}_auto.h"\n#include <string.h>\n\n`}
+          {`#include "${cIdentifier(nameOf(type))}_auto.h"\n#include <string.h>\n\n`}
           {implementation(program,type)}
         </SourceFile>,
       ];

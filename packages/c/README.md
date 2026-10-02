@@ -2,8 +2,11 @@
 
 TypeSpec to C11 declarations, SQLite store APIs, yyjson codecs, and argv dispatch.
 Alloy resolves cross-file type includes; mimalloc owns allocated values.
-C identifiers map hyphens to underscores. Wire, database, and CLI values preserve
-schema spelling. Mapped symbol collisions are emission errors.
+Declaration symbols are namespace-qualified (Boop.User.Tag -> Boop_User_Tag).
+C identifiers map hyphens to underscores, prefix a leading digit with '_', and
+suffix C keywords and std macro names (stdout, errno, ...) with '_'. Wire,
+database, and CLI values preserve schema spelling. Mapped symbol collisions are
+emission errors.
 
 ```ts
 emitC(program);                    // declarations and arena constructors
@@ -41,4 +44,4 @@ macros similarly require one callback per case. Compile manual switches with
 `-Wswitch-enum -Werror` to enforce coverage.
 
 Build, snapshot tests, the separate C fixture gate, and consumer integration
-commands are in [REPORT.md](REPORT.md). This lane ran no build or test gates.
+commands are in [REPORT.md](REPORT.md).

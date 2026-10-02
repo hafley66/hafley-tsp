@@ -1,14 +1,14 @@
 import type { Children } from "@alloy-js/core";
-import type { Model, Program, Scalar, Type } from "@typespec/compiler";
+import type { Model, Namespace, Program, Scalar, Type } from "@typespec/compiler";
 import { cIdentifier } from "../c/0_name-policy.js";
 import { SourceFile } from "../c/3_SourceFile.js";
-import type { Declaration } from "./0_types.js";
+import { isDeclared, symbolOf, type Declaration } from "./0_types.js";
 import { fieldsOf, isString, keyOf, nullableInner, pointerValue, inlineCollection } from "./1_type_map.js";
 import { cString } from "./4_store.js";
 
-function named(type: { name?: string | undefined }): string {
-  if (!type.name) throw new Error("JSON codec needs a named type");
-  return cIdentifier(type.name);
+function named(type: Type): string {
+  if (!isDeclared(type)) throw new Error("JSON codec needs a declared type");
+  return symbolOf(type as { name?: string; namespace?: Namespace });
 }
 
 function scalarName(type: Scalar): string {
@@ -23,14 +23,26 @@ class Codec {
     const inner = nullableInner(type);
     if (inner) return `if (!${value}) ${target} = yyjson_mut_null(doc); else {\n${this.encode(inner, pointerValue(inner) ? value : `(*${value})`, target)}}\n`;
     if (inlineCollection(type)) return this.encodeCollection(type, value, target);
+    if (type.kind === "Tuple") {
+      let code = `${target} = yyjson_mut_arr(doc);\nif (!${target}) return NULL;\n`;
+      type.values.forEach((v, i) => {
+        const item = this.fresh("item");
+        code += `{\nyyjson_mut_val *${item} = NULL;\n${this.encode(v, `${value}._${i}`, item)}if (!${item} || !yyjson_mut_arr_append(${target}, ${item})) return NULL;\n}\n`;
+      });
+      return code;
+    }
     if (type.kind === "Model" || type.kind === "Union") return `${target} = ${named(type)}_json_value(doc, ${value});\n`;
     if (type.kind === "Intrinsic" && type.name === "unknown") {
       const parsed = this.fresh("parsed");
       return `if (!${value}) return NULL;\nyyjson_doc *${parsed} = yyjson_read_opts((char *)(void *)${value}, strlen(${value}), 0, &doc->alc, NULL);\nif (!${parsed}) return NULL;\n${target} = yyjson_val_mut_copy(doc, yyjson_doc_get_root(${parsed}));\n`;
     }
+    if (type.kind === "EnumMember") {
+      const text = this.fresh("text");
+      return `if (${value} != ${named(type.enum)}_${cIdentifier(type.name)}) return NULL;\nconst char *${text} = ${named(type.enum)}_to_string(${value});\nif (!${text}) return NULL;\n${target} = yyjson_mut_strcpy(doc, ${text});\n`;
+    }
     if (type.kind === "Enum") {
       const text = this.fresh("text");
-      return `const char *${text} = ${cIdentifier(type.name)}_to_string(${value});\nif (!${text}) return NULL;\n${target} = yyjson_mut_strcpy(doc, ${text});\n`;
+      return `const char *${text} = ${named(type)}_to_string(${value});\nif (!${text}) return NULL;\n${target} = yyjson_mut_strcpy(doc, ${text});\n`;
     }
     if (isString(type)) return `if (!${value}${type.kind === "String" ? ` || strcmp(${value}, ${cString(type.value)}) != 0` : ""}) return NULL;\n${target} = yyjson_mut_strcpy(doc, ${value});\n`;
     const scalar = type.kind === "Scalar" ? scalarName(type) : type.kind === "Boolean" ? "boolean" : type.kind === "Number" ? "float64" : "";
@@ -45,14 +57,16 @@ class Codec {
       return `if (yyjson_is_null(${source})) ${target} = NULL; else {\n${target} = mi_heap_malloc(arena, sizeof(*${target}));\nif (!${target}) return NULL;\n${this.decode(inner, source, `(*${target})`)}}\n`;
     }
     if (inlineCollection(type)) return this.decodeCollection(type, source, target);
+    if (type.kind === "Tuple") return `if (!yyjson_is_arr(${source}) || yyjson_arr_size(${source}) != ${type.values.length}) return NULL;\n` + type.values.map((v, i) => this.decode(v, `yyjson_arr_get(${source}, ${i})`, `${target}._${i}`)).join("");
     if (type.kind === "Model" || type.kind === "Union") return `${target} = ${named(type)}_json_read(arena, ${source});\nif (!${target}) return NULL;\n`;
     if (type.kind === "Intrinsic" && type.name === "unknown") {
       const allocator = this.fresh("alc");
       return `yyjson_alc ${allocator} = alloy_c_json_allocator(arena);\n${target} = yyjson_val_write_opts(${source}, 0, &${allocator}, NULL, NULL);\nif (!${target}) return NULL;\n`;
     }
+    if (type.kind === "EnumMember") return `${this.decode(type.enum, source, target)}if (${target} != ${named(type.enum)}_${cIdentifier(type.name)}) return NULL;\n`;
     if (type.kind === "Enum") {
       const result = this.fresh("enum_value");
-      return `if (!yyjson_is_str(${source}) || strlen(yyjson_get_str(${source})) != yyjson_get_len(${source})) return NULL;\n${cIdentifier(type.name)} *${result} = ${cIdentifier(type.name)}_from_string(arena, yyjson_get_str(${source}));\nif (!${result}) return NULL;\n${target} = *${result};\n`;
+      return `if (!yyjson_is_str(${source}) || strlen(yyjson_get_str(${source})) != yyjson_get_len(${source})) return NULL;\n${named(type)} *${result} = ${named(type)}_from_string(arena, yyjson_get_str(${source}));\nif (!${result}) return NULL;\n${target} = *${result};\n`;
     }
     if (isString(type)) {
       const literal = type.kind === "String" ? `if (strcmp(yyjson_get_str(${source}), ${cString(type.value)}) != 0) return NULL;\n` : "";

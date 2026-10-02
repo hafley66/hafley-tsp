@@ -9,10 +9,14 @@ belong to the coordinator.
 
 ## Output and naming
 
-C identifiers map only '-' to '_'. String value tables, union tags, JSON
-property keys and CLI option spellings keep their schema spelling. Mapped
-member, field, global declaration/function and output-path collisions are
-emission errors. C keyword identifiers remain errors.
+Declaration symbols are the namespace path and name joined by '_'
+(Boop.User.Tag -> Boop_User_Tag); same-named declarations in different
+namespaces (Route.Rung, Mail.Rung) get distinct symbols. Identifiers map '-'
+to '_', prefix a leading digit with '_', and suffix C11 keywords and std macro
+names (stdin, stdout, stderr, errno, bool, ...) with '_'. String value tables,
+union tags, JSON property keys and CLI option spellings keep their schema
+spelling. Mapped member, field, global declaration/function and output-path
+collisions are emission errors.
 
 | Projection | API | Output |
 |---|---|---|
@@ -133,17 +137,20 @@ long flags, typed dispatch, invalid numbers and undeclared short flags.
 Set C_FIXTURE_OUTPUT to retain inspectable output. Legacy compiler-spawning
 Vitest cases require C_GATE=1; default Vitest runs snapshot/text tests only.
 
-Consumer compile, after reconciling the blockers below, from this lane:
+Consumer compile from this lane. boop2 does not depend on the package, so
+--emit takes the package directory path:
 
 ```bash
-pnpm --dir packages/c exec tsp compile /Users/chrishafley/projects/boop2/.boop-worktrees/c/first-slice/schema/main.tsp --emit @hafley66/alloy-c --option "@hafley66/alloy-c.emitter-output-dir=/Users/chrishafley/projects/boop2/.boop-worktrees/c/first-slice/impl/c/gen"
+pnpm --dir packages/c exec tsp compile /Users/chrishafley/projects/boop2/.boop-worktrees/c/first-slice/schema/main.tsp --emit $PWD/packages/c --option "@hafley66/alloy-c.emitter-output-dir=/Users/chrishafley/projects/boop2/.boop-worktrees/c/first-slice/impl/c/gen"
 ```
 
 The requested main checkout can instead be used as the entry point by replacing
 that schema/main.tsp path with /Users/chrishafley/projects/boop2/schema/main.tsp.
 It has the older flat schema in the inspected working tree. The coordinator
-owns deleting placeholder output before regeneration. Do not treat this
-command as a passing consumer gate on the currently inspected schemas.
+owns deleting placeholder output before regeneration. On the slice schema
+the command emits declarations and wire_auto.{h,c} (814 files). It emits no
+store files (tableFacts finds no SQL entities) and no CLI files (no
+@service HTTP operations).
 The output-dir option is the compiler's standard
 [emitter-output-dir setting](https://typespec.io/docs/emitters/json-schema/reference/emitter/).
 
@@ -155,7 +162,10 @@ make -C impl/c
 BOOP_BIN=$PWD/impl/c/boop bash tests/run.sh tests/1_whoami.bats tests/1a_user.bats
 ```
 
-The 18-case result is pending. No current passing result is claimed.
+Result 2026-10-02: every generated .c compiles under the Makefile flags; the
+link fails on five symbols the deleted placeholders defined and no TypeSpec
+source provides: boop_ddl, cli_parse, json_string, tag_json, favorite_json
+(rows below). The 18 cases do not run until those exist.
 
 ## Consumer facts that cannot be derived
 
@@ -168,7 +178,7 @@ The 18-case result is pending. No current passing result is claimed.
 | Store initialization | runtime checks user_version 40; placeholders include mood seed rows and subset DDL | TypeSpec/SQL facts for schema version, seed content, checks/defaults and the selected subset |
 | Output models | schema/user/3_wire.tsp defines Tag with created_at/last_used_at; Favorite and Identity are placeholder/runtime shapes | Canonical response contracts matching existing JSON and help snapshots |
 | Runtime state | placeholder 0_types_auto.h contains App, Cli and process-local fields | These process-local runtime structs need a manual owner; they are not derivable boundary types |
-| C global names | Phase-1 report records Rung/Confidence under distinct namespaces | Mapping requires unique C symbols; collisions now fail emission rather than reaching the linker |
+| C global names | Route.Rung and Mail.Rung, Turn.Confidence and Harness.Confidence | Resolved: declaration symbols are namespace-qualified |
 
 No C decorators were added to boop2. No table, route, runtime state or help text
 was inferred from the handwritten gen placeholders. Resolving the mismatches
@@ -201,11 +211,16 @@ pointers, primitive arrays and string-keyed records are represented in C.
 Nested collections copy their keys and values recursively. Named collection
 models expose constructors/codecs. unknown is serialized JSON carried by an
 arena-owned string. Cyclic runtime graphs require separate lifetime handling.
-Anonymous models, unsupported scalars, unnamed non-nullable unions, optional
-interface parameters, inline collection union payloads and nullable inline
-collections produce emission errors; use explicit named types for these
-representations. Interface collection signatures likewise require named
-collection models. JSON wire serialization of tagged unions uses tag/value
+Anonymous models are declared under site-derived names: <Owner>_<field>,
+<Union>_<variant>, <Interface>_<op>_<param|result>, <site>_item for collection
+elements, <site>_<n> for tuple members. Tuples are anonymous structs with
+members _0.._n and encode as JSON arrays. Interface inline collections get
+per-site typedefs <Interface>_<op>_<param|result>. Nullable inline collections
+are pointers to their collection struct. bytes, duration, url and date/time
+scalars carry their JSON string text as char *. EnumMember-typed fields use
+the enum type and check the member. Unsupported scalars, unnamed non-nullable
+unions, optional interface parameters, inline collection union payloads and
+nullable tuples with allocated members produce emission errors. JSON wire serialization of tagged unions uses tag/value
 objects; externally tagged or discriminator-specific wire layouts are not
 inferred. CLI output uses validated string values for enums and base C types
 for scalar aliases. Arbitrary model-valued CLI fields flatten through the
