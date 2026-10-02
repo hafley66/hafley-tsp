@@ -1,0 +1,33 @@
+{
+  "name": "@hafley66/alloy-c",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "tspMain": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && rollup -c rollup.config.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@alloy-js/core": "0.23.0-dev.12",
+    "@typespec/compiler": "^1.0.0"
+  },
+  "devDependencies": {
+    "@alloy-js/rollup-plugin": "^0.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup": "^4.60.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.0"
+  }
+}

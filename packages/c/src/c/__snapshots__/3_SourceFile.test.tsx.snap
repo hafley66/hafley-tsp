@@ -1,0 +1,25 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`resolves a later declaration and generates its header include 1`] = `
+{
+  "contents": [
+    {
+      "contents": "#include "Id_auto.h"
+typedef Id Use;
+",
+      "filetype": "c",
+      "kind": "file",
+      "path": "Use_auto.h",
+    },
+    {
+      "contents": "typedef int64_t Id;
+",
+      "filetype": "c",
+      "kind": "file",
+      "path": "Id_auto.h",
+    },
+  ],
+  "kind": "directory",
+  "path": "./",
+}
+`;
