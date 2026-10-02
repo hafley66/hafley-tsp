@@ -3,17 +3,34 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": { "default": "./src/index.ts" }
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./http": {
+      "types": "./src/http/index.ts",
+      "default": "./dist/http/index.js"
+    },
+    "./http/types": {
+      "types": "./src/http/0_types.ts",
+      "default": "./dist/http/0_types.js"
+    }
   },
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest -w"
+    "test:watch": "vitest -w",
+    "build": "tsc -p tsconfig.http.json"
   },
   "dependencies": {
-    "@alloy-js/core": "0.23.0-dev.12"
+    "@alloy-js/core": "0.23.0-dev.12",
+    "@typespec/compiler": "^1.0.0",
+    "@typespec/http": "~1.10.0",
+    "@typespec/openapi": "~1.10.0",
+    "@typespec/streams": "~0.80.0",
+    "@hafley/typespec-decorator-def": "workspace:*"
   },
   "devDependencies": {
     "@alloy-js/rollup-plugin": "^0.1.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "typescript": "^5.8.2"
   }
 }

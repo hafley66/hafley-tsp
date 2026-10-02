@@ -37,6 +37,8 @@ export default {
     "@alloy-js/core",
     "@alloy-js/core/jsx-runtime",
     "@typespec/compiler",
+    "@hafley/emit-helper/http",
+    "@hafley/emit-helper/http/types",
     "@hafley/typespec-sql",
     "@typespec/http",
     "@typespec/streams",

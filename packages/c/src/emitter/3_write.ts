@@ -1,13 +1,15 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { emitFile, getSourceLocation, type EmitContext, type Program } from "@typespec/compiler";
-import { declarations } from "./0_types.js";
+import { emitFile, type EmitContext, type Program } from "@typespec/compiler";
+import { getAllHttpServices } from "@typespec/http";
+import { programToOps } from "@hafley/emit-helper/http";
+import { emitCli } from "./7_cli.js";
 import { emitStore } from "./4_store.js";
 import { emitC, type CFile } from "./2_emit.js";
 
 function preamble(program: Program, files: CFile[]): string {
-  const sources = [...new Set(declarations(program).map(t => getSourceLocation(t).file.path))].sort();
+  const sources = [...program.sourceFiles.keys()].sort();
   const hash = createHash("sha256");
   for (const path of sources) hash.update(path).update(program.sourceFiles.get(path)!.file.text);
   // Include the rendered bodies so generator changes invalidate the fast path.
@@ -39,7 +41,9 @@ export function writeC(program: Program, files: CFile[], outputDir: string): voi
 }
 export async function $onEmit(context: EmitContext): Promise<void> {
   if (context.program.compilerOptions.noEmit || context.program.hasError()) return;
-  const files = [...emitC(context.program, { wire: true }), ...emitStore(context.program)];
+  const [services] = getAllHttpServices(context.program);
+  const cli = services.some(s => s.operations.length) ? emitCli(programToOps(context.program)) : [];
+  const files = [...emitC(context.program, { wire: true }), ...emitStore(context.program), ...cli];
   const prefix = preamble(context.program, files);
   for (const file of files) {
     const path = resolve(context.emitterOutputDir, file.path);

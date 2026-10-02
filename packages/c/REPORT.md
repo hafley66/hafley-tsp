@@ -148,3 +148,32 @@ Named unions currently use `{ "tag": <exact variant name>, "value": <payload> }`
 Embedded NUL strings are rejected because emitted C strings are NUL terminated.
 Integer decoding rejects range overflow; malformed JSON and mismatched kinds
 return NULL. Recursive JSON/model traversal relies on acyclic value graphs.
+
+## CLI library candidates
+
+| Library | License | Integration size | Relevant behavior |
+|---|---|---|---|
+| [getopt_long](https://man.freebsd.org/cgi/man.cgi?query=getopt_long&sektion=3) | Platform libc: BSD on Darwin/BSD; LGPL in glibc | No vendored source or additional library on the slice's Darwin host | Declared long/short options, required values, `--`; process-global parsing state |
+| [cofyc/argparse](https://github.com/cofyc/argparse) | MIT | One C source plus header | Descriptor table, help/usage, callbacks; default help macro introduces a short option |
+| [argtable3](https://github.com/argtable/argtable3) | BSD-3-Clause | Amalgamated C source plus header | Descriptor tables, validation and help generation |
+
+Selected platform `getopt_long`. No argv library vendoring is necessary on
+Darwin. Generated option descriptors assign a short spelling only when the
+shared TypeSpec adapter supplies one; the built-in help option is `--help`.
+Numeric values, enums, required fields, conflicts, requires/requiresAll,
+required-one-of groups and duplicates are checked before dispatch. String maps
+use repeated KEY=VALUE values; arrays accept repeated flags or positional
+values, including configured ASCII delimiters. Scalar aliases use their base
+C argument type. Enum CLI arguments retain validated wire strings.
+`<service>/cli_auto.h/c` exposes root args, per-operation args, a tagged request,
+`<service>_ops`, and parse/dispatch functions. Callback return values are CLI
+exit statuses; handlers own output production. The callback receives typed
+args, root args, self, arena and the stream FILE pointer when declared.
+Parse returns 0 for success, -1 for displayed help, and 2 for argument errors.
+`<service>_ops_init(...)` requires one callback slot per operation.
+
+The HTTP adapters and neutral definitions moved with `git mv` from Rust into
+`packages/emit-helper/src/http/`. The route-tree builder and role classifier
+also moved there. Rust imports/re-exports the shared implementation; C uses
+`programToOps`, `planCliTree`, and `roleOf` from that same package. The helper
+HTTP subpath now has a build script and distributable JS exports.

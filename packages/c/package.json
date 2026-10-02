@@ -22,7 +22,9 @@
   "dependencies": {
     "@alloy-js/core": "0.23.0-dev.12",
     "@typespec/compiler": "^1.0.0",
-    "@hafley/typespec-sql": "workspace:*"
+    "@hafley/typespec-sql": "workspace:*",
+    "@hafley/emit-helper": "workspace:*",
+    "@typespec/http": "~1.10.0"
   },
   "devDependencies": {
     "@alloy-js/rollup-plugin": "^0.1.0",

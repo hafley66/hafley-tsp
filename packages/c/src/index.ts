@@ -6,3 +6,4 @@ export * from "./emitter/0_types.js";
 export * from "./emitter/2_emit.js";
 export * from "./emitter/3_write.js";
 export * from "./emitter/4_store.js";
+export * from "./emitter/7_cli.js";
