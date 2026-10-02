@@ -86,3 +86,16 @@ describe("clap and HTTP field metadata", () => {
     });
   }, 30000);
 });
+
+it("routes build nested enums, drop parameter segments, and dispatch group-local args", () => {
+  const service: ServiceDef = {
+    name: "Tree",
+    operations: [
+      { name: "root", verb: "post", path: "/", params: [{ name: "preset", type: str, source: "query", optional: true }] },
+      { name: "sql", verb: "post", path: "/db", params: [{ name: "sql", type: str, source: "path", optional: true }] },
+      { name: "db_list", verb: "post", path: "/db/session/{session_id}/list", params: [{ name: "session_id", type: str, source: "path" }] },
+      { name: "job_list", verb: "post", path: "/job/list", params: [] },
+    ],
+  };
+  expect(file(emitCrate([], { ops: { service, bin: "tree", http: false } }), "cli_auto.rs")).toMatchSnapshot();
+});

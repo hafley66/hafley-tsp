@@ -158,6 +158,45 @@ export function planOps(service: ServiceDef, registry: RefkeyRegistry, newKey: (
   });
 }
 
+// Insertion order follows the HTTP operation walk. Parameter and query template
+// segments do not introduce commands. A node can own args and child commands.
+export interface CliNode {
+  segment: string;
+  path: string[];
+  variant: string;
+  enumName: string;
+  commandName: string;
+  key: Refkey;
+  commandKey: Refkey;
+  plan?: OpPlan;
+  children: Map<string, CliNode>;
+}
+
+export function planCliTree(plans: OpPlan[], newKey: () => Refkey): CliNode {
+  const node = (segment: string, path: string[]): CliNode => ({
+    segment, path, variant: pascalCase(segment),
+    enumName: path.length ? pascalCase(path.join("_")) + "Cmd" : "Cmd",
+    commandName: pascalCase(path.join("_")) + "Command",
+    key: newKey(), commandKey: newKey(), children: new Map(),
+  });
+  const root = node("", []);
+  for (const plan of plans) {
+    const segments = plan.op.path.replace(/\{[^}]*\}/g, "").split("/").filter(Boolean);
+    let current = root;
+    for (const segment of segments) {
+      let child = current.children.get(segment);
+      if (!child) {
+        child = node(segment, [...current.path, segment]);
+        current.children.set(segment, child);
+      }
+      current = child;
+    }
+    if (current.plan) throw new Error(`Multiple clap operations at /${segments.join("/")}`);
+    current.plan = plan;
+  }
+  return root;
+}
+
 // What the ops add to the domain types tsp-rust already emits: derives and
 // field attrs only. The structs themselves are never re-declared here.
 export interface ModelExtras {

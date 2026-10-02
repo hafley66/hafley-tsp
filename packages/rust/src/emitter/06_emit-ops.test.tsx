@@ -38,18 +38,18 @@ describe("ops -> clap + axum", () => {
       return `${op.verb} ${op.path} ${op.name}(${params.join(", ")}) -> ${ret}`;
     });
     expect(rows.join("\n")).toMatchInlineSnapshot(`
-      "post /fast{?paths,sqlite,lines} fast(paths:query:string[]?, inputs:body:Inputs, sqlite:query:path?, lines:query:boolean?) -> stream TypeEdge
-      post /slow{?paths,sqlite,lines,scip_index,no_checker,scip_timeout} slow(paths:query:string[]?, inputs:body:Inputs, sqlite:query:path?, lines:query:boolean?, scip_index:query:path?, no_checker:query:boolean?, scip_timeout:query:uint64?) -> FactSummary
-      post /scip{?paths,sqlite,lines,scip_index,scip_cache,scip_timeout,indexer,raw,records,occurrence_text,scip_build} scip(paths:query:string[]?, inputs:body:Inputs, sqlite:query:path?, lines:query:boolean?, scip_index:query:path?, scip_cache:query:path?, scip_timeout:query:uint64?, indexer:query:string?, raw:query:boolean?, records:query:string?, occurrence_text:query:boolean?, scip_build:query:boolean?) -> FactSummary
-      post /graph{?paths,callers,uses,from,call_path,type_path,flow_path,sqlite,slow,timeout,at,compare,scip_index,rust_checker,ts_checker,go_checker} graph(paths:query:string[]?, inputs:body:Inputs, callers:query:string?, uses:query:string?, from:query:string?, call_path:query:string?, type_path:query:string?, flow_path:query:string?, sqlite:query:path?, slow:query:boolean?, timeout:query:uint64?=30, at:query:string?, compare:query:string?, scip_index:query:path?, rust_checker:query:boolean?, ts_checker:query:boolean?, go_checker:query:boolean?) -> CallEdge[]
-      post /cleave{?target,dest,list,root,state,drag,commit,verify,text_refs,json} cleave(target:query:string?, dest:query:path?, list:query:path?, root:query:path?, state:query:path?, drag:query:boolean?, commit:query:boolean?, verify:query:string?, text_refs:query:boolean?, json:query:boolean?) -> EditPlan
-      post /move{?old,new,list,root,verify_cwd,state,commit,shim,relocate_mod,verify,text_refs} move(old:query:path?, new:query:path?, list:query:path?, root:query:path[]?, verify_cwd:query:path?, state:query:path?, commit:query:boolean?, shim:query:boolean?, relocate_mod:query:boolean?, verify:query:string?, text_refs:query:boolean?) -> EditPlan
-      post /rename{?target,new,list,root,state,at,commit,text_refs,verify_scip,no_scip_merge,json} rename(target:query:string?, new:query:string?, list:query:path?, root:query:path?, state:query:path?, at:query:uint32?, commit:query:boolean?, text_refs:query:boolean?, verify_scip:query:path?, no_scip_merge:query:boolean?, json:query:boolean?) -> EditPlan
-      post /query{?paths,lang,query,digest,sqlite} query(paths:query:string[]?, inputs:body:Inputs, lang:query:string?, query:query:string, digest:query:string?, sqlite:query:path?) -> FactSummary
-      post /region/{target}/{id}{?generated,apply,state} region(target:path:path, id:path:string, generated:query:path=-, apply:query:boolean?, state:query:path?) -> EditPlan
-      post /watch{?root,patterns,kinds,receipts,once,poll_ms} watch(root:query:path?, patterns:query:string[], kinds:query:string[], receipts:query:path?, once:query:boolean?, poll_ms:query:uint64?=500) -> FactSummary
-      post /diff{?root,from,to,patterns,arms,sqlite} diff(root:query:path?, from:query:string, to:query:string, patterns:query:string[], arms:query:string[], sqlite:query:path?) -> FactSummary
-      post /ingest{?paths,sqlite} ingest(paths:query:path[]?, input:body:stream:TypeEdge, trace:header:string?, sqlite:query:path?) -> FactSummary
+      "post /fast fast(paths:query:string[]?, inputs:body:Inputs, sqlite:query:path?, lines:query:boolean?) -> stream TypeEdge
+      post /slow slow(paths:query:string[]?, inputs:body:Inputs, sqlite:query:path?, lines:query:boolean?, scip_index:query:path?, no_checker:query:boolean?, scip_timeout:query:uint64?) -> FactSummary
+      post /scip scip(paths:query:string[]?, inputs:body:Inputs, sqlite:query:path?, lines:query:boolean?, scip_index:query:path?, scip_cache:query:path?, scip_timeout:query:uint64?, indexer:query:string?, raw:query:boolean?, records:query:string?, occurrence_text:query:boolean?, scip_build:query:boolean?) -> FactSummary
+      post /graph graph(paths:query:string[]?, inputs:body:Inputs, callers:query:string?, uses:query:string?, from:query:string?, call_path:query:string?, type_path:query:string?, flow_path:query:string?, sqlite:query:path?, slow:query:boolean?, timeout:query:uint64?=30, at:query:string?, compare:query:string?, scip_index:query:path?, rust_checker:query:boolean?, ts_checker:query:boolean?, go_checker:query:boolean?) -> CallEdge[]
+      post /cleave cleave(target:query:string?, dest:query:path?, list:query:path?, root:query:path?, state:query:path?, drag:query:boolean?, commit:query:boolean?, verify:query:string?, text_refs:query:boolean?, json:query:boolean?) -> EditPlan
+      post /move move(old:query:path?, new:query:path?, list:query:path?, root:query:path[]?, verify_cwd:query:path?, state:query:path?, commit:query:boolean?, shim:query:boolean?, relocate_mod:query:boolean?, verify:query:string?, text_refs:query:boolean?) -> EditPlan
+      post /rename rename(target:query:string?, new:query:string?, list:query:path?, root:query:path?, state:query:path?, at:query:uint32?, commit:query:boolean?, text_refs:query:boolean?, verify_scip:query:path?, no_scip_merge:query:boolean?, json:query:boolean?) -> EditPlan
+      post /query query(paths:query:string[]?, inputs:body:Inputs, lang:query:string?, query:query:string, digest:query:string?, sqlite:query:path?) -> FactSummary
+      post /region/{target}/{id} region(target:path:path, id:path:string, generated:query:path=-, apply:query:boolean?, state:query:path?) -> EditPlan
+      post /watch watch(root:query:path?, patterns:query:string[], kinds:query:string[], receipts:query:path?, once:query:boolean?, poll_ms:query:uint64?=500) -> FactSummary
+      post /diff diff(root:query:path?, from:query:string, to:query:string, patterns:query:string[], arms:query:string[], sqlite:query:path?) -> FactSummary
+      post /ingest ingest(paths:query:path[]?, input:body:stream:TypeEdge, trace:header:string?, sqlite:query:path?) -> FactSummary
       post /schema schema() -> FactSummary
       post /trail/{runs} trail(runs:path:usize=5) -> FactSummary"
     `);
@@ -57,7 +57,9 @@ describe("ops -> clap + axum", () => {
   });
 
   it("writes models + ops_auto/cli_auto/http_auto and never rewrites the user-owned ops.rs", () => {
+    const before = new Map(readdirSync(join(PARITY, "src"), { recursive: true }).filter(p => p.endsWith(".rs") && p !== "ops.rs").map(p => [p, readFileSync(join(PARITY, "src", p), "utf8")]));
     const written = writeCrate(emitCrate(ops.types, { ops: { service: ops.service, bin: "ryi" } }), join(PARITY, "src"));
+    expect([...before].filter(([p, body]) => readFileSync(join(PARITY, "src", p), "utf8") !== body).map(([p]) => p)).toEqual([]);
     expect(written.join(" ")).toMatchInlineSnapshot(`"models/mod.rs models/file_args.rs models/inputs.rs models/type_edge.rs models/fact_summary.rs models/call_edge.rs models/edit_plan.rs models/type_edge_kind.rs ops_auto.rs cli_auto.rs http_auto.rs lib.rs"`);
     expect(readFileSync(join(PARITY, "src/ops.rs"), "utf8").startsWith("// User-owned")).toBe(true);
     const http = readFileSync(join(PARITY, "src/http_auto.rs"), "utf8");

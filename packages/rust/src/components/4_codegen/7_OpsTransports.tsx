@@ -1,4 +1,4 @@
-import { For, List, type Children, type Refkey } from "@alloy-js/core";
+import { For, List, type Children, type Refkey, refkey } from "@alloy-js/core";
 import { Attributes } from "../0_primitives/1_Attributes.js";
 import { StructDeclaration, StructField, TupleStructDeclaration } from "../1_declarations/0_StructDeclaration.js";
 import { EnumDeclaration } from "../1_declarations/1_EnumDeclaration.js";
@@ -6,7 +6,7 @@ import { TypeAlias } from "../1_declarations/3_TypeAlias.js";
 import { FunctionDeclaration, type FunctionParam } from "../1_declarations/4_FunctionDeclaration.js";
 import { SourceFile } from "../3_files/0_SourceFile.js";
 import { CodegenPair, ImplCall } from "./1_CodegenPair.js";
-import { axumRoutes, httpField, pascalCase, type OpPlan } from "../../emitter/04_ops-plan.js";
+import { axumRoutes, httpField, pascalCase, planCliTree, type CliNode, type OpPlan } from "../../emitter/04_ops-plan.js";
 import type { RefkeyRegistry, RustType } from "../../emitter/01_type-map.js";
 import type { ServiceDef } from "../../emitter/00_types.js";
 
@@ -123,32 +123,71 @@ pub fn request_root() -> std::path::PathBuf {
   );
 }
 
-function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean): Children {
+function cliBody(p: OpPlan): Children {
   const call = <ImplCall fn={p.fn} args={opCallArgs(p, "read_jsonl(&mut *input)")} />;
-  const body = p.returnsStream
-    ? <>write_stream(out, {call})?;</>
-    : p.returns
-      ? <>write_json(out, &amp;{call}?)?;</>
-      : <>{call}?;</>;
+  return p.returnsStream ? <>write_stream(out, {call})?;</> : p.returns ? <>write_json(out, &amp;{call}?)?;</> : <>{call}?;</>;
+}
+
+function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean, pattern?: Children): Children {
+  const body = cliBody(p);
   const empty = p.fields.length === 0;
-  return <>        {optional ? "Some(" : ""}{keys.cmd}::{p.variant}{empty ? "" : "(args)"}{optional ? ")" : ""} =&gt; {"{"} {empty ? "let args = Default::default(); " : ""}{body} {"}"}</>;
+  return <>        {pattern ?? <>{optional ? "Some(" : ""}{keys.cmd}::{p.variant}{empty ? "" : "(args)"}{optional ? ")" : ""}</>} =&gt; {"{"} {empty ? "let args = Default::default(); " : ""}{body} {"}"}</>;
+}
+
+function CliEnum(props: { node: CliNode; rootKey?: Refkey }) {
+  return <EnumDeclaration name={props.node.enumName} refkey={props.rootKey ?? props.node.key} derive={["clap::Subcommand", "Debug"]}>
+    <List hardline>{[...props.node.children.values()].map(node => <>
+      {(node.plan?.op.doc !== undefined || node.plan?.op.afterHelp) ? <><Attributes attrs={[
+        ...(node.plan?.op.doc !== undefined ? [`doc = ${JSON.stringify(node.plan.op.doc)}`] : []),
+        ...(node.plan?.op.afterHelp ? [`command(after_help = ${afterHelpExpr(node.plan.op.afterHelp)})`] : []),
+      ]} />{"\n"}</> : null}
+      {node.variant}{node.children.size ? <>({node.commandKey})</> : node.plan!.fields.length ? <>({node.plan!.argsKey})</> : null},
+    </>)}</List>
+  </EnumDeclaration>;
+}
+
+function cliGroups(node: CliNode): Children[] {
+  return [...node.children.values()].flatMap(child => child.children.size ? [
+    <StructDeclaration name={child.commandName} refkey={child.commandKey} derive={["clap::Args", "Debug"]} attrs={child.plan ? ["command(subcommand_negates_reqs = true)"] : undefined}>
+      {child.plan && <StructField name="args" type={child.plan.argsKey} attrs={["command(flatten)"]} />}
+      <StructField name="cmd" type={child.plan ? <>Option{"<"}{child.key}{">"}</> : child.key} attrs={["command(subcommand)"]} />
+    </StructDeclaration>,
+    <CliEnum node={child} />,
+    ...cliGroups(child),
+  ] : []);
+}
+
+function treeArms(keys: OpsKeys, node: CliNode, optional: boolean, root = false): Children[] {
+  const enumKey = root ? keys.cmd : node.key;
+  const arms = [...node.children.values()].map(child => {
+    const pattern = <>{optional ? "Some(" : ""}{enumKey}::{child.variant}{child.children.size ? "(group)" : child.plan!.fields.length ? "(args)" : ""}{optional ? ")" : ""}</>;
+    if (!child.children.size) return cliArm(keys, child.plan!, false, pattern);
+    return <>        {pattern} =&gt; {"{"}{"\n"}
+      match group.cmd {"{"}{"\n"}<List hardline>{treeArms(keys, child, !!child.plan)}</List>{"\n}"}
+      {"\n}"}</>;
+  });
+  if (optional && node.plan) {
+    const p = node.plan;
+    arms.push(<>        None =&gt; {"{"} let args = {root ? "cli.file" : "group.args"}; {cliBody(p)} {"}"}</>);
+  }
+  return arms;
 }
 
 // cli_auto.rs: clap derive tree; run() writes JSON (JSONL for streams) and reads stdin JSONL.
 export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string; service: ServiceDef; registry: RefkeyRegistry; implPath: string }) {
-  const about = props.service.doc !== undefined ? `, about = ${JSON.stringify(props.service.doc)}` : "";
-  const root = props.service.rootArgs ? props.registry.get(props.service.rootArgs) : undefined;
   const rootPlan = props.service.daemon && props.service.rootArgs
     ? props.plans.find(plan => plan.fields.some(field => field.param.type.kind === "model" && field.param.type.name === props.service.rootArgs))
     : undefined;
   const commandPlans = props.plans.filter(plan => plan !== rootPlan);
+  const tree = planCliTree(commandPlans, refkey);
+  const root = props.service.rootArgs ? props.registry.get(props.service.rootArgs) : tree.plan?.argsKey;
   const command = [
     `name = ${JSON.stringify(props.bin)}`,
     "version",
     ...(props.service.doc !== undefined ? [`about = ${JSON.stringify(props.service.doc)}`] : []),
     ...(props.service.afterHelp ? [`after_help = ${afterHelpExpr(props.service.afterHelp)}`] : []),
     ...(props.service.argsConflictsWithSubcommands ? ["args_conflicts_with_subcommands = true"] : []),
-    ...(root ? ["subcommand_negates_reqs = true", "disable_help_subcommand = true"] : []),
+    ...(root ? ["subcommand_negates_reqs = true", ...(props.service.rootArgs ? ["disable_help_subcommand = true"] : [])] : []),
   ];
   const readsInput = props.plans.some(p => p.input);
   return (
@@ -164,19 +203,8 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
             <StructField name="cmd" type={root ? <>Option{"<"}{props.keys.cmd}{">"}</> : props.keys.cmd} attrs={["command(subcommand)"]} />
             {root && <StructField name="file" type={root} attrs={["command(flatten)"]} />}
           </StructDeclaration>,
-          <EnumDeclaration name="Cmd" refkey={props.keys.cmd} derive={["clap::Subcommand", "Debug"]}>
-            <List hardline>
-              {commandPlans.map(p => (
-                <>
-                  {(p.op.doc !== undefined || p.op.afterHelp) ? <><Attributes attrs={[
-                    ...(p.op.doc !== undefined ? [`doc = ${JSON.stringify(p.op.doc)}`] : []),
-                    ...(p.op.afterHelp ? [`command(after_help = ${afterHelpExpr(p.op.afterHelp)})`] : []),
-                  ]} />{"\n"}</> : null}
-                  {p.variant}{p.fields.length ? <>({p.argsKey})</> : null},
-                </>
-              ))}
-            </List>
-          </EnumDeclaration>,
+          <CliEnum node={tree} rootKey={props.keys.cmd} />,
+          ...cliGroups(tree),
           !props.service.daemon && <FunctionDeclaration
             name="run"
             params={[
@@ -188,8 +216,8 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
           >
             {readsInput ? null : <>let _ = input;{"\n"}</>}
             match cli.cmd {"{"}{"\n"}
-            <List hardline>{props.plans.map(p => cliArm(props.keys, p, !!root))}</List>
-            {root ? "\n        None => { let _ = cli.file; }" : ""}
+            <List hardline>{treeArms(props.keys, tree, !!root, true)}</List>
+            {root && !tree.plan ? "\n        None => { let _ = cli.file; }" : ""}
             {"\n}\nOk(())"}
           </FunctionDeclaration>,
           !props.service.daemon && <FunctionDeclaration name="main" params={[{ name: "cli", type: props.keys.root }]} returns="std::process::ExitCode">

@@ -66,7 +66,7 @@ function operationDef(program: Program, http: HttpOperation, daemon: boolean): O
     ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf } : {}),
     ...(clap?.requiredOneOfName ? { requiredOneOfName: clap.requiredOneOfName } : {}),
     verb: http.verb,
-    path: daemon ? http.path : http.uriTemplate,
+    path: http.path,
     params,
     ...returnType(program, http.operation),
   };

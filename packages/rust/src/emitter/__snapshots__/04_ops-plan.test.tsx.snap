@@ -1,0 +1,102 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`routes build nested enums, drop parameter segments, and dispatch group-local args 1`] = `
+"use std::io::BufRead;
+use std::io::Write;
+
+use crate::ops_auto::DbListArgs;
+use crate::ops_auto::OpResult;
+use crate::ops_auto::RootArgs;
+use crate::ops_auto::SqlArgs;
+
+#[derive(clap::Parser, Debug)]
+#[command(name = "tree", version, subcommand_negates_reqs = true)]
+pub struct Tree {
+  #[command(subcommand)]
+  pub cmd: Option<Cmd>,#[command(flatten)]
+  pub file: RootArgs,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub enum Cmd {
+  Db(DbCommand),
+  Job(JobCommand),
+}
+
+#[derive(clap::Args, Debug)]
+#[command(subcommand_negates_reqs = true)]
+pub struct DbCommand {
+  #[command(flatten)]
+  pub args: SqlArgs,#[command(subcommand)]
+  pub cmd: Option<DbCmd>,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub enum DbCmd {
+  Session(DbSessionCommand),
+}
+
+#[derive(clap::Args, Debug)]
+pub struct DbSessionCommand {
+  #[command(subcommand)]
+  pub cmd: DbSessionCmd,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub enum DbSessionCmd {
+  List(DbListArgs),
+}
+
+#[derive(clap::Args, Debug)]
+pub struct JobCommand {
+  #[command(subcommand)]
+  pub cmd: JobCmd,
+}
+
+#[derive(clap::Subcommand, Debug)]
+pub enum JobCmd {
+  List,
+}
+
+pub fn run(cli: Tree, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<()> {
+  let _ = input;
+  match cli.cmd {
+          Some(Cmd::Db(group)) => {
+  match group.cmd {
+          Some(DbCmd::Session(group)) => {
+  match group.cmd {
+          DbSessionCmd::List(args) => { crate::ops::db_list(&args)?; }
+  }
+  }
+          None => { let args = group.args; crate::ops::sql(&args)?; }
+  }
+  }
+          Some(Cmd::Job(group)) => {
+  match group.cmd {
+          JobCmd::List => { let args = Default::default(); crate::ops::job_list(&args)?; }
+  }
+  }
+          None => { let args = cli.file; crate::ops::root(&args)?; }
+  }
+  Ok(())
+}
+
+pub fn main(cli: Tree) -> std::process::ExitCode {
+  let stdin = std::io::stdin();
+  let stdout = std::io::stdout();
+  match run(cli, &mut stdin.lock(), &mut stdout.lock()) {
+      Ok(()) => std::process::ExitCode::SUCCESS,
+      Err(e) => {
+          eprintln!("error: {e}");
+          std::process::ExitCode::FAILURE
+      }
+  }
+}
+
+fn write_json<T: serde::Serialize>(out: &mut dyn Write, value: &T) -> OpResult<()> {
+    serde_json::to_writer(&mut *out, value)?;
+    out.write_all(b"\\n")?;
+    Ok(())
+}
+"
+`;
