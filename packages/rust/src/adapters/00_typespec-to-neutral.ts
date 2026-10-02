@@ -13,6 +13,7 @@ import type {
 } from "@typespec/compiler";
 import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
 import { getQueryParamOptions } from "@typespec/http";
+import { getExtensions } from "@typespec/openapi";
 import { isStream } from "@typespec/streams";
 import { getClapArg, getClapModel } from "@hafley/typespec-decorator-def";
 
@@ -33,6 +34,8 @@ export type DocOf = (type: Type) => string | undefined;
 
 export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
   const extra = getClapArg(program, prop);
+  const short = getExtensions(program, prop).get("x-clap-short");
+  if (short !== undefined && (typeof short !== "string" || [...short].length !== 1)) throw new Error("x-clap-short must be one character");
   const query = getQueryParamOptions(program, prop);
   const encoded = resolveEncodedName(program, prop, "application/x-clap");
   const minValue = getMinValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMinValue(program, prop.type) : undefined);
@@ -42,6 +45,7 @@ export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["
     ...(query?.name && query.name !== prop.name ? { long: query.name } : {}),
     ...(encoded !== prop.name ? { long: encoded } : {}),
     ...extra,
+    ...(short !== undefined ? { short } : {}),
     ...(minValue !== undefined ? { minValue } : {}),
     ...(maxValue !== undefined ? { maxValue } : {}),
     ...(minItems !== undefined && minItems >= 1 ? { required: true } : {}),

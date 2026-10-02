@@ -1709,7 +1709,7 @@ pub struct TagAddArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct TagRecentArgs {
-  #[arg(long, default_value_t = 5)]
+  #[arg(long, default_value_t = 5, short = 'n')]
   pub limit: u64,
   #[command(flatten)]
   pub sharedFlags91: SharedFlags91,
@@ -1719,7 +1719,7 @@ pub struct TagRecentArgs {
 pub struct TagSearchArgs {
   #[arg()]
   pub query: String,
-  #[arg(long, default_value_t = 20)]
+  #[arg(long, default_value_t = 20, short = 'n')]
   pub limit: u64,
   #[command(flatten)]
   pub sharedFlags91: SharedFlags91,

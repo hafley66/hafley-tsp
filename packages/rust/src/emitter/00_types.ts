@@ -12,6 +12,7 @@ export interface ModelProperty {
   default?: ParamValue;
   cli?: {
     long?: string;
+    short?: string;
     valueName?: string;
     requires?: string;
     requiresAll?: string[];

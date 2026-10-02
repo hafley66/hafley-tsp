@@ -99,6 +99,7 @@ function argOptions(prop: ModelProperty): string[] {
   const options = [
     ...(prop.type.kind === "enum" ? ["value_enum"] : []),
     ...defaultAttr(prop.default),
+    ...(prop.cli?.short ? [`short = ${rustChar(prop.cli.short)}`] : []),
     ...(prop.cli?.valueName ? [`value_name = ${JSON.stringify(prop.cli.valueName)}`] : []),
     ...(prop.cli?.requires ? [`requires = ${JSON.stringify(prop.cli.requires)}`] : []),
     ...(prop.cli?.requiresAll ? [`requires_all = [${prop.cli.requiresAll.map(n => JSON.stringify(n)).join(", ")}]`] : []),

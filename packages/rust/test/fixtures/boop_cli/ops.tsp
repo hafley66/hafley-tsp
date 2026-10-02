@@ -1,6 +1,8 @@
 // Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs
 import "@typespec/http";
+import "@typespec/openapi";
 using Http;
+using OpenAPI;
 
 /**
  * Cross-harness agent transcript reader: drive jobs with `job`, read what agents did with `db`
@@ -349,6 +351,7 @@ model SharedFlags39 {
   /**
    * Skip the prompt and revive every row
    */
+  @extension("x-clap-short", "y")
   @query yes?: boolean;
 }
 
@@ -3133,7 +3136,8 @@ namespace tag {
     @route("/")
     @post
     op tag_recent(
-      @query limit: uint64 = 5,
+      @extension("x-clap-short", "n")
+        @query limit: uint64 = 5,
       ...SharedFlags91
     ): void;
 
@@ -3148,7 +3152,8 @@ namespace tag {
     @post
     op tag_search(
       @path("positional_query") query: string,
-      @query limit: uint64 = 20,
+      @extension("x-clap-short", "n")
+        @query limit: uint64 = 20,
       ...SharedFlags91
     ): void;
 

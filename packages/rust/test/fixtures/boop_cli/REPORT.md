@@ -29,3 +29,5 @@ The fixture directory defaults to `/Users/chrishafley/projects/boop2/fixtures/he
 Aliases, conflicts, requires, hyphen values, and custom parsers affect acceptance. Help captures alone cannot establish every parser behavior. The prior attempt's gap table and repros are read-only evidence for the acceptance audit.
 
 Native metadata pass: **135/155**. Query wire names, enum-member docs, required arrays (`@minItems(1)`), complete operation docs, and groups with zero args account for 44 additional matching captures. No custom decorator was added.
+
+Short flags: `@extension("x-clap-short", "y" | "n")` on native query fields. Required by 4 captures: job revive, beep lane revive, tag recent, tag search. HTTP parameter names have no independent one-character flag slot; OpenAPI extensions retain the metadata without a custom decorator.

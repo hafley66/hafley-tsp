@@ -176,6 +176,9 @@ importers:
       '@typespec/http':
         specifier: ~1.10.0
         version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))
+      '@typespec/openapi':
+        specifier: ~1.10.0
+        version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0))))
       '@typespec/streams':
         specifier: ~0.80.0
         version: 0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0))
@@ -189,9 +192,6 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.3
         version: 16.0.3(rollup@4.60.1)
-      '@typespec/openapi':
-        specifier: ~1.10.0
-        version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0))))
       '@typespec/openapi3':
         specifier: ~1.10.0
         version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0))))(@typespec/openapi@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))))(@typespec/streams@0.80.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))

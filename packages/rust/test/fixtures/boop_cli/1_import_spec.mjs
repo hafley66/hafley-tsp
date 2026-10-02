@@ -40,7 +40,7 @@ for (const c of orderedCommands()) {
     const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
     const wire = positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
-    fields.push({ name, text: doc(about, "  ") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
+    fields.push({ name, text: doc(about, "  ") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
   };
   c.arguments.forEach(r => add(r, true));
   c.options.forEach(r => add(r, false));
@@ -51,7 +51,7 @@ for (const c of orderedCommands()) {
 const counts = new Map();
 for (const { fields } of records) for (const f of fields) if (!f.positional) counts.set(f.text, (counts.get(f.text) ?? 0) + 1);
 for (const [text, count] of counts) if (count > 1) models.set(text, `SharedFlags${models.size}`);
-let out = `// Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs\nimport "@typespec/http";\nusing Http;\n\n${doc(records[0].c.about)}@service\nnamespace Boop;\n\n`;
+let out = `// Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs\nimport "@typespec/http";\nimport "@typespec/openapi";\nusing Http;\nusing OpenAPI;\n\n${doc(records[0].c.about)}@service\nnamespace Boop;\n\n`;
 out += [...enums.values()].map(v => v.text).join("\n\n") + "\n\n";
 out += [...models].map(([text, name]) => `model ${name} {\n${text}\n}`).join("\n\n") + "\n\n";
 const emit = (path, indent = "") => {
