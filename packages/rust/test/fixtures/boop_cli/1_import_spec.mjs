@@ -40,7 +40,7 @@ for (const c of orderedCommands()) {
     const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
     const wire = positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
-    fields.push({ name, text: doc(about, "  ") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
+    fields.push({ name, text: doc(about, "  ") + (label && label !== name.toUpperCase() ? `  @extension("x-clap-value-name", ${JSON.stringify(label)})\n` : "") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
   };
   c.arguments.forEach(r => add(r, true));
   c.options.forEach(r => add(r, false));

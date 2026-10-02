@@ -455,7 +455,7 @@ pub struct MailRecvArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct MailWaitArgs {
-  #[arg()]
+  #[arg(value_name = "ID-OR-JOB")]
   pub id_or_job: Option<String>,
   #[arg(long)]
   pub me: bool,
@@ -913,7 +913,7 @@ pub struct DebugArgs {
   #[arg(long, default_value = "2m")]
   pub since: String,
   #[doc = "One lane only, for the alert window"]
-  #[arg(long = "lane")]
+  #[arg(long = "lane", value_name = "LANE")]
   pub lane_flag: Option<String>,
   #[doc = "One JSON document, `alerts` and `sync`, instead of the grouped text"]
   #[arg(long)]
@@ -1396,7 +1396,7 @@ pub struct BeepAgentArgs {}
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepAgentWaterfallArgs {
   #[doc = "Inclusive epoch milliseconds, or a duration such as `24h`"]
-  #[arg(long = "since")]
+  #[arg(long = "since", value_name = "MS|DURATION")]
   pub ms_duration: String,
   #[doc = "Restrict rows to a working directory"]
   #[arg(long)]
@@ -1791,7 +1791,7 @@ pub struct TuiArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct WaitArgs {
   #[doc = "A message id or lane name. Omit to wait for all child lanes; use --me for the inbox"]
-  #[arg()]
+  #[arg(value_name = "ID-OR-LANE")]
   pub id_or_lane: Option<String>,
   #[doc = "Wait for the next unread mail addressed to the caller"]
   #[arg(long)]

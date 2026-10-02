@@ -211,6 +211,7 @@ model SharedFlags19 {
   /**
    * An env var the lane's spawn inherits, `KEY=VAL`. Repeatable; each value is shell-quoted onto the supervisor's spawn command
    */
+  @extension("x-clap-value-name", "KEY=VAL")
   @query("env") key_val?: string[];
 }
 
@@ -239,6 +240,7 @@ model SharedFlags23 {
   /**
    * The branch `gh pr create --base` targets; default `main`
    */
+  @extension("x-clap-value-name", "BRANCH")
   @query("pr-base") pr_base_flag?: string;
 }
 
@@ -1071,7 +1073,8 @@ namespace mail {
     @route("/{positional_id_or_job}")
     @post
     op mail_wait(
-      @path("positional_id_or_job") id_or_job?: string,
+      @extension("x-clap-value-name", "ID-OR-JOB")
+        @path("positional_id_or_job") id_or_job?: string,
       @query me?: boolean,
       ...SharedFlags58,
       ...SharedFlags56,
@@ -1854,6 +1857,7 @@ namespace debug {
     /**
        * One lane only, for the alert window
        */
+      @extension("x-clap-value-name", "LANE")
       @query("lane") lane_flag?: string,
     /**
        * One JSON document, `alerts` and `sync`, instead of the grouped text
@@ -2607,6 +2611,7 @@ namespace beep {
         /**
            * Inclusive epoch milliseconds, or a duration such as `24h`
            */
+          @extension("x-clap-value-name", "MS|DURATION")
           @query("since") ms_duration: string,
         /**
            * Restrict rows to a working directory
@@ -3307,6 +3312,7 @@ namespace wait {
     /**
        * A message id or lane name. Omit to wait for all child lanes; use --me for the inbox
        */
+      @extension("x-clap-value-name", "ID-OR-LANE")
       @path("positional_id_or_lane") id_or_lane?: string,
     /**
        * Wait for the next unread mail addressed to the caller

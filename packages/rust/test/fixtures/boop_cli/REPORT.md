@@ -37,3 +37,5 @@ Hidden commands: `@extension("x-clap-hidden", true)` on operations omitted from 
 Group args versus child commands: `@extension("x-clap-args-conflicts-with-subcommands", true)` on 4 operations: beep, beep fork, db, db usage. The captures contain two usage forms with args omitted from the child-command form. HTTP routes locate fields but have no rule forbidding their use with a child command.
 
 Required child commands: `@extension("x-clap-subcommand-required", true)` on 2 operations: me, beep selection. Both have local flags and require `<COMMAND>`. HTTP parameter optionality describes the flags, not the presence of a nested CLI command.
+
+Exceptional value labels: `@extension("x-clap-value-name", ...)` on 6 captured forms: beep agent waterfall, job create, beep lane create, debug, mail wait, wait. Uppercased field names cover ordinary labels. The exceptions contain punctuation (`MS|DURATION`, `KEY=VAL`, `ID-OR-*`) or a label already used by another field (`BRANCH`, `LANE`). No `@valueName` decorator is used.
