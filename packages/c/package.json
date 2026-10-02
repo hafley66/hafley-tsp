@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@alloy-js/core": "0.23.0-dev.12",
-    "@typespec/compiler": "^1.0.0"
+    "@typespec/compiler": "^1.0.0",
+    "@hafley/typespec-sql": "workspace:*"
   },
   "devDependencies": {
     "@alloy-js/rollup-plugin": "^0.1.0",

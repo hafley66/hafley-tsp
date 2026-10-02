@@ -3,6 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { emitFile, getSourceLocation, type EmitContext, type Program } from "@typespec/compiler";
 import { declarations } from "./0_types.js";
+import { emitStore } from "./4_store.js";
 import { emitC, type CFile } from "./2_emit.js";
 
 function preamble(program: Program, files: CFile[]): string {
@@ -38,7 +39,7 @@ export function writeC(program: Program, files: CFile[], outputDir: string): voi
 }
 export async function $onEmit(context: EmitContext): Promise<void> {
   if (context.program.compilerOptions.noEmit || context.program.hasError()) return;
-  const files = emitC(context.program);
+  const files = [...emitC(context.program), ...emitStore(context.program)];
   const prefix = preamble(context.program, files);
   for (const file of files) {
     const path = resolve(context.emitterOutputDir, file.path);

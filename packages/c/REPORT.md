@@ -110,3 +110,17 @@ Counts are newline counts. Emitted counts exclude generated metadata preambles.
 C identifiers map `-` to `_`. Enum values and union tag strings retain their
 original spelling. Mapped declaration, member, and generated field collisions
 are emission errors. No gate was run in this lane.
+
+## Store emitter
+
+`packages/sql/src/4a_table_facts.ts` exports physical table/column facts for
+ordinary entities, interned dictionaries, and interned entity tables. The SQL
+renderer and C emitter use the same column naming function. Store DDL comes
+from `emitSQL(program)` with its default SQLite dialect, byte for byte.
+`<namespace>/store_auto.h` declares rows, typed insert, and select-all APIs;
+`store_auto.c` uses prepared statements and checks bind/step/finalize results.
+Nullable columns have presence bits. Strings and blobs are copied into the
+caller's `mi_heap_t`; partially allocated results remain in that heap on error.
+SQL storage affinity determines row types: int64, double, text, or blob with
+length. Logical interned strings are physical integer IDs in these row APIs.
+No test or compiler command was run.

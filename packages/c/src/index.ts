@@ -5,3 +5,4 @@ export * from "./gen/0_nodes.js";
 export * from "./emitter/0_types.js";
 export * from "./emitter/2_emit.js";
 export * from "./emitter/3_write.js";
+export * from "./emitter/4_store.js";

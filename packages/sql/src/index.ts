@@ -34,3 +34,5 @@ export { sqliteDialect, type SqlDialect } from "./4_dialect.js";
 export { emitSQL, emitSQLFromStorage } from "./5_emit_sql.js";
 export { autoFile, internAutoFile } from "./6_auto_file.js";
 export { AutoEmitterMarker, loadedAutoEmitters } from "./7_auto_emitters.js";
+
+export { columnName, tableFacts, type TableColumn, type TableFact } from "./4a_table_facts.js";
