@@ -1869,6 +1869,7 @@ namespace me {
   /**
    * The caller's own mood and favorite messages, the only verb for either. Registering a pane is `boop tui` / `boop beep agent register` now
    */
+  @extension("x-clap-subcommand-required", true)
   @route("/")
   @post
   op me(
@@ -2913,6 +2914,7 @@ namespace beep {
     /**
      * Persistent recipient selection: list live harness panes, tick one route, record focus, or clear the set
      */
+    @extension("x-clap-subcommand-required", true)
     @route("/")
     @post
     op beep_selection(

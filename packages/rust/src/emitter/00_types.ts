@@ -98,6 +98,7 @@ export interface OperationDef {
   name: string;
   hidden?: boolean;
   argsConflictsWithSubcommands?: boolean;
+  subcommandRequired?: boolean;
   doc?: string;
   afterHelp?: string;
   requiredOneOf?: string[];
