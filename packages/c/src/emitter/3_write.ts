@@ -39,7 +39,7 @@ export function writeC(program: Program, files: CFile[], outputDir: string): voi
 }
 export async function $onEmit(context: EmitContext): Promise<void> {
   if (context.program.compilerOptions.noEmit || context.program.hasError()) return;
-  const files = [...emitC(context.program), ...emitStore(context.program)];
+  const files = [...emitC(context.program, { wire: true }), ...emitStore(context.program)];
   const prefix = preamble(context.program, files);
   for (const file of files) {
     const path = resolve(context.emitterOutputDir, file.path);

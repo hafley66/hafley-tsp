@@ -4,15 +4,16 @@ import { cIdentifier, assertDistinctIdentifiers, createCNamePolicy } from "../c/
 import { CScope } from "../c/1_scope.js";
 import { SourceFile } from "../c/3_SourceFile.js";
 import { EnumSpecifier, Enumerator, EnumeratorList, FieldDeclaration, FieldDeclarationList, FieldIdentifier, FunctionDeclarator, ParameterDeclaration, ParameterList, ParenthesizedDeclarator, PointerDeclarator, StructSpecifier, TypeDefinition } from "../gen/0_nodes.js";
+import { WireFiles } from "./5_wire.js";
 import { declarations, pathOf, type Declaration } from "./0_types.js";
-import { copyValue, fieldsOf, isString, keyOf, typeOf } from "./1_type_map.js";
+import { copyValue, fieldsOf, isString, keyOf, typeOf, nullableInner } from "./1_type_map.js";
 
 export interface CFile { path: string; contents: string; }
 const line = (children: Children) => <>{children}<hbr /></>;
 function string(s: string): string {
   return '"' + [...Buffer.from(s)].map(b => b === 34 ? '\\"' : b === 92 ? '\\\\' : b < 32 || b > 126 ? '\\' + b.toString(8).padStart(3,'0') : String.fromCharCode(b)).join('') + '"';
 }
-const needsCopy = (type: import("@typespec/compiler").Type) => isString(type) || type.kind === "Model" || type.kind === "Union";
+const needsCopy = (type: import("@typespec/compiler").Type) => !!nullableInner(type) || isString(type) || type.kind === "Model" || type.kind === "Union";
 const isNull = (v: UnionVariant) => v.type.kind === "Intrinsic" && v.type.name === "null";
 
 function enumDecl(name: string, members: { name: string; value?: number }[]): Children {
@@ -109,7 +110,18 @@ function implementation(program: Program, type: Declaration): Children {
         {"  if (!arena || !input) return NULL;"}<hbr />
         {`  ${name} *out = mi_heap_zalloc(arena, sizeof(*out));`}<hbr />
         {"  if (!out) return NULL;"}<hbr />
-        {fields.map(p => <>
+        {fields.map(p => p.type.kind === "Model" && p.type.indexer ? <>
+          {p.optional && line(`  out->has_${cIdentifier(p.name)} = input->has_${cIdentifier(p.name)};`)}
+          {line(`  if (${p.optional ? `input->has_${cIdentifier(p.name)} && ` : ""}input->${cIdentifier(p.name)}.count) {`)}
+          {line(`    if (!input->${cIdentifier(p.name)}.items || input->${cIdentifier(p.name)}.count > SIZE_MAX / sizeof(*out->${cIdentifier(p.name)}.items)) return NULL;`)}
+          {line(`    out->${cIdentifier(p.name)}.count = input->${cIdentifier(p.name)}.count;`)}
+          {line(`    out->${cIdentifier(p.name)}.items = mi_heap_zalloc(arena, input->${cIdentifier(p.name)}.count * sizeof(*out->${cIdentifier(p.name)}.items));`)}
+          {line(`    if (!out->${cIdentifier(p.name)}.items) return NULL;`)}
+          {line(`    for (size_t i = 0; i < input->${cIdentifier(p.name)}.count; ++i) {`)}
+          {line(<>      out-&gt;{cIdentifier(p.name)}.items[i] = {copyValue(p.type.indexer.value, `input->${cIdentifier(p.name)}.items[i]`)};</>)}
+          {needsCopy(p.type.indexer.value) && line(`      if (input->${cIdentifier(p.name)}.items[i] && !out->${cIdentifier(p.name)}.items[i]) return NULL;`)}
+          {line("    }")}{line("  }")}
+        </> : <>
           {p.optional && line(`  out->has_${cIdentifier(p.name)} = input->has_${cIdentifier(p.name)};`)}
           {"  "}{p.optional ? `if (input->has_${cIdentifier(p.name)}) ` : ""}out-&gt;{cIdentifier(p.name)} = {copyValue(p.type, `input->${cIdentifier(p.name)}`)};<hbr />
           {needsCopy(p.type) && line(`  if (${p.optional ? `input->has_${cIdentifier(p.name)} && ` : ""}input->${cIdentifier(p.name)} && !out->${cIdentifier(p.name)}) return NULL;`)}
@@ -153,7 +165,7 @@ function implementation(program: Program, type: Declaration): Children {
   }
 }
 
-export function emitC(program: Program): CFile[] {
+export function emitC(program: Program, options: { wire?: boolean } = {}): CFile[] {
   const types = declarations(program);
   const policy = createCNamePolicy();
   const namespaces = new Map<object | undefined, string[]>();
@@ -217,6 +229,7 @@ export function emitC(program: Program): CFile[] {
       return [
         <SourceFile path={`${path}_auto.h`} preamble={<>
           {"#pragma once\n#include <stdbool.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <mimalloc.h>\n\n"}
+          {type.kind === "Model" && fieldsOf(type).some(p => { const inner = nullableInner(p.type); return inner && inner.kind !== "Model" && inner.kind !== "Union" && !isString(inner); }) && "#ifndef ALLOY_C_MEMDUP\n#define ALLOY_C_MEMDUP\n#include <string.h>\nstatic inline void *alloy_c_memdup(mi_heap_t *arena, const void *src, size_t size) {\n  void *out = mi_heap_malloc(arena, size);\n  if (out) memcpy(out, src, size);\n  return out;\n}\n#endif\n"}
           {(type.kind === "Model" || type.kind === "Union" || type.kind === "Interface") && line(<TypeDefinition declarator={cIdentifier(type.name!)} refkey={keyOf(type)} type={<StructSpecifier name={cIdentifier(type.name!)} />} />)}
         </>}>
           {header(program,type)}
@@ -227,6 +240,7 @@ export function emitC(program: Program): CFile[] {
         </SourceFile>,
       ];
     })}
+    {options.wire && <WireFiles program={program} types={types} />}
   </Scope></Output>);
   const files: CFile[] = [];
   function walk(node: typeof tree) {

@@ -124,3 +124,27 @@ caller's `mi_heap_t`; partially allocated results remain in that heap on error.
 SQL storage affinity determines row types: int64, double, text, or blob with
 length. Logical interned strings are physical integer IDs in these row APIs.
 No test or compiler command was run.
+
+## JSON library candidates
+
+Sizes describe source integration units, not compiled binary measurements.
+
+| Library | License | Source size / integration | Allocator hooks |
+|---|---|---|---|
+| [yyjson 0.12.0](https://github.com/ibireme/yyjson/tree/0.12.0) | MIT | 410813-byte C source, 322407-byte header, measured vendored files | Per-document malloc/realloc/free with context; fixed pool and dynamic allocators |
+| [cJSON](https://github.com/DaveGamble/cJSON) | MIT | One C source and header | Global malloc/free hooks, no heap context |
+| [Jansson](https://github.com/akheron/jansson) | MIT | Multi-source library with configured header | Global malloc/free hooks, no per-document heap context |
+
+Selected yyjson 0.12.0. Vendored source, header and license live in the slice's
+`impl/c/vendor/yyjson`; its Makefile builds `yyjson.o` alongside `mimalloc.o`.
+The generated allocator uses `mi_heap_malloc` and `mi_heap_realloc`; free is a
+no-op, with heap destruction reclaiming the document and output together.
+`wire_auto.h/c` exposes `<Name>_json_encode/decode` and DOM conversion helpers
+for each model/union. Cross-file type includes come from Alloy refkeys.
+Models preserve field spellings. Optional members are omitted when absent;
+nullable values use pointer presence. Arrays use `{count, items}`.
+Named unions currently use `{ "tag": <exact variant name>, "value": <payload> }`.
+`unknown` is arena-owned serialized JSON, passed through yyjson DOM APIs.
+Embedded NUL strings are rejected because emitted C strings are NUL terminated.
+Integer decoding rejects range overflow; malformed JSON and mismatched kinds
+return NULL. Recursive JSON/model traversal relies on acyclic value graphs.

@@ -6,7 +6,6 @@ import { expect, it } from "vitest";
 import { emitC } from "./2_emit.js";
 
 it.each([
-  ['model Bad { values: string[]; }', 'Anonymous models, arrays and records require a named C representation'],
   ['union Bad { string, int64 }', 'Union Bad requires named variants'],
   ['scalar Bad extends decimal;', 'Unsupported scalar: decimal'],
   ['model Bad { `switch`: string; }', 'Invalid C11 identifier: switch'],
