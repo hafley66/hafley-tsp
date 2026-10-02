@@ -251,7 +251,7 @@ model SharedFlags25 {
   /**
    * What this lane does when its parent route stops answering
    */
-  @query on_parent_death?: Values0 = Values0.orphan;
+  @query on_parent_death: Values0 = Values0.orphan;
 }
 
 model SharedFlags26 {
@@ -279,7 +279,7 @@ model SharedFlags29 {
   /**
    * Seconds `--wait` blocks before exiting 124; 0 waits forever
    */
-  @query wait_timeout?: uint64 = 3600;
+  @query wait_timeout: uint64 = 3600;
 }
 
 model SharedFlags30 {
@@ -356,7 +356,7 @@ model SharedFlags40 {
   /**
    * Only routes active this recently: Ns, Nm, Nh
    */
-  @query since?: string = "1h";
+  @query since: string = "1h";
 }
 
 model SharedFlags41 {
@@ -441,7 +441,7 @@ model SharedFlags55 {
 }
 
 model SharedFlags56 {
-  @query timeout?: uint64 = 540;
+  @query timeout: uint64 = 540;
 }
 
 model SharedFlags57 {
@@ -468,7 +468,7 @@ model SharedFlags61 {
 }
 
 model SharedFlags62 {
-  @query format?: Values1 = Values1.ndjson;
+  @query format: Values1 = Values1.ndjson;
 }
 
 model SharedFlags63 {
@@ -528,11 +528,11 @@ model SharedFlags71 {
    * - prompt: Claude Code's `UserPromptSubmit`: the mail is printed as context
    * - plain:  A human or a script reading the inbox
    */
-  @query hook?: Values2 = Values2.plain;
+  @query hook: Values2 = Values2.plain;
 }
 
 model SharedFlags72 {
-  @query format?: Values3 = Values3.json;
+  @query format: Values3 = Values3.json;
 }
 
 model SharedFlags73 {
@@ -578,7 +578,7 @@ model SharedFlags82 {
   /**
    * Look back this many days
    */
-  @query days?: uint64 = 7;
+  @query days: uint64 = 7;
 }
 
 model SharedFlags83 {
@@ -589,7 +589,7 @@ model SharedFlags83 {
 }
 
 model SharedFlags84 {
-  @query limit?: uint64 = 50;
+  @query limit: uint64 = 50;
 }
 
 model SharedFlags85 {
@@ -632,7 +632,7 @@ model SharedFlags90 {
 }
 
 model SharedFlags91 {
-  @query format?: Values3 = Values3.text;
+  @query format: Values3 = Values3.text;
 }
 
 /**
@@ -1042,7 +1042,7 @@ namespace mail {
       @path("positional_body") body: string,
       @query("to") job: string,
       ...SharedFlags58,
-      @query kind?: string = "request",
+      @query kind: string = "request",
       ...SharedFlags56,
       @query no_wait?: boolean,
       ...SharedFlags42
@@ -1501,7 +1501,7 @@ namespace db {
       @route("/")
       @post
       op db_usage_blocks(
-        @query window_hours?: uint64 = 5,
+        @query window_hours: uint64 = 5,
         /**
            * Only the window that is still open
            */
@@ -1519,7 +1519,7 @@ namespace db {
       @route("/")
       @post
       op db_usage_burn_rate(
-        @query window_minutes?: uint64 = 60,
+        @query window_minutes: uint64 = 60,
         ...SharedFlags62
       ): void;
 
@@ -1565,7 +1565,7 @@ namespace db {
         @query cache_write_5m_per_mtok: string,
         @query cache_write_1h_per_mtok: string,
         @query cache_read_per_mtok: string,
-        @query source?: string = "manual"
+        @query source: string = "manual"
       ): void;
 
     }
@@ -1827,7 +1827,7 @@ namespace db {
       /**
          * Window in minutes
          */
-        @query window?: uint64 = 10,
+        @query window: uint64 = 10,
       ...SharedFlags62
     ): void;
 
@@ -1850,7 +1850,7 @@ namespace debug {
     /**
        * Window to read back, as `Ns`, `Nm`, `Nh` or a count of seconds
        */
-      @query since?: string = "2m",
+      @query since: string = "2m",
     /**
        * One lane only, for the alert window
        */
@@ -1939,7 +1939,7 @@ namespace me {
       /**
          * Assistant turn position: -1 is newest, -2 is the one before it
          */
-        @path("positional_index") index?: int64 = -1,
+        @path("positional_index") index: int64 = -1,
       /**
          * Why this message is kept
          */
@@ -1995,7 +1995,7 @@ namespace config {
     @route("/")
     @post
     op config_presets(
-      @query format?: Values4 = Values4.table
+      @query format: Values4 = Values4.table
     ): void;
 
   }
@@ -2054,7 +2054,7 @@ namespace agent {
       /**
          * The public graph contract currently emits JSON
          */
-        @query format?: Values5 = Values5.json,
+        @query format: Values5 = Values5.json,
       ...SharedFlags42
     ): void;
 
@@ -2087,11 +2087,11 @@ namespace beep {
     /**
        * The mail kind the row wears
        */
-      @query kind?: string = "request",
+      @query kind: string = "request",
     /**
        * Seconds to block before exiting 124
        */
-      @query timeout?: uint64 = 540,
+      @query timeout: uint64 = 540,
     /**
        * Send and return, instead of blocking for the answer
        */
@@ -2606,12 +2606,12 @@ namespace beep {
         /**
            * Inclusive epoch milliseconds, or a duration such as `24h`
            */
-          @query("since") `ms|duration`: string,
+          @query("since") ms_duration: string,
         /**
            * Restrict rows to a working directory
            */
           @query cwd?: string,
-        @query format?: Values6 = Values6.json
+        @query format: Values6 = Values6.json
       ): void;
 
     }
@@ -2639,7 +2639,7 @@ namespace beep {
         /**
            * Recorded for this row; a pane-less agent runs no supervisor of its own, so nothing polls on its behalf
            */
-          @query on_parent_death?: Values0 = Values0.orphan,
+          @query on_parent_death: Values0 = Values0.orphan,
         /**
            * The harness a door push addresses. Without it the route is a mailbox, not an address: nothing can push to it
            */
@@ -2674,7 +2674,7 @@ namespace beep {
       @post
       op beep_agent_done(
         @path("positional_name") name: string,
-        @query rc?: uint64 = 0,
+        @query rc: uint64 = 0,
         ...SharedFlags42
       ): void;
 
@@ -2695,7 +2695,7 @@ namespace beep {
         /**
            * How a commit reaches the subscriber: `door` or `mailbox`
            */
-          @query mode?: string = "door",
+          @query mode: string = "door",
         ...SharedFlags86,
         ...SharedFlags42
       ): void;
@@ -2744,7 +2744,7 @@ namespace beep {
         @query lane?: string,
         @query box?: string,
         @query close_routeless?: boolean,
-        @query max_age_days?: uint64 = 7,
+        @query max_age_days: uint64 = 7,
         ...SharedFlags42
       ): void;
 
@@ -2901,7 +2901,7 @@ namespace beep {
          * Include dead lanes; default is live-only
          */
         @query all?: boolean,
-      @query format?: Values7 = Values7.text,
+      @query format: Values7 = Values7.text,
       ...SharedFlags42
     ): void;
 
@@ -2998,7 +2998,7 @@ namespace beep {
       /**
          * The mail kind the rows wear
          */
-        @query kind?: string = "hail",
+        @query kind: string = "hail",
       ...SharedFlags89,
       ...SharedFlags90,
       ...SharedFlags42
@@ -3142,7 +3142,7 @@ namespace tag {
     @route("/")
     @post
     op tag_recent(
-      @query limit?: uint64 = 5,
+      @query limit: uint64 = 5,
       ...SharedFlags91
     ): void;
 
@@ -3157,7 +3157,7 @@ namespace tag {
     @post
     op tag_search(
       @path("positional_query") query: string,
-      @query limit?: uint64 = 20,
+      @query limit: uint64 = 20,
       ...SharedFlags91
     ): void;
 
@@ -3306,7 +3306,7 @@ namespace wait {
     /**
        * Seconds to block before exiting 124
        */
-      @query wait_timeout?: uint64 = 540,
+      @query wait_timeout: uint64 = 540,
     ...SharedFlags42
   ): void;
 

@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 import { orderedCommands } from "./0_help_inputs.mjs";
 
 const ident = name => /^[a-zA-Z_]\w*$/.test(name) && !["model", "namespace", "op", "enum", "scalar", "extends", "is", "valueof", "true", "false"].includes(name) ? name : `\`${name}\``;
-const field = value => value.toLowerCase().replace(/[- =]/g, "_");
+const field = value => value.toLowerCase().replace(/[- =|]/g, "_");
 const doc = (text, indent = "") => text ? `${indent}/**\n${text.split("\n").map(line => `${indent} * ${line}`).join("\n")}\n${indent} */\n` : "";
 const models = new Map();
 const enums = new Map();
@@ -37,7 +37,7 @@ for (const c of orderedCommands()) {
     const array = row.multi || (positional && row.arg.endsWith("...")) || /[Rr]epeatable/.test(about);
     if (array) type += "[]";
     const required = positional ? row.arg.startsWith("<") : c.usage.includes(`${row.long} <`);
-    const optional = !required;
+    const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
     const wire = positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
     fields.push({ name, text: doc(about, "  ") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
