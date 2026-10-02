@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`requires new callbacks after a variant is added: enum State { first, second 1`] = `
+{
+  "missingCase": true,
+  "status": 1,
+}
+`;
+
+exports[`requires new callbacks after a variant is added: union State { first: int64, second: string 1`] = `
+{
+  "missingCase": true,
+  "status": 1,
+}
+`;
