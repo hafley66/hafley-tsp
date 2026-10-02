@@ -5,13 +5,14 @@ import { CScope } from "../c/1_scope.js";
 import { SourceFile } from "../c/3_SourceFile.js";
 import { EnumSpecifier, Enumerator, EnumeratorList, FieldDeclaration, FieldDeclarationList, FieldIdentifier, FunctionDeclarator, ParameterDeclaration, ParameterList, ParenthesizedDeclarator, PointerDeclarator, StructSpecifier, TypeDefinition } from "../gen/0_nodes.js";
 import { declarations, pathOf, type Declaration } from "./0_types.js";
-import { copyValue, fieldsOf, keyOf, typeOf } from "./1_type_map.js";
+import { copyValue, fieldsOf, isString, keyOf, typeOf } from "./1_type_map.js";
 
 export interface CFile { path: string; contents: string; }
 const line = (children: Children) => <>{children}<hbr /></>;
 function string(s: string): string {
   return '"' + [...Buffer.from(s)].map(b => b === 34 ? '\\"' : b === 92 ? '\\\\' : b < 32 || b > 126 ? '\\' + b.toString(8).padStart(3,'0') : String.fromCharCode(b)).join('') + '"';
 }
+const needsCopy = (type: import("@typespec/compiler").Type) => isString(type) || type.kind === "Model" || type.kind === "Union";
 const isNull = (v: UnionVariant) => v.type.kind === "Intrinsic" && v.type.name === "null";
 
 function enumDecl(name: string, members: { name: string; value?: number }[]): Children {
@@ -111,6 +112,7 @@ function implementation(program: Program, type: Declaration): Children {
         {fields.map(p => <>
           {p.optional && line(`  out->has_${p.name} = input->has_${p.name};`)}
           {"  "}{p.optional ? `if (input->has_${p.name}) ` : ""}out-&gt;{p.name} = {copyValue(p.type, `input->${p.name}`)};<hbr />
+          {needsCopy(p.type) && line(`  if (${p.optional ? `input->has_${p.name} && ` : ""}input->${p.name} && !out->${p.name}) return NULL;`)}
         </>)}
         {"  return out;"}<hbr />{"}"}<hbr />
       </>;
@@ -126,7 +128,12 @@ function implementation(program: Program, type: Declaration): Children {
         {"  if (!out) return NULL;"}<hbr />
         {"  out->tag = input->tag;"}<hbr />
         {"  switch (input->tag) {"}<hbr />
-        {vs.map(v => line(<>    case {name}_tag_{v.name as string}: out-&gt;value.{v.name as string} = {isNull(v) ? "0" : copyValue(v.type, `input->value.${v.name as string}`)}; break;</>))}
+        {vs.map(v => <>
+          {line(`    case ${name}_tag_${v.name as string}:`)}
+          {line(<>      out-&gt;value.{v.name as string} = {isNull(v) ? "0" : copyValue(v.type, `input->value.${v.name as string}`)};</>)}
+          {needsCopy(v.type) && line(`      if (input->value.${v.name as string} && !out->value.${v.name as string}) return NULL;`)}
+          {line("      break;")}
+        </>)}
         {"    default: return NULL;"}<hbr />{"  }"}<hbr />{"  return out;"}<hbr />{"}"}<hbr /><hbr />
         {name} *{name}_parse(mi_heap_t *arena, const char *tag, const {name}_value *value) {"{"}<hbr />
         {"  if (!arena || !tag || !value) return NULL;"}<hbr />
@@ -153,6 +160,48 @@ export function emitC(program: Program): CFile[] {
     policy.getName(type.name!, "type_definition");
     const names = type.kind === "Model" ? fieldsOf(type).map(p => p.name) : type.kind === "Enum" ? [...type.members.keys()] : type.kind === "Union" ? variants(type).map(v => v.name as string) : type.kind === "Interface" ? [...type.operations.keys()] : [];
     for (const name of names) policy.getName(name, "field_declaration");
+    // Validate eagerly so unsupported types are reported before Alloy renders.
+    if (type.kind === "Scalar") {
+      if (!type.baseScalar) throw new Error(`Scalar ${type.name} needs a base scalar`);
+      typeOf(program, type.baseScalar);
+    }
+    if (type.kind === "Model") {
+      if (type.indexer) throw new Error(`Unsupported indexed model: ${type.name}`);
+      const emitted = new Set<string>();
+      for (const field of fieldsOf(type)) {
+        typeOf(program, field.type);
+        for (const name of [field.name, ...(field.optional ? [`has_${field.name}`] : [])]) {
+          if (emitted.has(name)) throw new Error(`Duplicate C field: ${type.name}.${name}`);
+          emitted.add(name);
+        }
+      }
+    }
+    if (type.kind === "Union") {
+      if (!type.variants.size) throw new Error(`Empty union: ${type.name}`);
+      for (const v of variants(type)) if (!isNull(v)) typeOf(program,v.type);
+    }
+    if (type.kind === "Enum") {
+      if (!type.members.size) throw new Error(`Empty enum: ${type.name}`);
+      let ordinal = 0;
+      const ordinals = new Set<number>();
+      const strings = new Set<string>();
+      for (const member of type.members.values()) {
+        const n = typeof member.value === "number" ? member.value : ordinal;
+        const text = String(member.value ?? member.name);
+        if (!Number.isInteger(n) || n < -2147483648 || n > 2147483647) throw new Error(`Enum value outside C11 int range: ${type.name}.${member.name}`);
+        if (ordinals.has(n) || strings.has(text)) throw new Error(`Ambiguous enum value: ${type.name}.${member.name}`);
+        ordinals.add(n); strings.add(text); ordinal = n + 1;
+      }
+    }
+    if (type.kind === "Interface") for (const op of type.operations.values()) {
+      typeOf(program,op.returnType);
+      for (const param of op.parameters.properties.values()) {
+        policy.getName(param.name, "field_declaration");
+        if (param.name === "self" || param.name === "arena") throw new Error(`Reserved C parameter: ${type.name}.${op.name}.${param.name}`);
+        if (param.optional) throw new Error(`Optional interface parameter: ${type.name}.${op.name}.${param.name}`);
+        typeOf(program,param.type);
+      }
+    }
   }
   const tree = render(<Output><Scope value={createScope(CScope, "c", undefined)}>
     {types.flatMap(type => {

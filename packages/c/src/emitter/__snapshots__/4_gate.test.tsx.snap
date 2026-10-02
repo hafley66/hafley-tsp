@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`emits scalars, structs, string tables, tagged unions and vtables 1`] = `
+exports[`compiles C files and runs arena round trips (boop2=false) 1`] = `
 [
   {
     "contents": "#pragma once
