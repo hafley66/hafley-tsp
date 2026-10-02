@@ -1,19 +1,19 @@
 import { Output, Scope, createScope, render, type Children } from "@alloy-js/core";
-import { type Program, type UnionVariant } from "@typespec/compiler";
+import { type Program, type Type, type UnionVariant } from "@typespec/compiler";
 import { cIdentifier, assertDistinctIdentifiers, createCNamePolicy } from "../c/0_name-policy.js";
 import { CScope } from "../c/1_scope.js";
 import { SourceFile } from "../c/3_SourceFile.js";
 import { EnumSpecifier, Enumerator, EnumeratorList, FieldDeclaration, FieldDeclarationList, FieldIdentifier, FunctionDeclarator, ParameterDeclaration, ParameterList, ParenthesizedDeclarator, PointerDeclarator, StructSpecifier, TypeDefinition } from "../gen/0_nodes.js";
 import { WireFiles } from "./5_wire.js";
 import { declarations, pathOf, type Declaration } from "./0_types.js";
-import { copyValue, fieldsOf, isString, keyOf, typeOf, nullableInner } from "./1_type_map.js";
+import { copyValue, fieldsOf, isString, keyOf, typeOf, nullableInner, inlineCollection, collectionFields, copyCollection } from "./1_type_map.js";
 
 export interface CFile { path: string; contents: string; }
 const line = (children: Children) => <>{children}<hbr /></>;
 function string(s: string): string {
   return '"' + [...Buffer.from(s)].map(b => b === 34 ? '\\"' : b === 92 ? '\\\\' : b < 32 || b > 126 ? '\\' + b.toString(8).padStart(3,'0') : String.fromCharCode(b)).join('') + '"';
 }
-const needsCopy = (type: import("@typespec/compiler").Type) => !!nullableInner(type) || isString(type) || type.kind === "Model" || type.kind === "Union";
+const needsCopy = (type: import("@typespec/compiler").Type) => type.kind === "Intrinsic" && type.name === "unknown" || !!nullableInner(type) || isString(type) || type.kind === "Model" || type.kind === "Union";
 const isNull = (v: UnionVariant) => v.type.kind === "Intrinsic" && v.type.name === "null";
 
 function enumDecl(name: string, members: { name: string; value?: number }[]): Children {
@@ -29,6 +29,13 @@ function variants(type: Extract<Declaration, { kind: "Union" }>): UnionVariant[]
     if (typeof v.name !== "string") throw new Error(`Union ${cIdentifier(type.name!)} requires named variants`);
     return v;
   });
+}
+
+function needsMemdup(type: Type): boolean {
+  const inner = nullableInner(type);
+  if (inner) return !isString(inner) && inner.kind !== "Model" && inner.kind !== "Union";
+  if (inlineCollection(type)) return needsMemdup(type.indexer.value);
+  return false;
 }
 
 function header(program: Program, type: Declaration): Children {
@@ -52,7 +59,7 @@ function header(program: Program, type: Declaration): Children {
       </>;
     }
     case "Model": {
-      if (type.indexer) throw new Error(`Unsupported indexed model: ${name}`);
+      if (type.indexer) return <><StructSpecifier name={<>{name}</>} body={<>{"{"}<hbr />{collectionFields(program, type)}<hbr />{"}"}</>} />;<hbr />{name} *{name}_create(mi_heap_t *arena, const {name} *input);<hbr /></>;
       const fields = fieldsOf(type).flatMap(p => [
         ...(p.optional ? [<FieldDeclaration type="bool" declarator={`has_${cIdentifier(p.name)}`} />] : []),
         <FieldDeclaration type={typeOf(program, p.type)} declarator={cIdentifier(p.name)} />,
@@ -105,22 +112,17 @@ function implementation(program: Program, type: Declaration): Children {
       return `static const struct { ${name} value; const char *text; } ${name}_strings[] = {\n${table}};\n\nconst char *${name}_to_string(${name} value) {\n  for (size_t i = 0; i < sizeof(${name}_strings) / sizeof(${name}_strings[0]); ++i) {\n    if (${name}_strings[i].value == value) return ${name}_strings[i].text;\n  }\n  return NULL;\n}\n\n${name} *${name}_from_string(mi_heap_t *arena, const char *text) {\n  if (!arena || !text) return NULL;\n  for (size_t i = 0; i < sizeof(${name}_strings) / sizeof(${name}_strings[0]); ++i) {\n    if (strcmp(${name}_strings[i].text, text) == 0) {\n      ${name} *out = mi_heap_malloc(arena, sizeof(*out));\n      if (out) *out = ${name}_strings[i].value;\n      return out;\n    }\n  }\n  return NULL;\n}\n\nvoid ${name}_match(${name} value, void *context, const ${name}_cases *cases) {\n  switch (value) {\n${members.map(m => `    case ${name}_${cIdentifier(m.name)}: cases->${cIdentifier(m.name)}(context); return;\n`).join("")}  }\n}\n`;
     }
     case "Model": {
+      if (type.indexer) return <>{name} *{name}_create(mi_heap_t *arena, const {name} *input) {"{"}<hbr />{"if (!arena || !input) return NULL;"}<hbr />{`${name} *out = mi_heap_zalloc(arena, sizeof(*out));\nif (!out) return NULL;\n`}{copyCollection(type, "(*input)", "(*out)")}{"return out;\n}"}<hbr /></>;
       const fields = fieldsOf(type);
       return <>{name} *{name}_create(mi_heap_t *arena, const {name} *input) {"{"}<hbr />
         {"  if (!arena || !input) return NULL;"}<hbr />
         {`  ${name} *out = mi_heap_zalloc(arena, sizeof(*out));`}<hbr />
         {"  if (!out) return NULL;"}<hbr />
-        {fields.map(p => p.type.kind === "Model" && p.type.indexer ? <>
+        {fields.map(p => inlineCollection(p.type) ? <>
           {p.optional && line(`  out->has_${cIdentifier(p.name)} = input->has_${cIdentifier(p.name)};`)}
-          {line(`  if (${p.optional ? `input->has_${cIdentifier(p.name)} && ` : ""}input->${cIdentifier(p.name)}.count) {`)}
-          {line(`    if (!input->${cIdentifier(p.name)}.items || input->${cIdentifier(p.name)}.count > SIZE_MAX / sizeof(*out->${cIdentifier(p.name)}.items)) return NULL;`)}
-          {line(`    out->${cIdentifier(p.name)}.count = input->${cIdentifier(p.name)}.count;`)}
-          {line(`    out->${cIdentifier(p.name)}.items = mi_heap_zalloc(arena, input->${cIdentifier(p.name)}.count * sizeof(*out->${cIdentifier(p.name)}.items));`)}
-          {line(`    if (!out->${cIdentifier(p.name)}.items) return NULL;`)}
-          {line(`    for (size_t i = 0; i < input->${cIdentifier(p.name)}.count; ++i) {`)}
-          {line(<>      out-&gt;{cIdentifier(p.name)}.items[i] = {copyValue(p.type.indexer.value, `input->${cIdentifier(p.name)}.items[i]`)};</>)}
-          {needsCopy(p.type.indexer.value) && line(`      if (input->${cIdentifier(p.name)}.items[i] && !out->${cIdentifier(p.name)}.items[i]) return NULL;`)}
-          {line("    }")}{line("  }")}
+          {p.optional && line(`if (input->has_${cIdentifier(p.name)}) {`)}
+          {copyCollection(p.type, `input->${cIdentifier(p.name)}`, `out->${cIdentifier(p.name)}`)}
+          {p.optional && line("}")}
         </> : <>
           {p.optional && line(`  out->has_${cIdentifier(p.name)} = input->has_${cIdentifier(p.name)};`)}
           {"  "}{p.optional ? `if (input->has_${cIdentifier(p.name)}) ` : ""}out-&gt;{cIdentifier(p.name)} = {copyValue(p.type, `input->${cIdentifier(p.name)}`)};<hbr />
@@ -168,6 +170,18 @@ function implementation(program: Program, type: Declaration): Children {
 export function emitC(program: Program, options: { wire?: boolean } = {}): CFile[] {
   const types = declarations(program);
   const policy = createCNamePolicy();
+  const symbols = types.flatMap(type => {
+    const name = type.name!;
+    const names = [name];
+    if (type.kind === "Model" || type.kind === "Union" || type.kind === "Interface") names.push(`${name}_create`);
+    if (type.kind === "Enum") names.push(`${name}_to_string`, `${name}_from_string`, `${name}_cases`, `${name}_cases_init`, `${name}_match`, ...[...type.members.keys()].map(m => `${name}_${m}`));
+    if (type.kind === "Union") names.push(`${name}_tag`, `${name}_value`, `${name}_tag_to_string`, `${name}_parse`, `${name}_cases`, `${name}_cases_init`, `${name}_match`, ...variants(type).flatMap(v => [`${name}_tag_${v.name as string}`, `${name}_create_${v.name as string}`]));
+    if (options.wire && (type.kind === "Model" || type.kind === "Union")) names.push(...["value", "read", "encode", "decode"].map(suffix => `${name}_json_${suffix}`));
+    return names;
+  });
+  assertDistinctIdentifiers(symbols, "global C symbols");
+  assertDistinctIdentifiers(types.map(t => t.name!), "global C declarations");
+  if (new Set(types.map(pathOf)).size !== types.length) throw new Error("C output path collision");
   const namespaces = new Map<object | undefined, string[]>();
   for (const type of types) {
     const names = namespaces.get(type.namespace) ?? [];
@@ -186,7 +200,7 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
       typeOf(program, type.baseScalar);
     }
     if (type.kind === "Model") {
-      if (type.indexer) throw new Error(`Unsupported indexed model: ${cIdentifier(type.name!)}`);
+      if (type.indexer) typeOf(program, type.indexer.value);
       const emitted = new Set<string>();
       for (const field of fieldsOf(type)) {
         typeOf(program, field.type);
@@ -198,7 +212,10 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
     }
     if (type.kind === "Union") {
       if (!type.variants.size) throw new Error(`Empty union: ${cIdentifier(type.name!)}`);
-      for (const v of variants(type)) if (!isNull(v)) typeOf(program,v.type);
+      for (const v of variants(type)) if (!isNull(v)) {
+        if (inlineCollection(v.type)) throw new Error("Union collection variants require named models");
+        typeOf(program, v.type);
+      }
     }
     if (type.kind === "Enum") {
       if (!type.members.size) throw new Error(`Empty enum: ${cIdentifier(type.name!)}`);
@@ -214,11 +231,14 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
       }
     }
     if (type.kind === "Interface") for (const op of type.operations.values()) {
+      if (inlineCollection(op.returnType)) throw new Error("Interface collections require named models");
+      assertDistinctIdentifiers([...op.parameters.properties.keys()], `${type.name}.${op.name} parameters`);
       typeOf(program,op.returnType);
       for (const param of op.parameters.properties.values()) {
         policy.getName(param.name, "field_declaration");
         if (param.name === "self" || param.name === "arena") throw new Error(`Reserved C parameter: ${cIdentifier(type.name!)}.${op.name}.${param.name}`);
         if (param.optional) throw new Error(`Optional interface parameter: ${cIdentifier(type.name!)}.${op.name}.${param.name}`);
+        if (inlineCollection(param.type)) throw new Error("Interface collections require named models");
         typeOf(program,param.type);
       }
     }
@@ -229,7 +249,7 @@ export function emitC(program: Program, options: { wire?: boolean } = {}): CFile
       return [
         <SourceFile path={`${path}_auto.h`} preamble={<>
           {"#pragma once\n#include <stdbool.h>\n#include <stddef.h>\n#include <stdint.h>\n#include <mimalloc.h>\n\n"}
-          {type.kind === "Model" && fieldsOf(type).some(p => { const inner = nullableInner(p.type); return inner && inner.kind !== "Model" && inner.kind !== "Union" && !isString(inner); }) && "#ifndef ALLOY_C_MEMDUP\n#define ALLOY_C_MEMDUP\n#include <string.h>\nstatic inline void *alloy_c_memdup(mi_heap_t *arena, const void *src, size_t size) {\n  void *out = mi_heap_malloc(arena, size);\n  if (out) memcpy(out, src, size);\n  return out;\n}\n#endif\n"}
+          {(type.kind === "Model" && (type.indexer ? needsMemdup(type.indexer.value) : fieldsOf(type).some(p => needsMemdup(p.type))) || type.kind === "Union" && variants(type).some(v => needsMemdup(v.type))) && "#ifndef ALLOY_C_MEMDUP\n#define ALLOY_C_MEMDUP\n#include <string.h>\nstatic inline void *alloy_c_memdup(mi_heap_t *arena, const void *src, size_t size) {\n  void *out = mi_heap_malloc(arena, size);\n  if (out) memcpy(out, src, size);\n  return out;\n}\n#endif\n"}
           {(type.kind === "Model" || type.kind === "Union" || type.kind === "Interface") && line(<TypeDefinition declarator={cIdentifier(type.name!)} refkey={keyOf(type)} type={<StructSpecifier name={cIdentifier(type.name!)} />} />)}
         </>}>
           {header(program,type)}
