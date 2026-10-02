@@ -27,3 +27,5 @@ The fixture directory defaults to `/Users/chrishafley/projects/boop2/fixtures/he
 | Root and group extra help | boop, beep | Pending native-form evaluation | Doc extraction currently supplies the leading paragraph only |
 
 Aliases, conflicts, requires, hyphen values, and custom parsers affect acceptance. Help captures alone cannot establish every parser behavior. The prior attempt's gap table and repros are read-only evidence for the acceptance audit.
+
+Native metadata pass: **135/155**. Query wire names, enum-member docs, required arrays (`@minItems(1)`), complete operation docs, and groups with zero args account for 44 additional matching captures. No custom decorator was added.

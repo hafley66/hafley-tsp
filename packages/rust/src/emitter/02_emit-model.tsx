@@ -1,3 +1,4 @@
+import { Attributes } from "../components/0_primitives/1_Attributes.js";
 import { List, refkey, Refkey } from "@alloy-js/core";
 import { StructDeclaration, StructField } from "../components/1_declarations/0_StructDeclaration.js";
 import { EnumDeclaration, UnitVariant } from "../components/1_declarations/1_EnumDeclaration.js";
@@ -71,7 +72,7 @@ export function emitEnum(def: EnumDef, registry: RefkeyRegistry, rk?: Refkey, ex
       >
         <List hardline>
           {def.members.map(m => (
-            <UnitVariant name={m.name} />
+            <>{m.doc !== undefined ? <><Attributes attrs={[`doc = ${JSON.stringify(m.doc)}`]} />{"\n"}</> : null}<UnitVariant name={m.name} /></>
           ))}
         </List>
       </EnumDeclaration>

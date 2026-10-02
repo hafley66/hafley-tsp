@@ -522,12 +522,6 @@ model SharedFlags70 {
 }
 
 model SharedFlags71 {
-  /**
-   * Possible values:
-   * - stop:   Claude Code's `Stop`: the mail comes back as a block decision
-   * - prompt: Claude Code's `UserPromptSubmit`: the mail is printed as context
-   * - plain:  A human or a script reading the inbox
-   */
   @query hook: Values2 = Values2.plain;
 }
 
@@ -2066,6 +2060,8 @@ namespace agent {
 namespace beep {
   /**
    * Mail a route and block for its answer; also the group that drives harnesses, lanes, agents and processes.
+   * 
+   * `boop beep <route> <body>` is the one send. `<route>` is a lane, a coordinator, a native, `parent` (the caller's own parent edge) or `children` (every live child of the caller).
    */
   @route("/{positional_route}/{positional_body}")
   @post
@@ -2193,9 +2189,6 @@ namespace beep {
 
     @route("/list")
     namespace list {
-      /**
-       * Usage: boop beep harness list
-       */
       @route("/")
       @post
       op beep_harness_list(
@@ -2206,9 +2199,6 @@ namespace beep {
 
     @route("/get")
     namespace get {
-      /**
-       * Usage: boop beep harness get <HARNESS>
-       */
       @route("/{positional_harness}")
       @post
       op beep_harness_get(
@@ -3125,7 +3115,8 @@ namespace tag {
     @route("/{positional_tag}")
     @post
     op tag_add(
-      @path("positional_tag") tag: string[],
+      @minItems(1)
+        @path("positional_tag") tag: string[],
       /**
          * What the tags hang on: favorite:<id>, comment:<id>, lane:<name>, or any spelling the caller keeps. Defaults to the caller's route
          */
@@ -3197,7 +3188,8 @@ namespace tag {
     @route("/{positional_source}")
     @post
     op tag_for(
-      @path("positional_source") source: string[],
+      @minItems(1)
+        @path("positional_source") source: string[],
       ...SharedFlags91
     ): void;
 

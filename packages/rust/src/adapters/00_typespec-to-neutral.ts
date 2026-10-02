@@ -12,6 +12,7 @@ import type {
   Program,
 } from "@typespec/compiler";
 import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
+import { getQueryParamOptions } from "@typespec/http";
 import { isStream } from "@typespec/streams";
 import { getClapArg, getClapModel } from "@hafley/typespec-decorator-def";
 
@@ -32,11 +33,13 @@ export type DocOf = (type: Type) => string | undefined;
 
 export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
   const extra = getClapArg(program, prop);
+  const query = getQueryParamOptions(program, prop);
   const encoded = resolveEncodedName(program, prop, "application/x-clap");
   const minValue = getMinValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMinValue(program, prop.type) : undefined);
   const maxValue = getMaxValue(program, prop) ?? (prop.type.kind === "Scalar" ? getMaxValue(program, prop.type) : undefined);
   const minItems = getMinItems(program, prop);
   const cli = {
+    ...(query?.name && query.name !== prop.name ? { long: query.name } : {}),
     ...(encoded !== prop.name ? { long: encoded } : {}),
     ...extra,
     ...(minValue !== undefined ? { minValue } : {}),
@@ -133,10 +136,11 @@ function convertModel(model: Model, docOf?: DocOf, program?: Program): ModelDef 
   return { kind: "model", name: model.name, properties, ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf, requiredOneOfName: clap.requiredOneOfName } : {}) };
 }
 
-function convertEnum(tspEnum: TspEnum): EnumDef {
+function convertEnum(tspEnum: TspEnum, docOf?: DocOf): EnumDef {
   const members = Array.from(tspEnum.members.values()).map(m => ({
     name: m.name,
     value: m.value,
+    ...(docOf?.(m) !== undefined ? { doc: docOf!(m) } : {}),
   }));
   return { kind: "enum", name: tspEnum.name, members };
 }
@@ -162,7 +166,7 @@ export function namespaceToTypeDefs(
   }
 
   for (const [, tspEnum] of ns.enums) {
-    defs.push(convertEnum(tspEnum));
+    defs.push(convertEnum(tspEnum, options.docOf));
   }
 
   if (options.recursive) {

@@ -4,6 +4,6 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize, Deserialize, clap::Args, Default)]
 pub struct SharedFlags23 {
   #[doc = "The branch `gh pr create --base` targets; default `main`"]
-  #[arg(long)]
+  #[arg(long = "pr-base")]
   pub pr_base_flag: Option<String>,
 }

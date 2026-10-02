@@ -429,7 +429,7 @@ pub struct MailArgs {}
 pub struct MailSendArgs {
   #[arg()]
   pub body: String,
-  #[arg(long)]
+  #[arg(long = "to")]
   pub job: String,
   #[command(flatten)]
   pub sharedFlags58: SharedFlags58,
@@ -913,7 +913,7 @@ pub struct DebugArgs {
   #[arg(long, default_value = "2m")]
   pub since: String,
   #[doc = "One lane only, for the alert window"]
-  #[arg(long)]
+  #[arg(long = "lane")]
   pub lane_flag: Option<String>,
   #[doc = "One JSON document, `alerts` and `sync`, instead of the grouped text"]
   #[arg(long)]
@@ -955,7 +955,7 @@ pub struct MeMoodArgs {
   #[arg(long)]
   pub clear: bool,
   #[doc = "The session to act on; defaults to the caller"]
-  #[arg(long)]
+  #[arg(long = "as")]
   pub session: Option<String>,
 }
 
@@ -1025,7 +1025,7 @@ pub struct BeepArgs {
   #[arg()]
   pub body: Option<String>,
   #[doc = "Who the row is from, when the whoami ladder cannot say"]
-  #[arg(long)]
+  #[arg(long = "as")]
   pub name: Option<String>,
   #[doc = "The mail kind the row wears"]
   #[arg(long, default_value = "request")]
@@ -1396,7 +1396,7 @@ pub struct BeepAgentArgs {}
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepAgentWaterfallArgs {
   #[doc = "Inclusive epoch milliseconds, or a duration such as `24h`"]
-  #[arg(long)]
+  #[arg(long = "since")]
   pub ms_duration: String,
   #[doc = "Restrict rows to a working directory"]
   #[arg(long)]
@@ -1663,7 +1663,7 @@ pub struct InboxArgs {}
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct InboxDrainArgs {
   #[doc = "Whose inbox to drain; defaults to the identity ladder's answer"]
-  #[arg(long)]
+  #[arg(long = "as")]
   pub name: Option<String>,
   #[command(flatten)]
   pub sharedFlags71: SharedFlags71,
@@ -1700,7 +1700,7 @@ pub struct TagArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct TagAddArgs {
-  #[arg()]
+  #[arg(required = true)]
   pub tag: Vec<String>,
   #[doc = "What the tags hang on: favorite:<id>, comment:<id>, lane:<name>, or any spelling the caller keeps. Defaults to the caller's route"]
   #[arg(long)]
@@ -1739,7 +1739,7 @@ pub struct TagOfArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct TagForArgs {
-  #[arg()]
+  #[arg(required = true)]
   pub source: Vec<String>,
   #[command(flatten)]
   pub sharedFlags91: SharedFlags91,
@@ -1771,7 +1771,7 @@ pub struct TuiArgs {
   #[arg()]
   pub args: Vec<String>,
   #[doc = "Executable override, for example ccz with the Claude adapter"]
-  #[arg(long)]
+  #[arg(long = "bin")]
   pub executable: Option<String>,
   #[doc = "Stable route name for later resumes; refuses an existing live owner"]
   #[arg(long)]
@@ -1797,7 +1797,7 @@ pub struct WaitArgs {
   #[arg(long)]
   pub me: bool,
   #[doc = "Whose inbox to watch, when the whoami ladder cannot say"]
-  #[arg(long)]
+  #[arg(long = "as")]
   pub name: Option<String>,
   #[doc = "Seconds to block before exiting 124"]
   #[arg(long, default_value_t = 540)]
@@ -1811,7 +1811,7 @@ pub struct WhoamiArgs {
   #[command(flatten)]
   pub sharedFlags85: SharedFlags85,
   #[doc = "Who is calling. The first rung; `--from` is the same flag"]
-  #[arg(long)]
+  #[arg(long = "as")]
   pub name: Option<String>,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,

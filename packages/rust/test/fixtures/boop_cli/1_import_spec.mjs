@@ -19,7 +19,7 @@ for (const c of orderedCommands()) {
     let about = row.about;
     const defaultValue = about.match(/\[default: ([^\]]+)\]/)?.[1];
     const possible = about.match(/\[possible values: ([^\]]+)\]/)?.[1]?.split(", ") ?? [...about.matchAll(/^\s*- ([\w-]+):/gm)].map(m => m[1]);
-    about = about.replace(/\s*\[default: [^\]]+\]/g, "").replace(/\s*\[possible values: [^\]]+\]/g, "").split(/\n\s*Possible values:/)[0].trim();
+    about = about.split(/(?:^|\n)\s*Possible values:/)[0].replace(/\s*\[default: [^\]]+\]/g, "").replace(/\s*\[possible values: [^\]]+\]/g, "").split(/\n\s*Possible values:/)[0].trim();
     let type = row.value == null && !positional ? "boolean" : "string";
     if (defaultValue && /^-?\d+$/.test(defaultValue)) type = defaultValue.startsWith("-") ? "int64" : "uint64";
     if (possible.length) {
@@ -40,7 +40,7 @@ for (const c of orderedCommands()) {
     const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
     const wire = positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
-    fields.push({ name, text: doc(about, "  ") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
+    fields.push({ name, text: doc(about, "  ") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
   };
   c.arguments.forEach(r => add(r, true));
   c.options.forEach(r => add(r, false));

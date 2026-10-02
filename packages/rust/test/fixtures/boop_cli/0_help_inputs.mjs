@@ -31,7 +31,7 @@ export const commands = Object.values(tree).map(command => {
   const text = readFileSync(join(fixtureDir, command.file), "utf8");
   const options = rows(text, "Options");
   const args = rows(text, "Arguments");
-  return { ...command, text, options: command.options.map(o => ({ ...o, ...options.find(r => r.long === o.long) })), arguments: command.arguments.map(a => ({ ...a, ...args.find(r => r.arg === a.arg) })) };
+  return { ...command, about: text.startsWith("Usage:") ? "" : text.split("\n\nUsage:")[0], text, options: command.options.map(o => ({ ...o, ...options.find(r => r.long === o.long) })), arguments: command.arguments.map(a => ({ ...a, ...args.find(r => r.arg === a.arg) })) };
 });
 
 // Parent help defines registration order. Hidden children retain tree order.

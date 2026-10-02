@@ -146,11 +146,15 @@ function CliEnum(props: { node: CliNode; rootKey?: Refkey }) {
   </EnumDeclaration>;
 }
 
+function ownsArgs(node: CliNode): boolean {
+  return !!node.plan?.fields.length;
+}
+
 function cliGroups(node: CliNode): Children[] {
   return [...node.children.values()].flatMap(child => child.children.size ? [
-    <StructDeclaration name={child.commandName} refkey={child.commandKey} derive={["clap::Args", "Debug"]} attrs={child.plan ? ["command(subcommand_negates_reqs = true)"] : undefined}>
-      {child.plan && <StructField name="args" type={child.plan.argsKey} attrs={["command(flatten)"]} />}
-      <StructField name="cmd" type={child.plan ? <>Option{"<"}{child.key}{">"}</> : child.key} attrs={["command(subcommand)"]} />
+    <StructDeclaration name={child.commandName} refkey={child.commandKey} derive={["clap::Args", "Debug"]} attrs={ownsArgs(child) ? ["command(subcommand_negates_reqs = true)"] : undefined}>
+      {ownsArgs(child) && <StructField name="args" type={child.plan!.argsKey} attrs={["command(flatten)"]} />}
+      <StructField name="cmd" type={ownsArgs(child) ? <>Option{"<"}{child.key}{">"}</> : child.key} attrs={["command(subcommand)"]} />
     </StructDeclaration>,
     <CliEnum node={child} />,
     ...cliGroups(child),
@@ -163,7 +167,7 @@ function treeArms(keys: OpsKeys, node: CliNode, optional: boolean, root = false)
     const pattern = <>{optional ? "Some(" : ""}{enumKey}::{child.variant}{child.children.size ? "(group)" : child.plan!.fields.length ? "(args)" : ""}{optional ? ")" : ""}</>;
     if (!child.children.size) return cliArm(keys, child.plan!, false, pattern);
     return <>        {pattern} =&gt; {"{"}{"\n"}
-      match group.cmd {"{"}{"\n"}<List hardline>{treeArms(keys, child, !!child.plan)}</List>{"\n}"}
+      match group.cmd {"{"}{"\n"}<List hardline>{treeArms(keys, child, ownsArgs(child))}</List>{"\n}"}
       {"\n}"}</>;
   });
   if (optional && node.plan) {
@@ -187,7 +191,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
     ...(props.service.doc !== undefined ? [`about = ${JSON.stringify(props.service.doc)}`] : []),
     ...(props.service.afterHelp ? [`after_help = ${afterHelpExpr(props.service.afterHelp)}`] : []),
     ...(props.service.argsConflictsWithSubcommands ? ["args_conflicts_with_subcommands = true"] : []),
-    ...(root ? ["subcommand_negates_reqs = true", ...(props.service.rootArgs ? ["disable_help_subcommand = true"] : [])] : []),
+    ...(props.service.rootArgs ? ["subcommand_negates_reqs = true", "disable_help_subcommand = true"] : []),
   ];
   const readsInput = props.plans.some(p => p.input);
   return (

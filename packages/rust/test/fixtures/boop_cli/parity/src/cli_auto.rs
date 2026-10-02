@@ -1,10 +1,8 @@
 use std::io::BufRead;
 use std::io::Write;
 
-use crate::ops_auto::AgentArgs;
 use crate::ops_auto::AgentSessionsArgs;
 use crate::ops_auto::AgentSummaryArgs;
-use crate::ops_auto::BeepAgentArgs;
 use crate::ops_auto::BeepAgentDoneArgs;
 use crate::ops_auto::BeepAgentRegisterArgs;
 use crate::ops_auto::BeepAgentSubscribeArgs;
@@ -14,16 +12,13 @@ use crate::ops_auto::BeepArgs;
 use crate::ops_auto::BeepForkArgs;
 use crate::ops_auto::BeepForkDiffArgs;
 use crate::ops_auto::BeepForkJoinArgs;
-use crate::ops_auto::BeepHarnessArgs;
 use crate::ops_auto::BeepHarnessGetArgs;
-use crate::ops_auto::BeepLaneArgs;
 use crate::ops_auto::BeepLaneAttachArgs;
 use crate::ops_auto::BeepLaneCreateArgs;
 use crate::ops_auto::BeepLaneDeleteArgs;
 use crate::ops_auto::BeepLaneGetArgs;
 use crate::ops_auto::BeepLaneKillArgs;
 use crate::ops_auto::BeepLaneListArgs;
-use crate::ops_auto::BeepLaneMessageArgs;
 use crate::ops_auto::BeepLaneMessageListArgs;
 use crate::ops_auto::BeepLanePaneArgs;
 use crate::ops_auto::BeepLanePatchArgs;
@@ -38,12 +33,10 @@ use crate::ops_auto::BeepLaneSquaresArgs;
 use crate::ops_auto::BeepLaneWaitArgs;
 use crate::ops_auto::BeepLaneWhereArgs;
 use crate::ops_auto::BeepMessageAckArgs;
-use crate::ops_auto::BeepMessageArgs;
 use crate::ops_auto::BeepPasteArgs;
 use crate::ops_auto::BeepPsArgs;
 use crate::ops_auto::BeepPstreeArgs;
 use crate::ops_auto::BeepRemindAddArgs;
-use crate::ops_auto::BeepRemindArgs;
 use crate::ops_auto::BeepRemindCancelArgs;
 use crate::ops_auto::BeepRemindListArgs;
 use crate::ops_auto::BeepRemindRunArgs;
@@ -52,65 +45,47 @@ use crate::ops_auto::BeepSelectionArgs;
 use crate::ops_auto::BeepSelectionFocusArgs;
 use crate::ops_auto::BeepSelectionSetArgs;
 use crate::ops_auto::BeepShoutArgs;
-use crate::ops_auto::ConfigArgs;
 use crate::ops_auto::ConfigPresetsArgs;
 use crate::ops_auto::DbAgentSummaryArgs;
 use crate::ops_auto::DbArgs;
-use crate::ops_auto::DbChatArgs;
 use crate::ops_auto::DbChatListArgs;
-use crate::ops_auto::DbCommandArgs;
 use crate::ops_auto::DbCommandListArgs;
-use crate::ops_auto::DbEdgeArgs;
 use crate::ops_auto::DbEdgeListArgs;
 use crate::ops_auto::DbFavoriteAddArgs;
-use crate::ops_auto::DbFavoriteArgs;
 use crate::ops_auto::DbFavoriteDeleteArgs;
 use crate::ops_auto::DbFavoriteEditArgs;
 use crate::ops_auto::DbFavoriteListArgs;
 use crate::ops_auto::DbFavoriteShowArgs;
-use crate::ops_auto::DbFetchArgs;
 use crate::ops_auto::DbFetchListArgs;
 use crate::ops_auto::DbLanesArgs;
 use crate::ops_auto::DbMailArgs;
-use crate::ops_auto::DbPrArgs;
 use crate::ops_auto::DbPrListArgs;
-use crate::ops_auto::DbPriceArgs;
 use crate::ops_auto::DbPriceSetArgs;
 use crate::ops_auto::DbSchemaArgs;
 use crate::ops_auto::DbSearchArgs;
-use crate::ops_auto::DbSessionArgs;
 use crate::ops_auto::DbSessionGetArgs;
 use crate::ops_auto::DbSessionListArgs;
 use crate::ops_auto::DbSessionsArgs;
-use crate::ops_auto::DbSkillArgs;
 use crate::ops_auto::DbSkillListArgs;
-use crate::ops_auto::DbSpanArgs;
 use crate::ops_auto::DbSpanListArgs;
 use crate::ops_auto::DbStatusArgs;
-use crate::ops_auto::DbSyncArgs;
 use crate::ops_auto::DbSyncCreateArgs;
-use crate::ops_auto::DbSyncCursorArgs;
 use crate::ops_auto::DbSyncCursorListArgs;
-use crate::ops_auto::DbTouchArgs;
 use crate::ops_auto::DbTouchListArgs;
-use crate::ops_auto::DbTurnArgs;
 use crate::ops_auto::DbTurnGetArgs;
 use crate::ops_auto::DbTurnListArgs;
 use crate::ops_auto::DbUsageArgs;
 use crate::ops_auto::DbUsageBlocksArgs;
 use crate::ops_auto::DbUsageBurnRateArgs;
 use crate::ops_auto::DebugArgs;
-use crate::ops_auto::InboxArgs;
 use crate::ops_auto::InboxDrainArgs;
 use crate::ops_auto::InboxHooksArgs;
-use crate::ops_auto::JobArgs;
 use crate::ops_auto::JobAttachArgs;
 use crate::ops_auto::JobCreateArgs;
 use crate::ops_auto::JobDeleteArgs;
 use crate::ops_auto::JobGetArgs;
 use crate::ops_auto::JobKillArgs;
 use crate::ops_auto::JobListArgs;
-use crate::ops_auto::JobMessageArgs;
 use crate::ops_auto::JobMessageListArgs;
 use crate::ops_auto::JobPaneArgs;
 use crate::ops_auto::JobPatchArgs;
@@ -124,7 +99,6 @@ use crate::ops_auto::JobSignalArgs;
 use crate::ops_auto::JobSquaresArgs;
 use crate::ops_auto::JobWaitArgs;
 use crate::ops_auto::JobWhereArgs;
-use crate::ops_auto::MailArgs;
 use crate::ops_auto::MailRecvArgs;
 use crate::ops_auto::MailSendArgs;
 use crate::ops_auto::MailWaitArgs;
@@ -139,7 +113,6 @@ use crate::ops_auto::RemindArgs;
 use crate::ops_auto::RootArgs;
 use crate::ops_auto::ShellInitArgs;
 use crate::ops_auto::TagAddArgs;
-use crate::ops_auto::TagArgs;
 use crate::ops_auto::TagForArgs;
 use crate::ops_auto::TagListArgs;
 use crate::ops_auto::TagOfArgs;
@@ -152,7 +125,7 @@ use crate::ops_auto::WaitArgs;
 use crate::ops_auto::WhoamiArgs;
 
 #[derive(clap::Parser, Debug)]
-#[command(name = "boop", version, about = "Cross-harness agent transcript reader: drive jobs with `job`, read what agents did with `db`", subcommand_negates_reqs = true)]
+#[command(name = "boop", version, about = "Cross-harness agent transcript reader: drive jobs with `job`, read what agents did with `db`")]
 pub struct Boop {
   #[command(subcommand)]
   pub cmd: Option<Cmd>,#[command(flatten)]
@@ -175,7 +148,7 @@ pub enum Cmd {
   Config(ConfigCommand),
   #[doc = "Freshly synchronize and summarize Boop agent/runtime/activity facts"]
   Agent(AgentCommand),
-  #[doc = "Mail a route and block for its answer; also the group that drives harnesses, lanes, agents and processes."]
+  #[doc = "Mail a route and block for its answer; also the group that drives harnesses, lanes, agents and processes.\n\n`boop beep <route> <body>` is the one send. `<route>` is a lane, a coordinator, a native, `parent` (the caller's own parent edge) or `children` (every live child of the caller)."]
   Beep(BeepCommand),
   #[doc = "Mail a claude coordinator reads at a turn boundary: the hook inbox. Folded (door-only-claude-delivery): the hook inbox is a rung the delivery ladder walks on its own, not a verb a caller reaches for. The installed hook still calls `boop inbox drain`, so the group runs"]
   Inbox(InboxCommand),
@@ -194,11 +167,9 @@ pub enum Cmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct JobCommand {
-  #[command(flatten)]
-  pub args: JobArgs,#[command(subcommand)]
-  pub cmd: Option<JobCmd>,
+  #[command(subcommand)]
+  pub cmd: JobCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -244,11 +215,9 @@ pub enum JobCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct JobMessageCommand {
-  #[command(flatten)]
-  pub args: JobMessageArgs,#[command(subcommand)]
-  pub cmd: Option<JobMessageCmd>,
+  #[command(subcommand)]
+  pub cmd: JobMessageCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -258,11 +227,9 @@ pub enum JobMessageCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct MailCommand {
-  #[command(flatten)]
-  pub args: MailArgs,#[command(subcommand)]
-  pub cmd: Option<MailCmd>,
+  #[command(subcommand)]
+  pub cmd: MailCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -334,11 +301,9 @@ pub enum DbCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbSessionCommand {
-  #[command(flatten)]
-  pub args: DbSessionArgs,#[command(subcommand)]
-  pub cmd: Option<DbSessionCmd>,
+  #[command(subcommand)]
+  pub cmd: DbSessionCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -350,11 +315,9 @@ pub enum DbSessionCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbTurnCommand {
-  #[command(flatten)]
-  pub args: DbTurnArgs,#[command(subcommand)]
-  pub cmd: Option<DbTurnCmd>,
+  #[command(subcommand)]
+  pub cmd: DbTurnCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -366,11 +329,9 @@ pub enum DbTurnCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbChatCommand {
-  #[command(flatten)]
-  pub args: DbChatArgs,#[command(subcommand)]
-  pub cmd: Option<DbChatCmd>,
+  #[command(subcommand)]
+  pub cmd: DbChatCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -380,11 +341,9 @@ pub enum DbChatCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbTouchCommand {
-  #[command(flatten)]
-  pub args: DbTouchArgs,#[command(subcommand)]
-  pub cmd: Option<DbTouchCmd>,
+  #[command(subcommand)]
+  pub cmd: DbTouchCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -394,11 +353,9 @@ pub enum DbTouchCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbCommandCommand {
-  #[command(flatten)]
-  pub args: DbCommandArgs,#[command(subcommand)]
-  pub cmd: Option<DbCommandCmd>,
+  #[command(subcommand)]
+  pub cmd: DbCommandCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -408,11 +365,9 @@ pub enum DbCommandCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbFetchCommand {
-  #[command(flatten)]
-  pub args: DbFetchArgs,#[command(subcommand)]
-  pub cmd: Option<DbFetchCmd>,
+  #[command(subcommand)]
+  pub cmd: DbFetchCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -422,11 +377,9 @@ pub enum DbFetchCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbSkillCommand {
-  #[command(flatten)]
-  pub args: DbSkillArgs,#[command(subcommand)]
-  pub cmd: Option<DbSkillCmd>,
+  #[command(subcommand)]
+  pub cmd: DbSkillCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -436,11 +389,9 @@ pub enum DbSkillCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbPrCommand {
-  #[command(flatten)]
-  pub args: DbPrArgs,#[command(subcommand)]
-  pub cmd: Option<DbPrCmd>,
+  #[command(subcommand)]
+  pub cmd: DbPrCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -450,11 +401,9 @@ pub enum DbPrCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbSpanCommand {
-  #[command(flatten)]
-  pub args: DbSpanArgs,#[command(subcommand)]
-  pub cmd: Option<DbSpanCmd>,
+  #[command(subcommand)]
+  pub cmd: DbSpanCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -464,11 +413,9 @@ pub enum DbSpanCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbEdgeCommand {
-  #[command(flatten)]
-  pub args: DbEdgeArgs,#[command(subcommand)]
-  pub cmd: Option<DbEdgeCmd>,
+  #[command(subcommand)]
+  pub cmd: DbEdgeCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -494,11 +441,9 @@ pub enum DbUsageCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbPriceCommand {
-  #[command(flatten)]
-  pub args: DbPriceArgs,#[command(subcommand)]
-  pub cmd: Option<DbPriceCmd>,
+  #[command(subcommand)]
+  pub cmd: DbPriceCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -510,11 +455,9 @@ pub enum DbPriceCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbFavoriteCommand {
-  #[command(flatten)]
-  pub args: DbFavoriteArgs,#[command(subcommand)]
-  pub cmd: Option<DbFavoriteCmd>,
+  #[command(subcommand)]
+  pub cmd: DbFavoriteCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -532,11 +475,9 @@ pub enum DbFavoriteCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbSyncCommand {
-  #[command(flatten)]
-  pub args: DbSyncArgs,#[command(subcommand)]
-  pub cmd: Option<DbSyncCmd>,
+  #[command(subcommand)]
+  pub cmd: DbSyncCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -546,11 +487,9 @@ pub enum DbSyncCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct DbSyncCursorCommand {
-  #[command(flatten)]
-  pub args: DbSyncCursorArgs,#[command(subcommand)]
-  pub cmd: Option<DbSyncCursorCmd>,
+  #[command(subcommand)]
+  pub cmd: DbSyncCursorCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -580,11 +519,9 @@ pub enum MeCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct ConfigCommand {
-  #[command(flatten)]
-  pub args: ConfigArgs,#[command(subcommand)]
-  pub cmd: Option<ConfigCmd>,
+  #[command(subcommand)]
+  pub cmd: ConfigCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -598,11 +535,9 @@ pub enum ConfigCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct AgentCommand {
-  #[command(flatten)]
-  pub args: AgentArgs,#[command(subcommand)]
-  pub cmd: Option<AgentCmd>,
+  #[command(subcommand)]
+  pub cmd: AgentCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -650,11 +585,9 @@ pub enum BeepCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct BeepRemindCommand {
-  #[command(flatten)]
-  pub args: BeepRemindArgs,#[command(subcommand)]
-  pub cmd: Option<BeepRemindCmd>,
+  #[command(subcommand)]
+  pub cmd: BeepRemindCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -670,27 +603,21 @@ pub enum BeepRemindCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct BeepHarnessCommand {
-  #[command(flatten)]
-  pub args: BeepHarnessArgs,#[command(subcommand)]
-  pub cmd: Option<BeepHarnessCmd>,
+  #[command(subcommand)]
+  pub cmd: BeepHarnessCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
 pub enum BeepHarnessCmd {
-  #[doc = "Usage: boop beep harness list"]
   List,
-  #[doc = "Usage: boop beep harness get <HARNESS>"]
   Get(BeepHarnessGetArgs),
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct BeepLaneCommand {
-  #[command(flatten)]
-  pub args: BeepLaneArgs,#[command(subcommand)]
-  pub cmd: Option<BeepLaneCmd>,
+  #[command(subcommand)]
+  pub cmd: BeepLaneCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -736,11 +663,9 @@ pub enum BeepLaneCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct BeepLaneMessageCommand {
-  #[command(flatten)]
-  pub args: BeepLaneMessageArgs,#[command(subcommand)]
-  pub cmd: Option<BeepLaneMessageCmd>,
+  #[command(subcommand)]
+  pub cmd: BeepLaneMessageCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -750,11 +675,9 @@ pub enum BeepLaneMessageCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct BeepAgentCommand {
-  #[command(flatten)]
-  pub args: BeepAgentArgs,#[command(subcommand)]
-  pub cmd: Option<BeepAgentCmd>,
+  #[command(subcommand)]
+  pub cmd: BeepAgentCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -772,11 +695,9 @@ pub enum BeepAgentCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct BeepMessageCommand {
-  #[command(flatten)]
-  pub args: BeepMessageArgs,#[command(subcommand)]
-  pub cmd: Option<BeepMessageCmd>,
+  #[command(subcommand)]
+  pub cmd: BeepMessageCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -822,11 +743,9 @@ pub enum BeepSelectionCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct InboxCommand {
-  #[command(flatten)]
-  pub args: InboxArgs,#[command(subcommand)]
-  pub cmd: Option<InboxCmd>,
+  #[command(subcommand)]
+  pub cmd: InboxCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -838,11 +757,9 @@ pub enum InboxCmd {
 }
 
 #[derive(clap::Args, Debug)]
-#[command(subcommand_negates_reqs = true)]
 pub struct TagCommand {
-  #[command(flatten)]
-  pub args: TagArgs,#[command(subcommand)]
-  pub cmd: Option<TagCmd>,
+  #[command(subcommand)]
+  pub cmd: TagCmd,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -872,40 +789,37 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   match cli.cmd {
           Some(Cmd::Job(group)) => {
   match group.cmd {
-          Some(JobCmd::List(args)) => { crate::ops::job_list(&args)?; }
-          Some(JobCmd::Resume(args)) => { crate::ops::job_resume(&args)?; }
-          Some(JobCmd::Create(args)) => { crate::ops::job_create(&args)?; }
-          Some(JobCmd::Revive(args)) => { crate::ops::job_revive(&args)?; }
-          Some(JobCmd::Get(args)) => { crate::ops::job_get(&args)?; }
-          Some(JobCmd::Where(args)) => { crate::ops::job_where(&args)?; }
-          Some(JobCmd::Patch(args)) => { crate::ops::job_patch(&args)?; }
-          Some(JobCmd::Delete(args)) => { crate::ops::job_delete(&args)?; }
-          Some(JobCmd::Rm(args)) => { crate::ops::job_rm(&args)?; }
-          Some(JobCmd::Kill(args)) => { crate::ops::job_kill(&args)?; }
-          Some(JobCmd::Wait(args)) => { crate::ops::job_wait(&args)?; }
-          Some(JobCmd::Attach(args)) => { crate::ops::job_attach(&args)?; }
-          Some(JobCmd::Signal(args)) => { crate::ops::job_signal(&args)?; }
-          Some(JobCmd::Prune(args)) => { crate::ops::job_prune(&args)?; }
-          Some(JobCmd::Route(args)) => { crate::ops::job_route(&args)?; }
-          Some(JobCmd::Pane(args)) => { crate::ops::job_pane(&args)?; }
-          Some(JobCmd::Squares(args)) => { crate::ops::job_squares(&args)?; }
-          Some(JobCmd::Message(group)) => {
+          JobCmd::List(args) => { crate::ops::job_list(&args)?; }
+          JobCmd::Resume(args) => { crate::ops::job_resume(&args)?; }
+          JobCmd::Create(args) => { crate::ops::job_create(&args)?; }
+          JobCmd::Revive(args) => { crate::ops::job_revive(&args)?; }
+          JobCmd::Get(args) => { crate::ops::job_get(&args)?; }
+          JobCmd::Where(args) => { crate::ops::job_where(&args)?; }
+          JobCmd::Patch(args) => { crate::ops::job_patch(&args)?; }
+          JobCmd::Delete(args) => { crate::ops::job_delete(&args)?; }
+          JobCmd::Rm(args) => { crate::ops::job_rm(&args)?; }
+          JobCmd::Kill(args) => { crate::ops::job_kill(&args)?; }
+          JobCmd::Wait(args) => { crate::ops::job_wait(&args)?; }
+          JobCmd::Attach(args) => { crate::ops::job_attach(&args)?; }
+          JobCmd::Signal(args) => { crate::ops::job_signal(&args)?; }
+          JobCmd::Prune(args) => { crate::ops::job_prune(&args)?; }
+          JobCmd::Route(args) => { crate::ops::job_route(&args)?; }
+          JobCmd::Pane(args) => { crate::ops::job_pane(&args)?; }
+          JobCmd::Squares(args) => { crate::ops::job_squares(&args)?; }
+          JobCmd::Message(group) => {
   match group.cmd {
-          Some(JobMessageCmd::List(args)) => { crate::ops::job_message_list(&args)?; }
-          None => { let args = group.args; crate::ops::job_message(&args)?; }
+          JobMessageCmd::List(args) => { crate::ops::job_message_list(&args)?; }
   }
   }
-          Some(JobCmd::Run(args)) => { crate::ops::job_run(&args)?; }
-          None => { let args = group.args; crate::ops::job(&args)?; }
+          JobCmd::Run(args) => { crate::ops::job_run(&args)?; }
   }
   }
           Some(Cmd::Mail(group)) => {
   match group.cmd {
-          Some(MailCmd::Send(args)) => { crate::ops::mail_send(&args)?; }
-          Some(MailCmd::Recv(args)) => { crate::ops::mail_recv(&args)?; }
-          Some(MailCmd::Wait(args)) => { crate::ops::mail_wait(&args)?; }
-          Some(MailCmd::Watch(args)) => { crate::ops::mail_watch(&args)?; }
-          None => { let args = group.args; crate::ops::mail(&args)?; }
+          MailCmd::Send(args) => { crate::ops::mail_send(&args)?; }
+          MailCmd::Recv(args) => { crate::ops::mail_recv(&args)?; }
+          MailCmd::Wait(args) => { crate::ops::mail_wait(&args)?; }
+          MailCmd::Watch(args) => { crate::ops::mail_watch(&args)?; }
   }
   }
           Some(Cmd::Db(group)) => {
@@ -913,64 +827,54 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
           Some(DbCmd::AgentSummary(args)) => { crate::ops::db_agent_summary(&args)?; }
           Some(DbCmd::Session(group)) => {
   match group.cmd {
-          Some(DbSessionCmd::List(args)) => { crate::ops::db_session_list(&args)?; }
-          Some(DbSessionCmd::Get(args)) => { crate::ops::db_session_get(&args)?; }
-          None => { let args = group.args; crate::ops::db_session(&args)?; }
+          DbSessionCmd::List(args) => { crate::ops::db_session_list(&args)?; }
+          DbSessionCmd::Get(args) => { crate::ops::db_session_get(&args)?; }
   }
   }
           Some(DbCmd::Turn(group)) => {
   match group.cmd {
-          Some(DbTurnCmd::List(args)) => { crate::ops::db_turn_list(&args)?; }
-          Some(DbTurnCmd::Get(args)) => { crate::ops::db_turn_get(&args)?; }
-          None => { let args = group.args; crate::ops::db_turn(&args)?; }
+          DbTurnCmd::List(args) => { crate::ops::db_turn_list(&args)?; }
+          DbTurnCmd::Get(args) => { crate::ops::db_turn_get(&args)?; }
   }
   }
           Some(DbCmd::Chat(group)) => {
   match group.cmd {
-          Some(DbChatCmd::List(args)) => { crate::ops::db_chat_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_chat(&args)?; }
+          DbChatCmd::List(args) => { crate::ops::db_chat_list(&args)?; }
   }
   }
           Some(DbCmd::Touch(group)) => {
   match group.cmd {
-          Some(DbTouchCmd::List(args)) => { crate::ops::db_touch_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_touch(&args)?; }
+          DbTouchCmd::List(args) => { crate::ops::db_touch_list(&args)?; }
   }
   }
           Some(DbCmd::Command(group)) => {
   match group.cmd {
-          Some(DbCommandCmd::List(args)) => { crate::ops::db_command_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_command(&args)?; }
+          DbCommandCmd::List(args) => { crate::ops::db_command_list(&args)?; }
   }
   }
           Some(DbCmd::Fetch(group)) => {
   match group.cmd {
-          Some(DbFetchCmd::List(args)) => { crate::ops::db_fetch_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_fetch(&args)?; }
+          DbFetchCmd::List(args) => { crate::ops::db_fetch_list(&args)?; }
   }
   }
           Some(DbCmd::Skill(group)) => {
   match group.cmd {
-          Some(DbSkillCmd::List(args)) => { crate::ops::db_skill_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_skill(&args)?; }
+          DbSkillCmd::List(args) => { crate::ops::db_skill_list(&args)?; }
   }
   }
           Some(DbCmd::Pr(group)) => {
   match group.cmd {
-          Some(DbPrCmd::List(args)) => { crate::ops::db_pr_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_pr(&args)?; }
+          DbPrCmd::List(args) => { crate::ops::db_pr_list(&args)?; }
   }
   }
           Some(DbCmd::Span(group)) => {
   match group.cmd {
-          Some(DbSpanCmd::List(args)) => { crate::ops::db_span_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_span(&args)?; }
+          DbSpanCmd::List(args) => { crate::ops::db_span_list(&args)?; }
   }
   }
           Some(DbCmd::Edge(group)) => {
   match group.cmd {
-          Some(DbEdgeCmd::List(args)) => { crate::ops::db_edge_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_edge(&args)?; }
+          DbEdgeCmd::List(args) => { crate::ops::db_edge_list(&args)?; }
   }
   }
           Some(DbCmd::Usage(group)) => {
@@ -982,31 +886,27 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(DbCmd::Price(group)) => {
   match group.cmd {
-          Some(DbPriceCmd::List) => { let args = Default::default(); crate::ops::db_price_list(&args)?; }
-          Some(DbPriceCmd::Set(args)) => { crate::ops::db_price_set(&args)?; }
-          None => { let args = group.args; crate::ops::db_price(&args)?; }
+          DbPriceCmd::List => { let args = Default::default(); crate::ops::db_price_list(&args)?; }
+          DbPriceCmd::Set(args) => { crate::ops::db_price_set(&args)?; }
   }
   }
           Some(DbCmd::Favorite(group)) => {
   match group.cmd {
-          Some(DbFavoriteCmd::Add(args)) => { crate::ops::db_favorite_add(&args)?; }
-          Some(DbFavoriteCmd::List(args)) => { crate::ops::db_favorite_list(&args)?; }
-          Some(DbFavoriteCmd::Show(args)) => { crate::ops::db_favorite_show(&args)?; }
-          Some(DbFavoriteCmd::Edit(args)) => { crate::ops::db_favorite_edit(&args)?; }
-          Some(DbFavoriteCmd::Delete(args)) => { crate::ops::db_favorite_delete(&args)?; }
-          None => { let args = group.args; crate::ops::db_favorite(&args)?; }
+          DbFavoriteCmd::Add(args) => { crate::ops::db_favorite_add(&args)?; }
+          DbFavoriteCmd::List(args) => { crate::ops::db_favorite_list(&args)?; }
+          DbFavoriteCmd::Show(args) => { crate::ops::db_favorite_show(&args)?; }
+          DbFavoriteCmd::Edit(args) => { crate::ops::db_favorite_edit(&args)?; }
+          DbFavoriteCmd::Delete(args) => { crate::ops::db_favorite_delete(&args)?; }
   }
   }
           Some(DbCmd::Sync(group)) => {
   match group.cmd {
-          Some(DbSyncCmd::Create(args)) => { crate::ops::db_sync_create(&args)?; }
-          None => { let args = group.args; crate::ops::db_sync(&args)?; }
+          DbSyncCmd::Create(args) => { crate::ops::db_sync_create(&args)?; }
   }
   }
           Some(DbCmd::SyncCursor(group)) => {
   match group.cmd {
-          Some(DbSyncCursorCmd::List(args)) => { crate::ops::db_sync_cursor_list(&args)?; }
-          None => { let args = group.args; crate::ops::db_sync_cursor(&args)?; }
+          DbSyncCursorCmd::List(args) => { crate::ops::db_sync_cursor_list(&args)?; }
   }
   }
           Some(DbCmd::Search(args)) => { crate::ops::db_search(&args)?; }
@@ -1030,80 +930,72 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(Cmd::Config(group)) => {
   match group.cmd {
-          Some(ConfigCmd::Path) => { let args = Default::default(); crate::ops::config_path(&args)?; }
-          Some(ConfigCmd::Show) => { let args = Default::default(); crate::ops::config_show(&args)?; }
-          Some(ConfigCmd::Presets(args)) => { crate::ops::config_presets(&args)?; }
-          None => { let args = group.args; crate::ops::config(&args)?; }
+          ConfigCmd::Path => { let args = Default::default(); crate::ops::config_path(&args)?; }
+          ConfigCmd::Show => { let args = Default::default(); crate::ops::config_show(&args)?; }
+          ConfigCmd::Presets(args) => { crate::ops::config_presets(&args)?; }
   }
   }
           Some(Cmd::Agent(group)) => {
   match group.cmd {
-          Some(AgentCmd::Summary(args)) => { crate::ops::agent_summary(&args)?; }
-          Some(AgentCmd::Sessions(args)) => { crate::ops::agent_sessions(&args)?; }
-          None => { let args = group.args; crate::ops::agent(&args)?; }
+          AgentCmd::Summary(args) => { crate::ops::agent_summary(&args)?; }
+          AgentCmd::Sessions(args) => { crate::ops::agent_sessions(&args)?; }
   }
   }
           Some(Cmd::Beep(group)) => {
   match group.cmd {
           Some(BeepCmd::Remind(group)) => {
   match group.cmd {
-          Some(BeepRemindCmd::Add(args)) => { crate::ops::beep_remind_add(&args)?; }
-          Some(BeepRemindCmd::List(args)) => { crate::ops::beep_remind_list(&args)?; }
-          Some(BeepRemindCmd::Cancel(args)) => { crate::ops::beep_remind_cancel(&args)?; }
-          Some(BeepRemindCmd::Run(args)) => { crate::ops::beep_remind_run(&args)?; }
-          None => { let args = group.args; crate::ops::beep_remind(&args)?; }
+          BeepRemindCmd::Add(args) => { crate::ops::beep_remind_add(&args)?; }
+          BeepRemindCmd::List(args) => { crate::ops::beep_remind_list(&args)?; }
+          BeepRemindCmd::Cancel(args) => { crate::ops::beep_remind_cancel(&args)?; }
+          BeepRemindCmd::Run(args) => { crate::ops::beep_remind_run(&args)?; }
   }
   }
           Some(BeepCmd::Harness(group)) => {
   match group.cmd {
-          Some(BeepHarnessCmd::List) => { let args = Default::default(); crate::ops::beep_harness_list(&args)?; }
-          Some(BeepHarnessCmd::Get(args)) => { crate::ops::beep_harness_get(&args)?; }
-          None => { let args = group.args; crate::ops::beep_harness(&args)?; }
+          BeepHarnessCmd::List => { let args = Default::default(); crate::ops::beep_harness_list(&args)?; }
+          BeepHarnessCmd::Get(args) => { crate::ops::beep_harness_get(&args)?; }
   }
   }
           Some(BeepCmd::Lane(group)) => {
   match group.cmd {
-          Some(BeepLaneCmd::List(args)) => { crate::ops::beep_lane_list(&args)?; }
-          Some(BeepLaneCmd::Resume(args)) => { crate::ops::beep_lane_resume(&args)?; }
-          Some(BeepLaneCmd::Create(args)) => { crate::ops::beep_lane_create(&args)?; }
-          Some(BeepLaneCmd::Revive(args)) => { crate::ops::beep_lane_revive(&args)?; }
-          Some(BeepLaneCmd::Get(args)) => { crate::ops::beep_lane_get(&args)?; }
-          Some(BeepLaneCmd::Where(args)) => { crate::ops::beep_lane_where(&args)?; }
-          Some(BeepLaneCmd::Patch(args)) => { crate::ops::beep_lane_patch(&args)?; }
-          Some(BeepLaneCmd::Delete(args)) => { crate::ops::beep_lane_delete(&args)?; }
-          Some(BeepLaneCmd::Rm(args)) => { crate::ops::beep_lane_rm(&args)?; }
-          Some(BeepLaneCmd::Kill(args)) => { crate::ops::beep_lane_kill(&args)?; }
-          Some(BeepLaneCmd::Wait(args)) => { crate::ops::beep_lane_wait(&args)?; }
-          Some(BeepLaneCmd::Attach(args)) => { crate::ops::beep_lane_attach(&args)?; }
-          Some(BeepLaneCmd::Signal(args)) => { crate::ops::beep_lane_signal(&args)?; }
-          Some(BeepLaneCmd::Prune(args)) => { crate::ops::beep_lane_prune(&args)?; }
-          Some(BeepLaneCmd::Route(args)) => { crate::ops::beep_lane_route(&args)?; }
-          Some(BeepLaneCmd::Pane(args)) => { crate::ops::beep_lane_pane(&args)?; }
-          Some(BeepLaneCmd::Squares(args)) => { crate::ops::beep_lane_squares(&args)?; }
-          Some(BeepLaneCmd::Message(group)) => {
+          BeepLaneCmd::List(args) => { crate::ops::beep_lane_list(&args)?; }
+          BeepLaneCmd::Resume(args) => { crate::ops::beep_lane_resume(&args)?; }
+          BeepLaneCmd::Create(args) => { crate::ops::beep_lane_create(&args)?; }
+          BeepLaneCmd::Revive(args) => { crate::ops::beep_lane_revive(&args)?; }
+          BeepLaneCmd::Get(args) => { crate::ops::beep_lane_get(&args)?; }
+          BeepLaneCmd::Where(args) => { crate::ops::beep_lane_where(&args)?; }
+          BeepLaneCmd::Patch(args) => { crate::ops::beep_lane_patch(&args)?; }
+          BeepLaneCmd::Delete(args) => { crate::ops::beep_lane_delete(&args)?; }
+          BeepLaneCmd::Rm(args) => { crate::ops::beep_lane_rm(&args)?; }
+          BeepLaneCmd::Kill(args) => { crate::ops::beep_lane_kill(&args)?; }
+          BeepLaneCmd::Wait(args) => { crate::ops::beep_lane_wait(&args)?; }
+          BeepLaneCmd::Attach(args) => { crate::ops::beep_lane_attach(&args)?; }
+          BeepLaneCmd::Signal(args) => { crate::ops::beep_lane_signal(&args)?; }
+          BeepLaneCmd::Prune(args) => { crate::ops::beep_lane_prune(&args)?; }
+          BeepLaneCmd::Route(args) => { crate::ops::beep_lane_route(&args)?; }
+          BeepLaneCmd::Pane(args) => { crate::ops::beep_lane_pane(&args)?; }
+          BeepLaneCmd::Squares(args) => { crate::ops::beep_lane_squares(&args)?; }
+          BeepLaneCmd::Message(group) => {
   match group.cmd {
-          Some(BeepLaneMessageCmd::List(args)) => { crate::ops::beep_lane_message_list(&args)?; }
-          None => { let args = group.args; crate::ops::beep_lane_message(&args)?; }
+          BeepLaneMessageCmd::List(args) => { crate::ops::beep_lane_message_list(&args)?; }
   }
   }
-          Some(BeepLaneCmd::Run(args)) => { crate::ops::beep_lane_run(&args)?; }
-          None => { let args = group.args; crate::ops::beep_lane(&args)?; }
+          BeepLaneCmd::Run(args) => { crate::ops::beep_lane_run(&args)?; }
   }
   }
           Some(BeepCmd::Agent(group)) => {
   match group.cmd {
-          Some(BeepAgentCmd::Waterfall(args)) => { crate::ops::beep_agent_waterfall(&args)?; }
-          Some(BeepAgentCmd::Register(args)) => { crate::ops::beep_agent_register(&args)?; }
-          Some(BeepAgentCmd::Done(args)) => { crate::ops::beep_agent_done(&args)?; }
-          Some(BeepAgentCmd::Subscribe(args)) => { crate::ops::beep_agent_subscribe(&args)?; }
-          Some(BeepAgentCmd::Unsubscribe(args)) => { crate::ops::beep_agent_unsubscribe(&args)?; }
-          None => { let args = group.args; crate::ops::beep_agent(&args)?; }
+          BeepAgentCmd::Waterfall(args) => { crate::ops::beep_agent_waterfall(&args)?; }
+          BeepAgentCmd::Register(args) => { crate::ops::beep_agent_register(&args)?; }
+          BeepAgentCmd::Done(args) => { crate::ops::beep_agent_done(&args)?; }
+          BeepAgentCmd::Subscribe(args) => { crate::ops::beep_agent_subscribe(&args)?; }
+          BeepAgentCmd::Unsubscribe(args) => { crate::ops::beep_agent_unsubscribe(&args)?; }
   }
   }
           Some(BeepCmd::Message(group)) => {
   match group.cmd {
-          Some(BeepMessageCmd::Ack(args)) => { crate::ops::beep_message_ack(&args)?; }
-          None => { let args = group.args; crate::ops::beep_message(&args)?; }
+          BeepMessageCmd::Ack(args) => { crate::ops::beep_message_ack(&args)?; }
   }
   }
           Some(BeepCmd::Fork(group)) => {
@@ -1132,25 +1024,23 @@ pub fn run(cli: Boop, input: &mut dyn BufRead, out: &mut dyn Write) -> OpResult<
   }
           Some(Cmd::Inbox(group)) => {
   match group.cmd {
-          Some(InboxCmd::Drain(args)) => { crate::ops::inbox_drain(&args)?; }
-          Some(InboxCmd::Hooks(args)) => { crate::ops::inbox_hooks(&args)?; }
-          None => { let args = group.args; crate::ops::inbox(&args)?; }
+          InboxCmd::Drain(args) => { crate::ops::inbox_drain(&args)?; }
+          InboxCmd::Hooks(args) => { crate::ops::inbox_hooks(&args)?; }
   }
   }
           Some(Cmd::Remind(args)) => { crate::ops::remind(&args)?; }
           Some(Cmd::ShellInit(args)) => { crate::ops::shell_init(&args)?; }
           Some(Cmd::Tag(group)) => {
   match group.cmd {
-          Some(TagCmd::Add(args)) => { crate::ops::tag_add(&args)?; }
-          Some(TagCmd::Recent(args)) => { crate::ops::tag_recent(&args)?; }
-          Some(TagCmd::Search(args)) => { crate::ops::tag_search(&args)?; }
-          Some(TagCmd::List(args)) => { crate::ops::tag_list(&args)?; }
-          Some(TagCmd::Of(args)) => { crate::ops::tag_of(&args)?; }
-          Some(TagCmd::For(args)) => { crate::ops::tag_for(&args)?; }
-          Some(TagCmd::Sources(args)) => { crate::ops::tag_sources(&args)?; }
-          Some(TagCmd::Rm(args)) => { crate::ops::tag_rm(&args)?; }
-          Some(TagCmd::Backfill) => { let args = Default::default(); crate::ops::tag_backfill(&args)?; }
-          None => { let args = group.args; crate::ops::tag(&args)?; }
+          TagCmd::Add(args) => { crate::ops::tag_add(&args)?; }
+          TagCmd::Recent(args) => { crate::ops::tag_recent(&args)?; }
+          TagCmd::Search(args) => { crate::ops::tag_search(&args)?; }
+          TagCmd::List(args) => { crate::ops::tag_list(&args)?; }
+          TagCmd::Of(args) => { crate::ops::tag_of(&args)?; }
+          TagCmd::For(args) => { crate::ops::tag_for(&args)?; }
+          TagCmd::Sources(args) => { crate::ops::tag_sources(&args)?; }
+          TagCmd::Rm(args) => { crate::ops::tag_rm(&args)?; }
+          TagCmd::Backfill => { let args = Default::default(); crate::ops::tag_backfill(&args)?; }
   }
   }
           Some(Cmd::Tui(args)) => { crate::ops::tui(&args)?; }

@@ -10,7 +10,7 @@ use crate::ops_auto::RootArgs;
 use crate::ops_auto::SqlArgs;
 
 #[derive(clap::Parser, Debug)]
-#[command(name = "tree", version, subcommand_negates_reqs = true)]
+#[command(name = "tree", version)]
 pub struct Tree {
   #[command(subcommand)]
   pub cmd: Option<Cmd>,#[command(flatten)]
