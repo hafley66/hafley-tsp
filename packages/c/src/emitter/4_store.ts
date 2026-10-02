@@ -36,7 +36,7 @@ function bind(c: TableColumn, index: number): string {
     case "text": call = `${value} ? sqlite3_bind_text(stmt, ${index}, ${value}, -1, SQLITE_TRANSIENT) : SQLITE_MISUSE`; break;
     case "integer": call = `sqlite3_bind_int64(stmt, ${index}, ${value})`; break;
     case "real": call = `sqlite3_bind_double(stmt, ${index}, ${value})`; break;
-    case "blob": call = `sqlite3_bind_blob64(stmt, ${index}, ${value} ? (const void *)${value} : (const void *)"", row->${name}_size, SQLITE_TRANSIENT)`; break;
+    case "blob": call = `(row->${name}_size && !${value}) ? SQLITE_MISUSE : sqlite3_bind_blob64(stmt, ${index}, ${value} ? (const void *)${value} : (const void *)"", row->${name}_size, SQLITE_TRANSIENT)`; break;
   }
   return `  rc = ${c.nullable ? `!row->has_${name} ? sqlite3_bind_null(stmt, ${index}) : ` : ""}${call};\n  if (rc != SQLITE_OK) goto done;\n`;
 }
@@ -46,7 +46,7 @@ function readColumn(c: TableColumn, index: number): string {
   switch (kind(c)) {
     case "integer": read = `    ${value} = sqlite3_column_int64(stmt, ${index});\n`; break;
     case "real": read = `    ${value} = sqlite3_column_double(stmt, ${index});\n`; break;
-    case "text": read = `    const char *text_${index} = (const char *)sqlite3_column_text(stmt, ${index});\n    if (!text_${index}) { rc = SQLITE_NOMEM; goto done; }\n    ${value} = mi_heap_strdup(arena, text_${index});\n    if (!${value}) { rc = SQLITE_NOMEM; goto done; }\n`; break;
+    case "text": read = `    const char *text_${index} = (const char *)sqlite3_column_text(stmt, ${index});\n    if (!text_${index}) { rc = SQLITE_NOMEM; goto done; }\n    if (strlen(text_${index}) != (size_t)sqlite3_column_bytes(stmt, ${index})) { rc = SQLITE_MISMATCH; goto done; }\n    ${value} = mi_heap_strdup(arena, text_${index});\n    if (!${value}) { rc = SQLITE_NOMEM; goto done; }\n`; break;
     case "blob": read = `    row.${name}_size = (size_t)sqlite3_column_bytes(stmt, ${index});\n    ${value} = mi_heap_malloc(arena, row.${name}_size ? row.${name}_size : 1);\n    if (!${value}) { rc = SQLITE_NOMEM; goto done; }\n    if (row.${name}_size) memcpy(${value}, sqlite3_column_blob(stmt, ${index}), row.${name}_size);\n`; break;
   }
   return c.nullable ? `    row.has_${name} = sqlite3_column_type(stmt, ${index}) != SQLITE_NULL;\n    if (row.has_${name}) {\n${read}    }\n` : `    if (sqlite3_column_type(stmt, ${index}) == SQLITE_NULL) { rc = SQLITE_MISMATCH; goto done; }\n${read}`;
