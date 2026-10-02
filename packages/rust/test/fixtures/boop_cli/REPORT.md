@@ -31,3 +31,5 @@ Aliases, conflicts, requires, hyphen values, and custom parsers affect acceptanc
 Native metadata pass: **135/155**. Query wire names, enum-member docs, required arrays (`@minItems(1)`), complete operation docs, and groups with zero args account for 44 additional matching captures. No custom decorator was added.
 
 Short flags: `@extension("x-clap-short", "y" | "n")` on native query fields. Required by 4 captures: job revive, beep lane revive, tag recent, tag search. HTTP parameter names have no independent one-character flag slot; OpenAPI extensions retain the metadata without a custom decorator.
+
+Hidden commands: `@extension("x-clap-hidden", true)` on operations omitted from their parent's visible command roster. This addresses the boop, job, and beep lane parent captures. `@visibility` accepts model properties, so it cannot mark an operation hidden. No custom decorator was added.

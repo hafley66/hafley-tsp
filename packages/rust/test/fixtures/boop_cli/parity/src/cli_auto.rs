@@ -146,22 +146,31 @@ pub enum Cmd {
   Me(MeCommand),
   #[doc = "Inspect the boop configuration the CLI reads"]
   Config(ConfigCommand),
+  #[command(hide = true)]
   #[doc = "Freshly synchronize and summarize Boop agent/runtime/activity facts"]
   Agent(AgentCommand),
+  #[command(hide = true)]
   #[doc = "Mail a route and block for its answer; also the group that drives harnesses, lanes, agents and processes.\n\n`boop beep <route> <body>` is the one send. `<route>` is a lane, a coordinator, a native, `parent` (the caller's own parent edge) or `children` (every live child of the caller)."]
   Beep(BeepCommand),
+  #[command(hide = true)]
   #[doc = "Mail a claude coordinator reads at a turn boundary: the hook inbox. Folded (door-only-claude-delivery): the hook inbox is a rung the delivery ladder walks on its own, not a verb a caller reaches for. The installed hook still calls `boop inbox drain`, so the group runs"]
   Inbox(InboxCommand),
+  #[command(hide = true)]
   #[doc = "Print the newest user messages from the caller's tracked conversation"]
   Remind(RemindArgs),
+  #[command(hide = true)]
   #[doc = "Print shell functions that route interactive harnesses through Boop. Folded (one-pane-register-path): `boop tui <harness>` is the spelling"]
   ShellInit(ShellInitArgs),
+  #[command(hide = true)]
   #[doc = "The shared tag table: apply tags to any surface, read the recent five back. Search reads `agent_tag` only, never a message body"]
   Tag(TagCommand),
+  #[command(hide = true)]
   #[doc = "Launch an ordinary interactive harness TUI and register this pane"]
   Tui(TuiArgs),
+  #[command(hide = true)]
   #[doc = "Block until mail lands: the reply to <id>, a lane's result row, or the next unread row addressed to you with --me"]
   Wait(WaitArgs),
+  #[command(hide = true)]
   #[doc = "Report the caller's own identity and which of the two rungs named it"]
   Whoami(WhoamiArgs),
 }
@@ -210,6 +219,7 @@ pub enum JobCmd {
   Squares(JobSquaresArgs),
   #[doc = "The lane's mailbox"]
   Message(JobMessageCommand),
+  #[command(hide = true)]
   #[doc = "Drive one lane conversation. This is what a lane pane runs; a human calls `lane create`, never this. Folded (audit 2026-08-25): the supervisor's entry point, spawned by `lane create`"]
   Run(JobRunArgs),
 }
@@ -658,6 +668,7 @@ pub enum BeepLaneCmd {
   Squares(BeepLaneSquaresArgs),
   #[doc = "The lane's mailbox"]
   Message(BeepLaneMessageCommand),
+  #[command(hide = true)]
   #[doc = "Drive one lane conversation. This is what a lane pane runs; a human calls `lane create`, never this. Folded (audit 2026-08-25): the supervisor's entry point, spawned by `lane create`"]
   Run(BeepLaneRunArgs),
 }

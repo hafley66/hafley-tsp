@@ -137,7 +137,8 @@ function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean, pattern?: Children)
 function CliEnum(props: { node: CliNode; rootKey?: Refkey }) {
   return <EnumDeclaration name={props.node.enumName} refkey={props.rootKey ?? props.node.key} derive={["clap::Subcommand", "Debug"]}>
     <List hardline>{[...props.node.children.values()].map(node => <>
-      {(node.plan?.op.doc !== undefined || node.plan?.op.afterHelp) ? <><Attributes attrs={[
+      {(node.plan?.op.doc !== undefined || node.plan?.op.afterHelp || node.plan?.op.hidden) ? <><Attributes attrs={[
+        ...(node.plan?.op.hidden ? ["command(hide = true)"] : []),
         ...(node.plan?.op.doc !== undefined ? [`doc = ${JSON.stringify(node.plan.op.doc)}`] : []),
         ...(node.plan?.op.afterHelp ? [`command(after_help = ${afterHelpExpr(node.plan.op.afterHelp)})`] : []),
       ]} />{"\n"}</> : null}

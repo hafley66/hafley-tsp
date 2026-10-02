@@ -2,6 +2,7 @@
 // Domain models come from programToTypeDefs; ops reference them by name only.
 
 import { getDoc, type Operation, type Program, type Type } from "@typespec/compiler";
+import { getExtensions } from "@typespec/openapi";
 import { getAllHttpServices, type HttpOperation } from "@typespec/http";
 import { getStreamOf, isStream } from "@typespec/streams";
 import type { OperationDef, OperationParam, ParamSource, ServiceDef, TypeDef } from "../emitter/00_types.js";
@@ -61,6 +62,7 @@ function operationDef(program: Program, http: HttpOperation, daemon: boolean): O
   const clap = getClapOperation(program, http.operation);
   return {
     name: http.operation.name,
+    ...(getExtensions(program, http.operation).get("x-clap-hidden") === true ? { hidden: true } : {}),
     ...(doc !== undefined ? { doc } : {}),
     ...(clap?.afterHelp ? { afterHelp: clap.afterHelp } : {}),
     ...(clap?.requiredOneOf ? { requiredOneOf: clap.requiredOneOf } : {}),

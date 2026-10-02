@@ -998,6 +998,7 @@ namespace job {
     /**
      * Drive one lane conversation. This is what a lane pane runs; a human calls `lane create`, never this. Folded (audit 2026-08-25): the supervisor's entry point, spawned by `lane create`
      */
+    @extension("x-clap-hidden", true)
     @route("/")
     @post
     op job_run(
@@ -2004,6 +2005,7 @@ namespace agent {
   /**
    * Freshly synchronize and summarize Boop agent/runtime/activity facts
    */
+  @extension("x-clap-hidden", true)
   @route("/")
   @post
   op agent(
@@ -2066,6 +2068,7 @@ namespace beep {
    * 
    * `boop beep <route> <body>` is the one send. `<route>` is a lane, a coordinator, a native, `parent` (the caller's own parent edge) or `children` (every live child of the caller).
    */
+  @extension("x-clap-hidden", true)
   @route("/{positional_route}/{positional_body}")
   @post
   op beep(
@@ -2558,6 +2561,7 @@ namespace beep {
       /**
        * Drive one lane conversation. This is what a lane pane runs; a human calls `lane create`, never this. Folded (audit 2026-08-25): the supervisor's entry point, spawned by `lane create`
        */
+      @extension("x-clap-hidden", true)
       @route("/")
       @post
       op beep_lane_run(
@@ -3026,6 +3030,7 @@ namespace inbox {
   /**
    * Mail a claude coordinator reads at a turn boundary: the hook inbox. Folded (door-only-claude-delivery): the hook inbox is a rung the delivery ladder walks on its own, not a verb a caller reaches for. The installed hook still calls `boop inbox drain`, so the group runs
    */
+  @extension("x-clap-hidden", true)
   @route("/")
   @post
   op inbox(
@@ -3075,6 +3080,7 @@ namespace remind {
   /**
    * Print the newest user messages from the caller's tracked conversation
    */
+  @extension("x-clap-hidden", true)
   @route("/{positional_count}")
   @post
   op remind(
@@ -3091,6 +3097,7 @@ namespace shell_init {
   /**
    * Print shell functions that route interactive harnesses through Boop. Folded (one-pane-register-path): `boop tui <harness>` is the spelling
    */
+  @extension("x-clap-hidden", true)
   @route("/{positional_shell}")
   @post
   op shell_init(
@@ -3104,6 +3111,7 @@ namespace tag {
   /**
    * The shared tag table: apply tags to any surface, read the recent five back. Search reads `agent_tag` only, never a message body
    */
+  @extension("x-clap-hidden", true)
   @route("/")
   @post
   op tag(
@@ -3247,6 +3255,7 @@ namespace tui {
   /**
    * Launch an ordinary interactive harness TUI and register this pane
    */
+  @extension("x-clap-hidden", true)
   @route("/{positional_harness}/{positional_args}")
   @post
   op tui(
@@ -3285,6 +3294,7 @@ namespace wait {
   /**
    * Block until mail lands: the reply to <id>, a lane's result row, or the next unread row addressed to you with --me
    */
+  @extension("x-clap-hidden", true)
   @route("/{positional_id_or_lane}")
   @post
   op wait(
@@ -3314,6 +3324,7 @@ namespace whoami {
   /**
    * Report the caller's own identity and which of the two rungs named it
    */
+  @extension("x-clap-hidden", true)
   @route("/")
   @post
   op whoami(
