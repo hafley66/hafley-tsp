@@ -1,47 +1,44 @@
 # @hafley66/alloy-c
 
-TypeSpec to C11 type declarations, using Alloy 0.23.0-dev.12 and mimalloc heaps.
-The grammar components and printing policy in `src/gen` and `src/c` were copied
-from `hafley-tsp-alloy-turnkey/lab/isolated/the-gang-tries-to-make-alloy-turnkey`
-(the tree-sitter-c experiment). Only the declaration components used here were copied.
-Names retain their TypeSpec spelling; invalid C identifiers cause emission errors.
+TypeSpec to C11 declarations, SQLite store APIs, yyjson codecs, and argv dispatch.
+Alloy resolves cross-file type includes; mimalloc owns allocated values.
+C identifiers map hyphens to underscores. Wire, database, and CLI values preserve
+schema spelling. Mapped symbol collisions are emission errors.
 
-Build: `pnpm --dir packages/c build`. Test: `pnpm --dir packages/c test`.
-
-```sh
-tsp compile main.tsp --emit @hafley66/alloy-c --output-dir out
-BOOP_SCHEMA=/path/to/boop2/schema pnpm --dir packages/c test
+```ts
+emitC(program);                    // declarations and arena constructors
+emitC(program, { wire: true });    // declarations plus JSON codecs
+emitStore(program);                // SQL package facts and exact SQLite DDL
+emitCli(programToOps(program));    // shared HTTP/OpenAPI route plan
+writeC(program, files, outputDir); // generated preamble and unchanged-body skip
 ```
 
-`emitC(program)` returns deterministic `{path, contents}` files. `writeC(program,
-files, outputDir)` adds a timestamp, input/output hash and contributing source
-list, then skips unchanged files. `$onEmit` provides the compiler emitter hook.
-Output paths retain namespace segments and declaration names, for example
-`Boop/Acp/channel/Delivery_auto.h` and `Delivery_auto.c` beside it.
+`$onEmit` emits all four projections. Declaration files retain namespace paths;
+store files are `<namespace>/store_auto.h/c`, wire files are `wire_auto.h/c`,
+and CLI files are `<service>/cli_auto.h/c`. The HTTP adapter, neutral type data,
+parameter roles and route tree live in `@hafley/emit-helper/http`, also consumed
+by Rust.
 
-Model and union constructors copy strings and model/union pointers recursively
-into the caller's `mi_heap_t *`. Destroy that heap once the lifetime ends. Cyclic
-runtime pointer graphs require separate handling; constructors support acyclic
-values of recursive types. Vtables contain function pointers and accept explicit
-`self` and `arena` arguments. Vtable construction copies the table by value.
+Models and named unions have arena constructors. Arrays and records carry a
+count and items; record entries carry key/value. Named collection models have
+constructors and codecs. Nullable scalar/enum values use pointers; optional
+fields have presence bits. Unknown values carry serialized JSON. Constructor
+copies support acyclic runtime graphs.
 
-Enums expose `<Name>_to_string` and arena-allocated `<Name>_from_string` functions.
-Explicit string values are retained; numeric values use their decimal spelling.
-Unknown strings, invalid tags and null arena/input pointers return `NULL` from
-allocating APIs. Allocation failures propagate `NULL`; intermediate allocations
-remain in the heap until its destruction.
+Each model/union exposes `<Name>_json_encode/decode`. The caller supplies the
+heap; parser documents, decoded strings and encoded output live until that
+heap is destroyed. Invalid JSON, kinds, enum values, integer ranges, or
+allocation failures return NULL. Named unions encode tag/value objects.
 
-Unions expose `<Name>_tag_to_string`, `<Name>_create_<variant>` and
-`<Name>_parse(arena, tag, payload)`. The payload is a typed `<Name>_value` union
-whose active member must agree with the tag. This phase provides tag/payload
-reconstruction; it does not provide JSON parsing or transport codecs.
+Store insert/select functions return sqlite status codes and finalize their
+statements. Select output rows, strings and blobs belong to the caller's heap.
+Rows represent physical SQL affinity, including integer interned IDs.
 
-For exhaustive dispatch, initialize `<Name>_cases` using
-`<Name>_cases_init(callback_for_first_variant, callback_for_second_variant, ...)`
-and call `<Name>_match`. Adding a variant increases the macro's required arity,
-so existing initializers fail compilation until a callback is added. Compile
-manual switches with `-Wswitch-enum -Werror` to enforce their coverage too.
+CLI parse returns 0, -1 for displayed help, or 2 for errors. Dispatch calls
+`<service>_ops` callbacks with typed args and returns the handler's exit status.
+`<service>_ops_init(...)` requires one slot per operation. Enum/union callback
+macros similarly require one callback per case. Compile manual switches with
+`-Wswitch-enum -Werror` to enforce coverage.
 
-C11-invalid identifiers produce an emission error. The current boop2 enum
-schema includes hyphenated member names; the full consumer gate requires a
-naming exception. See `REPORT.md` for the recorded gaps and gate status.
+Build, snapshot tests, the separate C fixture gate, and consumer integration
+commands are in [REPORT.md](REPORT.md). This lane ran no build or test gates.

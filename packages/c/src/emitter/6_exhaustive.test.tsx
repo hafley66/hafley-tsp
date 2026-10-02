@@ -7,7 +7,7 @@ import { expect, it } from "vitest";
 import { emitC } from "./2_emit.js";
 import { writeC } from "./3_write.js";
 
-it.each(['enum State { first, second', 'union State { first: int64, second: string'])("requires new callbacks after a variant is added: %s", async (source) => {
+it.runIf(process.env.C_GATE === "1").each(['enum State { first, second', 'union State { first: int64, second: string'])("requires new callbacks after a variant is added: %s", async (source) => {
   const out = mkdtempSync(join(tmpdir(),"alloy-c-exhaustive-"));
   try {
     const tsp = join(out,"main.tsp");

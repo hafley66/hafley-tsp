@@ -28,7 +28,16 @@ function oldContents(path: string): string | undefined {
   try { return readFileSync(path, "utf8"); }
   catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
 }
+function validateFiles(files: CFile[]): void {
+  const paths = new Set<string>();
+  for (const file of files) {
+    if (!/^[A-Za-z0-9_\/]+_auto\.[hc]$/.test(file.path)) throw new Error(`Refusing manual output: ${file.path}`);
+    if (paths.has(file.path)) throw new Error(`C output path collision: ${file.path}`);
+    paths.add(file.path);
+  }
+}
 export function writeC(program: Program, files: CFile[], outputDir: string): void {
+  validateFiles(files);
   const prefix = preamble(program, files);
   for (const file of files) {
     if (!/^[A-Za-z0-9_\/]+_auto\.[hc]$/.test(file.path)) throw new Error(`Refusing manual output: ${file.path}`);
@@ -44,6 +53,7 @@ export async function $onEmit(context: EmitContext): Promise<void> {
   const [services] = getAllHttpServices(context.program);
   const cli = services.some(s => s.operations.length) ? emitCli(programToOps(context.program)) : [];
   const files = [...emitC(context.program, { wire: true }), ...emitStore(context.program), ...cli];
+  validateFiles(files);
   const prefix = preamble(context.program, files);
   for (const file of files) {
     const path = resolve(context.emitterOutputDir, file.path);
