@@ -13,14 +13,25 @@ const C_KEYWORDS = new Set([
   "_Static_assert", "_Thread_local",
 ]);
 
-// Invalid C names are reported rather than rewritten.
+// Only hyphens are mapped. Boundary values retain their TypeSpec spelling.
+export function cIdentifier(name: string): string {
+  const identifier = name.replaceAll("-", "_");
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier) || C_KEYWORDS.has(identifier)) {
+    throw new Error(`Invalid C11 identifier: ${name}`);
+  }
+  return identifier;
+}
+
+export function assertDistinctIdentifiers(names: string[], scope: string): void {
+  const seen = new Set<string>();
+  for (const name of names) {
+    const identifier = cIdentifier(name);
+    if (seen.has(identifier)) throw new Error(`C identifier collision in ${scope}: ${identifier}`);
+    seen.add(identifier);
+  }
+}
 export function createCNamePolicy(): NamePolicy<CElements> {
-  return createNamePolicy((name) => {
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) || C_KEYWORDS.has(name)) {
-      throw new Error(`Invalid C11 identifier: ${name}`);
-    }
-    return name;
-  });
+  return createNamePolicy((name) => cIdentifier(name));
 }
 
 export function useCNamePolicy(): NamePolicy<CElements> {

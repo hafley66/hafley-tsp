@@ -104,3 +104,9 @@ Counts are newline counts. Emitted counts exclude generated metadata preambles.
   the name policy reports invalid identifiers instead of rewriting them.
 - Consumer schema files were read directly at the requested boop2 path.
 - Package uses `@alloy-js/core` `0.23.0-dev.12`, matching `packages/rust`.
+
+## 2026-10-02 naming
+
+C identifiers map `-` to `_`. Enum values and union tag strings retain their
+original spelling. Mapped declaration, member, and generated field collisions
+are emission errors. No gate was run in this lane.
