@@ -50,9 +50,10 @@ function fieldsHeader(fields: Field[]): string {
   }).join("") || "  unsigned char _empty;\n";
 }
 function longName(f: Field): string { return f.cli?.long ?? f.name.replaceAll("_", "-"); }
-function descriptors(fields: Field[], offset = 0): string[] {
+function descriptors(fields: Field[], offset = 0, globalOnly = false): string[] {
   const longs: string[] = [], shorts: string[] = [];
   const result = fields.flatMap((f, i) => {
+    if (globalOnly && !f.cli?.global) return [];
     if (f.positional || f.cli?.positional || f.cli?.skip || f.stream) return [];
     const name = longName(f);
     if (!name || name.startsWith("-") || name.includes("=") || name === "help") throw new Error(`Reserved or invalid CLI option: ${name}`);
@@ -81,7 +82,7 @@ function convert(type: ModelProperty["type"], source: string, target: string, in
   const bits = c.match(/\d+/)?.[0];
   if (bits && Number(bits) < 64) condition += unsigned ? ` || number > UINT${bits}_MAX` : ` || number < INT${bits}_MIN || number > INT${bits}_MAX`;
   if (c === "float") condition += " || number < -FLT_MAX || number > FLT_MAX";
-  if (cli?.minValue !== undefined) condition += ` || number < ${cli.minValue}`;
+  if (cli?.minValue !== undefined && (!unsigned || cli.minValue > 0)) condition += ` || number < ${cli.minValue}`;
   if (cli?.maxValue !== undefined) condition += ` || number > ${cli.maxValue}`;
   return `{ ${real ? "double" : unsigned ? "uint64_t" : "int64_t"} number;\nif (${condition}) return cli_error(err, ${cString(error)});\n${target} = (${c})number;\n}\n`;
 }
@@ -140,7 +141,12 @@ export function emitCli(input: ProgramOps): CFile[] {
   assertDistinctIdentifiers(input.service.operations.map(op => op.name), "CLI operations");
   const rootModel = input.types.find(t => t.kind === "model" && t.name === input.service.rootArgs);
   const roots = rootModel?.kind === "model" ? flatten(rootModel.properties, input) : [];
+  if (roots.some(f => f.cli?.positional)) throw new Error("Root CLI positional arguments require an explicit operation");
   const plans: Plan[] = input.service.operations.map(op => ({ op, fields: opFields(op, input) }));
+  for (const plan of plans) {
+    const positional = plan.fields.filter(f => f.positional || f.cli?.positional);
+    if (positional.slice(0, -1).some(repeated)) throw new Error(`CLI variadic must be last: ${plan.op.name}`);
+  }
   const tree = planCliTree(plans, refkey);
   const nodes: RouteNode<Plan>[] = [];
   const parents: number[] = [];
@@ -168,7 +174,7 @@ export function emitCli(input: ProgramOps): CFile[] {
   source += `static const struct { int parent; const char *segment; int operation; const char *help; } commands[] = {\n${nodes.map((node, i) => `  {${parents[i]}, ${cString(node.segment)}, ${node.plan ? plans.indexOf(node.plan) : -1}, ${cString(help(node))}}`).join(",\n")}\n};\n\n`;
   source += `int ${prefix}_cli_parse(mi_heap_t *arena, int argc, char **argv, ${prefix}_request *request, FILE *input, FILE *err) {\n  if (!arena || argc < 1 || !argv || !request) return 2;\n  (void)input;\n  memset(request, 0, sizeof(*request));\n  cli_value values[${maxFields}] = {0}, positionals = {0};\n  size_t position = 0;\n  (void)position;\n  int cursor = 1, command = 0, rc;\n  const cli_flag root_flags[] = {\n${rootFlags.length ? rootFlags.join(",\n") + ",\n" : ""}    {NULL, 0, false, false, 0}\n  };\n  rc = cli_scan(arena, argc, argv, &cursor, root_flags, ${rootFlags.length}, values, &positionals, true, err);\n  if (rc) { if (rc == -1 && err) fputs(commands[0].help, err); return rc; }\n  while (cursor < argc) {\n    int next = -1;\n    for (size_t i = 1; i < sizeof(commands) / sizeof(commands[0]); ++i)\n      if (commands[i].parent == command && strcmp(commands[i].segment, argv[cursor]) == 0) { next = (int)i; break; }\n    if (next < 0) break;\n    command = next; ++cursor;\n  }\n  if (commands[command].operation < 0) {\n    if (err) fputs(commands[command].help, err);\n    return cursor < argc && strcmp(argv[cursor], "--help") == 0 && cursor + 1 == argc ? -1 : 2;\n  }\n  switch (commands[command].operation) {\n`;
   for (const [index, plan] of plans.entries()) {
-    const op = cIdentifier(plan.op.name), flags = [...rootFlags, ...descriptors(plan.fields, roots.length)];
+    const op = cIdentifier(plan.op.name), flags = [...descriptors(roots, 0, true), ...descriptors(plan.fields, roots.length)];
     const names = [...roots, ...plan.fields].filter(f => !f.positional && !f.cli?.positional && !f.cli?.skip && !f.stream).map(longName);
     const shorts = [...roots, ...plan.fields].flatMap(f => f.cli?.short ? [f.cli.short] : []);
     if (new Set(shorts).size !== shorts.length) throw new Error(`Root/operation short option collision: ${plan.op.name}`);
