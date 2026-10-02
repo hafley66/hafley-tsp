@@ -34,13 +34,19 @@ for (const c of orderedCommands()) {
       }
       type = enums.get(key).name;
     }
+    if (label === "ID-OR-JOB") type = "MessageId | Job";
+    if (label === "ID-OR-LANE") type = "MessageId | LaneName";
+    if (label === "MS|DURATION") type = "int64 | duration";
+    if (label === "LANE") type = "LaneName";
+    if (label === "BRANCH") type = "GitBranch";
+    if (label === "KEY=VAL") { name = "env"; type = "Record<string>"; }
     const array = row.multi || (positional && row.arg.endsWith("...")) || /[Rr]epeatable/.test(about);
-    if (array) type += "[]";
+    if (array && label !== "KEY=VAL") type += "[]";
     const required = positional ? row.arg.startsWith("<") : c.usage.includes(`${row.long} <`);
     const optional = !required && defaultValue === undefined;
     const value = defaultValue === undefined ? "" : ` = ${type.startsWith("Values") ? `${type}.${ident(defaultValue)}` : type === "uint64" || type === "int64" ? defaultValue : JSON.stringify(defaultValue)}`;
     const wire = positional ? `@path(${JSON.stringify("positional_" + name)})` : field(row.long.slice(2)) === name ? "@query" : `@query(${JSON.stringify(row.long.slice(2))})`;
-    fields.push({ name, text: doc(about, "  ") + (positional && c.usage.includes(`[-- <${label}>`) ? `  @extension("x-clap-last", true)\n` : "") + (label && label !== name.toUpperCase() ? `  @extension("x-clap-value-name", ${JSON.stringify(label)})\n` : "") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
+    fields.push({ name, text: doc(about, "  ") + (positional && c.usage.includes(`[-- <${label}>`) ? `  @extension("x-clap-last", true)\n` : "") + (row.short ? `  @extension("x-clap-short", ${JSON.stringify(row.short.slice(1))})\n` : "") + (positional && required && array ? "  @minItems(1)\n" : "") + `  ${wire} ${ident(name)}${optional ? "?" : ""}: ${type}${value};`, positional, required });
   };
   c.arguments.forEach(r => add(r, true));
   c.options.forEach(r => add(r, false));
@@ -53,6 +59,7 @@ for (const { fields } of records) for (const f of fields) if (!f.positional) cou
 for (const [text, count] of counts) if (count > 1) models.set(text, `SharedFlags${models.size}`);
 const footer = records[0].c.text.slice(records[0].c.text.indexOf("\n\nDOCTRINE") + 2).trimEnd();
 let out = `// Imported from boop2 help fixtures. Regenerate with: node 1_import_spec.mjs\nimport "@typespec/http";\nimport "@typespec/openapi";\nusing Http;\nusing OpenAPI;\n\n${doc(records[0].c.about)}@service\n@extension("x-clap-after-help", ${JSON.stringify(footer)})\nnamespace Boop;\n\n`;
+out += "scalar MessageId extends string;\nscalar Job extends string;\nscalar LaneName extends string;\nscalar GitBranch extends string;\n\n";
 out += [...enums.values()].map(v => v.text).join("\n\n") + "\n\n";
 out += [...models].map(([text, name]) => `model ${name} {\n${text}\n}`).join("\n\n") + "\n\n";
 const emit = (path, indent = "") => {

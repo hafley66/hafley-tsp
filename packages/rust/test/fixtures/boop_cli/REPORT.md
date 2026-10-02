@@ -43,3 +43,11 @@ Exceptional value labels: `@extension("x-clap-value-name", ...)` on 6 captured f
 Trailing args: `@extension("x-clap-last", true)` on tui's `@path args?: string[]`, required by 1 capture: tui. The native array type specifies repetition; it does not require the `--` separator shown in the capture.
 
 Extra help: `@extension("x-clap-after-help", ...)` on the service namespace, required by 1 capture: boop. A doc comment is printed before usage; this text must follow options. Extension text is emitted literally, including `$PWD`, while existing ryi afterHelp keeps its build-variable expansion. Final help parity: **155/155**.
+
+## Type-derived labels (feature/clap-derive-labels, step 1)
+
+All six `x-clap-value-name` declarations are removed. Help parity remains **155/155**; no capture changed. Named scalar labels use the final PascalCase component after removing a trailing `Name`: `MessageId` → `ID`, `LaneName` → `LANE`, `GitBranch` → `BRANCH`. Scalar alternatives join with `-OR-`; the `int64 | duration` pair uses `MS|DURATION` to retain the epoch-millisecond/duration capture. Union values retain the adapter's existing string representation.
+
+`Record<string>` query fields emit repeatable `KEY=VAL` arguments with a generated parser. The clap field stores `Vec<(String, String)>`, preserving occurrence order and duplicate keys. Parsing splits the first `=`, permits empty values, and rejects absent `=` or empty keys. HTTP query maps are collected into that argument representation. Models without clap derives retain their `HashMap` fields.
+
+Validation: help parity **155/155**; Rust package tests **162 passed, 4 skipped**; TypeScript checking passed; generated parser acceptance test passed. The ryi regeneration test remains byte-identical.

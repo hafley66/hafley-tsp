@@ -151,7 +151,7 @@ pub struct JobListArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobResumeArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags6: SharedFlags6,
@@ -224,7 +224,7 @@ pub struct JobCreateArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobReviveArgs {
   #[doc = "The dead route to revive. Omit for `--dead` or `--list`"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
   pub sharedFlags36: SharedFlags36,
@@ -244,7 +244,7 @@ pub struct JobReviveArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobGetArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags43: SharedFlags43,
@@ -254,7 +254,7 @@ pub struct JobGetArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobWhereArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -262,7 +262,7 @@ pub struct JobWhereArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobPatchArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags44: SharedFlags44,
@@ -287,7 +287,7 @@ pub struct JobPatchArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobDeleteArgs {
   #[doc = "One lane: kill its pane and drop its route. Omit for a bulk delete by `--state`"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
   pub sharedFlags52: SharedFlags52,
@@ -303,7 +303,7 @@ pub struct JobDeleteArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobRmArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -311,7 +311,7 @@ pub struct JobRmArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobKillArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -319,7 +319,7 @@ pub struct JobKillArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobWaitArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags56: SharedFlags56,
@@ -329,7 +329,7 @@ pub struct JobWaitArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobAttachArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -357,7 +357,7 @@ pub struct JobPruneArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobRouteArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -365,7 +365,7 @@ pub struct JobRouteArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobPaneArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags60: SharedFlags60,
@@ -377,7 +377,7 @@ pub struct JobPaneArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobSquaresArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags62: SharedFlags62,
@@ -392,7 +392,7 @@ pub struct JobMessageArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct JobMessageListArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags6: SharedFlags6,
@@ -907,7 +907,7 @@ pub struct DbStatusArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct DebugArgs {
   #[doc = "One lane, answered in full: route, mail, worktree, transcript, alerts. Without it, the WARN/ERROR window across every lane"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[doc = "Window to read back, as `Ns`, `Nm`, `Nh` or a count of seconds"]
   #[arg(long, default_value = "2m")]
@@ -1119,7 +1119,7 @@ pub struct BeepLaneListArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneResumeArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags6: SharedFlags6,
@@ -1192,7 +1192,7 @@ pub struct BeepLaneCreateArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneReviveArgs {
   #[doc = "The dead route to revive. Omit for `--dead` or `--list`"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
   pub sharedFlags36: SharedFlags36,
@@ -1212,7 +1212,7 @@ pub struct BeepLaneReviveArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneGetArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags43: SharedFlags43,
@@ -1222,7 +1222,7 @@ pub struct BeepLaneGetArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneWhereArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -1230,7 +1230,7 @@ pub struct BeepLaneWhereArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLanePatchArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags44: SharedFlags44,
@@ -1255,7 +1255,7 @@ pub struct BeepLanePatchArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneDeleteArgs {
   #[doc = "One lane: kill its pane and drop its route. Omit for a bulk delete by `--state`"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[command(flatten)]
   pub sharedFlags52: SharedFlags52,
@@ -1271,7 +1271,7 @@ pub struct BeepLaneDeleteArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneRmArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -1279,7 +1279,7 @@ pub struct BeepLaneRmArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneKillArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -1287,7 +1287,7 @@ pub struct BeepLaneKillArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneWaitArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags56: SharedFlags56,
@@ -1297,7 +1297,7 @@ pub struct BeepLaneWaitArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneAttachArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -1325,7 +1325,7 @@ pub struct BeepLanePruneArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneRouteArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags42: SharedFlags42,
@@ -1333,7 +1333,7 @@ pub struct BeepLaneRouteArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLanePaneArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags60: SharedFlags60,
@@ -1345,7 +1345,7 @@ pub struct BeepLanePaneArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneSquaresArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags62: SharedFlags62,
@@ -1360,7 +1360,7 @@ pub struct BeepLaneMessageArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepLaneMessageListArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags6: SharedFlags6,
@@ -1451,7 +1451,7 @@ pub struct BeepAgentDoneArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepAgentSubscribeArgs {
   #[doc = "A lane, or the `children` / `'*'` alias"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[doc = "How a commit reaches the subscriber: `door` or `mailbox`"]
   #[arg(long, default_value = "door")]
@@ -1465,7 +1465,7 @@ pub struct BeepAgentSubscribeArgs {
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepAgentUnsubscribeArgs {
   #[doc = "A lane, or the `children` / `'*'` alias"]
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: String,
   #[command(flatten)]
   pub sharedFlags86: SharedFlags86,
@@ -1478,7 +1478,7 @@ pub struct BeepMessageArgs {}
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepMessageAckArgs {
-  #[arg(long)]
+  #[arg(long, value_name = "LANE")]
   pub lane: Option<String>,
   #[arg(long)]
   pub r#box: Option<String>,
@@ -1570,7 +1570,7 @@ pub struct BeepPasteArgs {
 
 #[derive(clap::Args, Debug, Clone, serde::Serialize)]
 pub struct BeepPsArgs {
-  #[arg()]
+  #[arg(value_name = "LANE")]
   pub lane: Option<String>,
   #[doc = "Include dead routes (no live process behind the pane)"]
   #[arg(long)]

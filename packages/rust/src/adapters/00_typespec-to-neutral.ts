@@ -32,12 +32,29 @@ import type {
 
 export type DocOf = (type: Type) => string | undefined;
 
+// Final named scalar component, after a trailing Name: MessageId -> ID,
+// LaneName -> LANE, GitBranch -> BRANCH. Primitive fields keep clap defaults.
+function typeValueLabel(type: Type): string | undefined {
+  if (type.kind === "Scalar" && scalarAlias(type) && /^[A-Z]/.test(type.name)) {
+    const words = type.name.replace(/Name$/, "").match(/[A-Z]+(?=[A-Z][a-z]|$)|[A-Z]?[a-z]+|[0-9]+/g);
+    return words?.at(-1)?.toUpperCase();
+  }
+  if (type.kind === "Model" && type.name === "Record" && type.indexer) return "KEY=VAL";
+  if (type.kind === "Union") {
+    const members = [...type.variants.values()].map(v => v.type);
+    // Epoch milliseconds or duration preserves the numeric/time capture spelling.
+    if (members.length === 2 && members[0].kind === "Scalar" && members[0].name === "int64" && members[1].kind === "Scalar" && members[1].name === "duration") return "MS|DURATION";
+    const labels = members.map(t => typeValueLabel(t) ?? ("name" in t ? String(t.name).toUpperCase() : undefined));
+    if (labels.every(label => label !== undefined)) return labels.join("-OR-");
+  }
+  return undefined;
+}
+
 export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["cli"] {
   const extra = getClapArg(program, prop);
   const last = getExtensions(program, prop).get("x-clap-last");
   if (last !== undefined && typeof last !== "boolean") throw new Error("x-clap-last must be boolean");
-  const valueName = getExtensions(program, prop).get("x-clap-value-name");
-  if (valueName !== undefined && typeof valueName !== "string") throw new Error("x-clap-value-name must be a string");
+  const valueName = typeValueLabel(prop.type);
   const short = getExtensions(program, prop).get("x-clap-short");
   if (short !== undefined && (typeof short !== "string" || [...short].length !== 1)) throw new Error("x-clap-short must be one character");
   const query = getQueryParamOptions(program, prop);
@@ -48,9 +65,9 @@ export function cliOf(program: Program, prop: TspModelProperty): ModelProperty["
   const cli = {
     ...(query?.name && query.name !== prop.name ? { long: query.name } : {}),
     ...(encoded !== prop.name ? { long: encoded } : {}),
+    ...(valueName !== undefined ? { valueName } : {}),
     ...extra,
     ...(last !== undefined ? { last } : {}),
-    ...(valueName !== undefined ? { valueName } : {}),
     ...(short !== undefined ? { short } : {}),
     ...(minValue !== undefined ? { minValue } : {}),
     ...(maxValue !== undefined ? { maxValue } : {}),

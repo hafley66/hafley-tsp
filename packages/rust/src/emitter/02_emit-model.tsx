@@ -5,7 +5,7 @@ import { EnumDeclaration, UnitVariant } from "../components/1_declarations/1_Enu
 import { SourceFile } from "../components/3_files/0_SourceFile.js";
 import { mapType, wrapOptional, type RefkeyRegistry } from "./01_type-map.js";
 import type { ModelDef, EnumDef, TypeDef } from "./00_types.js";
-import { rustIdent } from "./04_ops-plan.js";
+import { cliFieldType, isStringRecord, rustIdent } from "./04_ops-plan.js";
 import type { ModelExtras } from "./04_ops-plan.js";
 
 const MODEL_DERIVES = ["Debug", "Clone", "Serialize", "Deserialize"];
@@ -23,8 +23,9 @@ export function emitModel(model: ModelDef, registry: RefkeyRegistry, rk?: Refkey
   const fileExternalUses = [...MODEL_EXTERNAL_USES];
 
   const fields = model.properties.map(prop => {
-    let rt = mapType(prop.type, registry);
-    if (prop.optional && !(extras && prop.type.kind === "scalar" && prop.type.name === "boolean")) rt = wrapOptional(rt);
+    const cliRecord = extras && isStringRecord(prop.type) && !prop.cli?.skip;
+    let rt = cliRecord ? cliFieldType(prop, registry) : mapType(prop.type, registry);
+    if (!cliRecord && prop.optional && !(extras && prop.type.kind === "scalar" && prop.type.name === "boolean")) rt = wrapOptional(rt);
     fileExternalUses.push(...rt.externalUses);
     return { name: rustIdent(prop.name), typeCode: rt.code, attrs: [
       ...(extras?.fieldAttrs.get(prop.name) ?? []),

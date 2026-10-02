@@ -58,8 +58,13 @@ function defaultAttr(value: ParamValue | undefined): string[] {
   return [`default_value_t = ${value}`];
 }
 
+export function isStringRecord(type: ModelProperty["type"]): boolean {
+  return type.kind === "map" && type.key.name === "string" && type.value.kind === "scalar" && type.value.name === "string";
+}
+
 // clap field type: bool stays a flag, arrays repeat, defaults drop the Option.
 export function cliFieldType(prop: ModelProperty, registry: RefkeyRegistry): RustType {
+  if (isStringRecord(prop.type) && !prop.cli?.skip) return { code: "Vec<(String, String)>", externalUses: [] };
   const base = mapType(prop.type, registry);
   if (isBool(prop.type) || prop.type.kind === "array" || prop.default !== undefined) return base;
   return prop.optional ? wrapOptional(base) : base;
@@ -99,9 +104,10 @@ function argOptions(prop: ModelProperty): string[] {
   const options = [
     ...(prop.type.kind === "enum" ? ["value_enum"] : []),
     ...defaultAttr(prop.default),
+    ...(isStringRecord(prop.type) ? ["value_name = \"KEY=VAL\"", "value_parser = |s: &str| -> Result<(String, String), String> { s.split_once('=').filter(|(key, _)| !key.is_empty()).map(|(key, value)| (key.to_owned(), value.to_owned())).ok_or_else(|| \"expected KEY=VAL with a nonempty key\".to_owned()) }"] : []),
     ...(prop.cli?.last ? ["last = true"] : []),
     ...(prop.cli?.short ? [`short = ${rustChar(prop.cli.short)}`] : []),
-    ...(prop.cli?.valueName ? [`value_name = ${JSON.stringify(prop.cli.valueName)}`] : []),
+    ...(!isStringRecord(prop.type) && prop.cli?.valueName ? [`value_name = ${JSON.stringify(prop.cli.valueName)}`] : []),
     ...(prop.cli?.requires ? [`requires = ${JSON.stringify(prop.cli.requires)}`] : []),
     ...(prop.cli?.requiresAll ? [`requires_all = [${prop.cli.requiresAll.map(n => JSON.stringify(n)).join(", ")}]`] : []),
     ...(prop.cli?.conflictsWith?.length === 1 ? [`conflicts_with = ${JSON.stringify(prop.cli.conflictsWith[0])}`] : []),
@@ -305,6 +311,7 @@ export function httpField(plan: FieldPlan, registry: RefkeyRegistry): HttpField 
   }
   if (p.source === "query") {
     const base = mapType(p.type, registry);
+    if (isStringRecord(p.type) && !p.cli?.skip) return { field: f, structType: p.optional ? wrapOptional(base) : base, wildcard: false, expr: `query.${f}${p.optional ? ".unwrap_or_default()" : ""}.into_iter().collect()` };
     if (p.type.kind === "array") return { field: f, structType: base, wildcard: false, expr: `query.${f}` };
     if (isBool(p.type)) return { field: f, structType: wrapOptional(base), wildcard: false, expr: `query.${f}.unwrap_or(${p.default ?? false})` };
     if (p.default !== undefined) {
