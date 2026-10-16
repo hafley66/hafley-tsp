@@ -11,6 +11,8 @@ export interface RusqliteTaggedRowWriterOptions {
   discriminator: string;
   sourceFields: RusqliteTaggedSourceField[];
   ordinalSourceField: string;
+  /** Write the discriminator as a column. `false` keeps it on the wire only; the table name carries it. Default true. */
+  storeDiscriminator?: boolean;
   jsonScalars?: string[];
   dialect?: SqlDialect;
 }
@@ -219,6 +221,7 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
   const ordinal = options.sourceFields.find((field) => field.property === options.ordinalSourceField);
   if (!ordinal) throw new Error(`Ordinal source field is not configured: ${options.ordinalSourceField}`);
   const excluded = new Set([...sourceNames, options.discriminator]);
+  const tagColumns = options.storeDiscriminator === false ? [] : [options.discriminator];
   const jsonScalars = new Set(options.jsonScalars ?? []);
   const entities: Entity[] = [];
   for (const model of namespace.models.values()) {
@@ -253,6 +256,10 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     throw new Error(`Ordinal source field must be required int64: ${options.ordinalSourceField}`);
   }
   const quoteIdentifier = dialect.quoteIdentifier.bind(dialect);
+  // `Source` borrows only when a source field is text; otherwise it has no lifetime.
+  const sourceBorrows = sourceProperties.some(({ presence }) => rustFieldType(presence, jsonScalars).includes("String"));
+  const sourceDecl = sourceBorrows ? "Source<'a>" : "Source";
+  const sourceUse = sourceBorrows ? "Source<'_>" : "Source";
   const nested = referencedTypes(entities).map((type) => {
     if (type.kind === "Enum") return emitEnum(type);
     if (type.kind === "Union") return emitUnion(type, jsonScalars);
@@ -261,10 +268,10 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
   }).filter(Boolean);
   const models = entities.map((entity) => emitModel(entity.model, jsonScalars, excluded));
   const inserts = entities.map((entity) => {
-    const allColumns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...entity.columns.map((column) => column.name)];
+    const allColumns = [...options.sourceFields.map((field) => field.property), ...tagColumns, ...entity.columns.map((column) => column.name)];
     const sql = `INSERT INTO ${quoteIdentifier(entity.tag)} (${allColumns.map(quoteIdentifier).join(", ")}) VALUES (${allColumns.map((_, index) => dialect.placeholder(index + 1)).join(", ")})`;
     const locals: string[] = [];
-    const values = options.sourceFields.map((field) => `source.${ident(field.rustName)}`).concat(JSON.stringify(entity.tag));
+    const values = options.sourceFields.map((field) => `source.${ident(field.rustName)}`).concat(tagColumns.map(() => JSON.stringify(entity.tag)));
     for (const column of entity.columns) {
       const expression = `self.${column.path.map((property) => ident(property.name)).join(".")}`;
       const optionalParent = column.path.slice(0, -1).findIndex((property) => {
@@ -295,12 +302,12 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     const binds = values.map((value) => `        statement.raw_bind_parameter(parameter, ${value})?;\n        parameter += 1;`);
     return [
       `impl models::${ident(entity.model.name)} {`,
-      "    fn bind(&self, statement: &mut rusqlite::Statement<'_>, mut parameter: usize, source: &Source<'_>) -> Result<usize, InsertError> {",
+      `    fn bind(&self, statement: &mut rusqlite::Statement<'_>, mut parameter: usize, source: &${sourceUse}) -> Result<usize, InsertError> {`,
       ...locals,
       ...binds,
       "        Ok(parameter)",
       "    }",
-      "    pub fn insert(&self, conn: &rusqlite::Connection, source: &Source<'_>) -> Result<usize, InsertError> {",
+      `    pub fn insert(&self, conn: &rusqlite::Connection, source: &${sourceUse}) -> Result<usize, InsertError> {`,
       `        let mut statement = conn.prepare_cached(${JSON.stringify(sql)})?;`,
       "        self.bind(&mut statement, 1, source)?;",
       "        Ok(statement.raw_execute()?)",
@@ -311,14 +318,14 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
   const groups = entities.map((entity) => `    let mut ${ident(entity.tag)}: Vec<(usize, &models::${ident(entity.model.name)})> = Vec::new();`);
   const groupArms = entities.map((entity) => `            Fact::${ident(entity.model.name)}(value) => ${ident(entity.tag)}.push((index, value)),`);
   const capacities = entities.map((entity) => {
-    const count = options.sourceFields.length + 1 + entity.columns.length;
-    const columns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...entity.columns.map((column) => column.name)];
+    const count = options.sourceFields.length + tagColumns.length + entity.columns.length;
+    const columns = [...options.sourceFields.map((field) => field.property), ...tagColumns, ...entity.columns.map((column) => column.name)];
     const prefix = `INSERT INTO ${quoteIdentifier(entity.tag)} (${columns.map(quoteIdentifier).join(", ")}) VALUES `;
     const tuple = `(${columns.map(() => "?").join(", ")})`;
     return `    let ${ident(entity.tag)}_capacity = if ${ident(entity.tag)}.is_empty() { 1 } else { statement_capacity(conn, ${count}, ${JSON.stringify(prefix)}, ${JSON.stringify(tuple)})? };`;
   });
   const batches = entities.map((entity) => {
-    const columns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...entity.columns.map((column) => column.name)];
+    const columns = [...options.sourceFields.map((field) => field.property), ...tagColumns, ...entity.columns.map((column) => column.name)];
     const prefix = `INSERT INTO ${quoteIdentifier(entity.tag)} (${columns.map(quoteIdentifier).join(", ")}) VALUES `;
     const tuple = `(${columns.map(() => "?").join(", ")})`;
     return [
@@ -335,7 +342,7 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     ].join("\n");
   });
   const smallest = entities.reduce((best, entity) => entity.columns.length < best.columns.length ? entity : best);
-  const smallestColumns = [...options.sourceFields.map((field) => field.property), options.discriminator, ...smallest.columns.map((column) => column.name)];
+  const smallestColumns = [...options.sourceFields.map((field) => field.property), ...tagColumns, ...smallest.columns.map((column) => column.name)];
   const smallestPrefix = `INSERT INTO ${quoteIdentifier(smallest.tag)} (${smallestColumns.map(quoteIdentifier).join(", ")}) VALUES `;
   const smallestTuple = `(${smallestColumns.map(() => "?").join(", ")})`;
   return [
@@ -354,7 +361,7 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     "}",
     "fn required_nullable<'de, D: serde::Deserializer<'de>, T: serde::Deserialize<'de>>(deserializer: D) -> Result<Option<T>, D::Error> { <Option<T> as serde::Deserialize>::deserialize(deserializer) }",
     "#[derive(Clone, Copy)]",
-    "pub struct Source<'a> {",
+    `pub struct ${sourceDecl} {`,
     ...sourceProperties.map(({ source, presence }) => `    pub ${ident(source.rustName)}: ${rustFieldType(presence, jsonScalars).replaceAll("String", "&'a str")},`),
     "}",
     "pub mod models {",
@@ -367,7 +374,7 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     ...entities.map((entity) => `    #[serde(rename = ${JSON.stringify(entity.tag)})]\n    ${ident(entity.model.name)}(models::${ident(entity.model.name)}),`),
     "}",
     "impl Fact {",
-    "    pub fn insert(&self, conn: &rusqlite::Connection, source: &Source<'_>) -> Result<usize, InsertError> {",
+    `    pub fn insert(&self, conn: &rusqlite::Connection, source: &${sourceUse}) -> Result<usize, InsertError> {`,
     "        match self {",
     ...entities.map((entity) => `            Self::${ident(entity.model.name)}(row) => row.insert(conn, source),`),
     "        }",
@@ -393,7 +400,7 @@ export function emitRusqliteTaggedRowWriter(program: Program, options: RusqliteT
     "pub fn max_batch_rows(conn: &rusqlite::Connection) -> Result<usize, InsertError> {",
     `    statement_capacity(conn, ${smallestColumns.length}, ${JSON.stringify(smallestPrefix)}, ${JSON.stringify(smallestTuple)})`,
     "}",
-    "pub fn insert_all(conn: &rusqlite::Connection, source: &Source<'_>, rows: &[Fact]) -> Result<usize, InsertError> {",
+    `pub fn insert_all(conn: &rusqlite::Connection, source: &${sourceUse}, rows: &[Fact]) -> Result<usize, InsertError> {`,
     "    if rows.is_empty() { return Ok(0); }",
     `    source.${ident(ordinal.rustName)}.checked_add(i64::try_from(rows.len() - 1).map_err(|_| InsertError::OrdinalOverflow)?)`,
     "        .ok_or(InsertError::OrdinalOverflow)?;",
