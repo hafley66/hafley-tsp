@@ -92,7 +92,17 @@ function operationDef(program: Program, http: HttpOperation, daemon: boolean, un
     path: daemon ? http.path : http.uriTemplate,
     params,
     ...returnType(program, http.operation, ctx),
+    ...(errorDefs(program, http).length ? { errors: errorDefs(program, http).map(e => e.name) } : {}),
   };
+}
+
+// The one property of an error model, when it is a required string: the generated code can
+// build the model from a message.
+function messageField(types: TypeDef[], name: string): string | undefined {
+  const def = types.find(t => t.kind === "model" && t.name === name);
+  if (def?.kind !== "model" || def.properties.length !== 1) return undefined;
+  const [prop] = def.properties;
+  return !prop!.optional && prop!.type.kind === "scalar" && prop!.type.name === "string" ? prop!.name : undefined;
 }
 
 export interface ProgramOps {
@@ -112,7 +122,12 @@ export function programToOps(program: Program): ProgramOps {
   const hoistedByModels = unions.size;
   const operations = service.operations.map((op: HttpOperation) => operationDef(program, op, !!daemon, unions));
   const errors = new Map<string, ErrorDef>();
-  for (const op of service.operations) for (const e of errorDefs(program, op)) if (!errors.has(e.name)) errors.set(e.name, e);
+  for (const op of service.operations) {
+    for (const e of errorDefs(program, op)) {
+      const field = messageField(types, e.name);
+      if (!errors.has(e.name)) errors.set(e.name, field ? { ...e, field } : e);
+    }
+  }
   return {
     types: [...types, ...[...unions.values()].slice(hoistedByModels)],
     service: {

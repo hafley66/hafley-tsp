@@ -8,6 +8,7 @@ import { FunctionDeclaration, type FunctionParam } from "../1_declarations/4_Fun
 import { SourceFile } from "../3_files/0_SourceFile.js";
 import { CodegenPair, ImplCall } from "./1_CodegenPair.js";
 import { axumRoutes, httpField, pascalCase, type OpPlan } from "../../emitter/04_ops-plan.js";
+import { rustIdent } from "../../emitter/01_type-map.js";
 import type { RefkeyRegistry, RustType } from "../../emitter/01_type-map.js";
 import type { ServiceDef } from "../../emitter/00_types.js";
 
@@ -24,6 +25,22 @@ export interface ErrorVariant {
   name: string;
   status: number;
   key: Refkey | string;
+  field?: string;
+}
+
+// The @error model that carries a message as its one string field, by status: 500 is the
+// catch-all `OpError::Internal`, 422 a request body the JSON extractor cannot decode.
+function messageModel(errors: ErrorVariant[], status: number, among?: string[]): ErrorVariant | undefined {
+  const found = errors.find(e => e.status === status && (!among || among.includes(e.name)));
+  if (found && !found.field) {
+    throw new Error(`@error model ${found.name} answers ${status}; it needs exactly one property, a required string, so the generated code can build it from a message`);
+  }
+  return found;
+}
+
+function messageBody(model: ErrorVariant, message: string): Children {
+  const field = rustIdent(model.field!);
+  return <>{model.key} {"{"} {field === message ? field : `${field}: ${message}`} {"}"}</>;
 }
 
 // With @error models OpError is an enum whose catch-all is `Internal(String)`;
@@ -329,7 +346,9 @@ function opErrorResponse(keys: OpsKeys, errors: ErrorVariant[]): Children {
     return <>impl IntoResponse for {keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"{"}"error": self.0{"}"}))).into_response(){"\n"}    {"}"}{"\n"}{"}"}</>;
   }
   const arms = errors.map(e => `            OpError::${e.name}(body) => (StatusCode::from_u16(${e.status}).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), Json(body)).into_response(),\n`).join("");
-  return <>impl IntoResponse for {keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        match self {"{"}{"\n"}            OpError::Internal(error) =&gt; (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"{"}"error": error{"}"}))).into_response(),{"\n"}{arms}        {"}"}{"\n"}    {"}"}{"\n"}{"}"}</>;
+  const internal = messageModel(errors, 500);
+  const internalBody = internal ? messageBody(internal, "error") : <>serde_json::json!({"{"}"error": error{"}"})</>;
+  return <>impl IntoResponse for {keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        match self {"{"}{"\n"}            OpError::Internal(error) =&gt; (StatusCode::INTERNAL_SERVER_ERROR, Json({internalBody})).into_response(),{"\n"}{arms}        {"}"}{"\n"}    {"}"}{"\n"}{"}"}</>;
 }
 
 // http_auto.rs: one axum handler per op (extractors -> <Op>Args -> the op impl on the blocking pool) and the Router.
@@ -344,7 +363,8 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
     const headerFields = fields.filter(f => f.plan.param.source === "header");
     const body = fields.find(f => f.plan.param.source === "body");
     const optionalPath = pathFields.some(f => f.plan.param.optional);
-    return { p, fields, pathFields, queryFields, headerFields, body, optionalPath };
+    const rejection = body ? messageModel(errors, 422, p.op.errors ?? []) : undefined;
+    return { p, fields, pathFields, queryFields, headerFields, body, optionalPath, rejection };
   });
   const streamsOut = props.plans.some(p => p.returnsStream);
   const streamsIn = props.plans.some(p => p.input);
@@ -357,6 +377,7 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
         externalUses={uses(structTypes.concat(props.plans.map(p => p.returns)), [
           "axum::Json",
           ...(handlers.some(h => h.pathFields.length) ? ["axum::extract::Path"] : []),
+          ...(handlers.some(h => h.rejection) ? ["axum::extract::rejection::JsonRejection"] : []),
           ...(stateful ? ["axum::extract::State", "std::sync::Arc"] : []),
           "axum::http::StatusCode",
           ...(handlers.some(h => h.headerFields.length) ? ["axum::http::HeaderMap"] : []),
@@ -407,7 +428,8 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
                   : [{ name: "Path(path)", type: <>Path{"<"}{h.p.variant}Path{">"}</> }]),
               ...(h.queryFields.length === 0 ? [] : [{ name: "Query(query)", type: <>Query{"<"}{h.p.variant}Query{">"}</> }]),
               ...(h.headerFields.length === 0 ? [] : [{ name: "headers", type: "HeaderMap" }]),
-              ...(h.body ? [{ name: "Json(body)", type: <>Json{"<"}{h.body.plan.cliType.code}{">"}</> }] : []),
+              ...(h.body && h.rejection ? [{ name: "body", type: <>Result{"<"}Json{"<"}{h.body.plan.cliType.code}{">"}, JsonRejection{">"}</> }] : []),
+              ...(h.body && !h.rejection ? [{ name: "Json(body)", type: <>Json{"<"}{h.body.plan.cliType.code}{">"}</> }] : []),
               ...(h.p.input ? [{ name: "body", type: "Body" }] : []),
             ];
             const call = stateful ? <>ops.{h.p.fn}({opCallArgs(h.p, "input").join(", ")})</> : <ImplCall fn={h.p.fn} args={opCallArgs(h.p, "input")} />;
@@ -425,6 +447,7 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
                 returns={h.p.returnsStream ? "Response" : <>{props.keys.opResult}{"<"}Json{"<"}{h.p.returns?.code ?? "()"}{">>"}</>}
               >
                 {h.optionalPath ? <>let path = path.map(|Path(p)| p).unwrap_or_default();{"\n"}</> : null}
+                {h.rejection ? <>let Json(body) = body.map_err(|rejection| OpError::{h.rejection.name}({messageBody(h.rejection, "rejection.body_text()")}))?;{"\n"}</> : null}
                 let args = {h.p.argsKey} {"{"}{"\n"}
                 <List hardline>{h.fields.map(f => <>    {f.plan.field}: {f.http.expr},</>)}</List>
                 {"\n};\n"}

@@ -51,6 +51,8 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
       model QueryRequest
       model QueryError
       model Missing
+      model ServerError
+      model BodyRejected
       enum ColType
       union Cell
       union Shape
@@ -216,30 +218,40 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
   });
 
   it("gap 3: http-only transports derive no clap and emit no cli_auto.rs", () => {
-    expect(Object.keys(wire).sort().join(" ")).toMatchInlineSnapshot(`"http_auto.rs lib.rs models/cell.rs models/change.rs models/circle.rs models/col_type.rs models/column.rs models/column_mode.rs models/delta.rs models/flat.rs models/missing.rs models/mod.rs models/query_error.rs models/query_request.rs models/shape.rs models/square.rs models/table.rs ops_auto.rs"`);
+    expect(Object.keys(wire).sort().join(" ")).toMatchInlineSnapshot(`"http_auto.rs lib.rs models/body_rejected.rs models/cell.rs models/change.rs models/circle.rs models/col_type.rs models/column.rs models/column_mode.rs models/delta.rs models/flat.rs models/missing.rs models/mod.rs models/query_error.rs models/query_request.rs models/server_error.rs models/shape.rs models/square.rs models/table.rs ops_auto.rs"`);
     expect(Object.values(wire).filter(text => text.includes("clap")).length).toBe(0);
   });
 
   it("gap 4 + 5 + 7: ops_auto.rs carries the handler trait, the @error OpError, and module-prefixed paths", () => {
     expect(wire["ops_auto.rs"]).toMatchInlineSnapshot(`
-      "use crate::_9_wire::models::change::Change;
+      "use crate::_9_wire::models::body_rejected::BodyRejected;
+      use crate::_9_wire::models::change::Change;
       use crate::_9_wire::models::column::Column;
       use crate::_9_wire::models::delta::Delta;
       use crate::_9_wire::models::missing::Missing;
       use crate::_9_wire::models::query_error::QueryError;
       use crate::_9_wire::models::query_request::QueryRequest;
+      use crate::_9_wire::models::server_error::ServerError;
       use crate::_9_wire::models::table::Table;
 
       #[derive(Debug)]
       pub enum OpError {
         Internal(String),
+        ServerError(ServerError),
         QueryError(QueryError),
         Missing(Missing),
+        BodyRejected(BodyRejected),
       }
 
       impl<E: std::error::Error> From<E> for OpError {
           fn from(e: E) -> Self {
               OpError::Internal(e.to_string())
+          }
+      }
+
+      impl From<ServerError> for OpError {
+          fn from(e: ServerError) -> Self {
+              OpError::ServerError(e)
           }
       }
 
@@ -255,12 +267,20 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
           }
       }
 
+      impl From<BodyRejected> for OpError {
+          fn from(e: BodyRejected) -> Self {
+              OpError::BodyRejected(e)
+          }
+      }
+
       impl std::fmt::Display for OpError {
           fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
               match self {
                   OpError::Internal(message) => f.write_str(message),
+                  OpError::ServerError(body) => f.write_str(&serde_json::to_string(body).map_err(|_| std::fmt::Error)?),
                   OpError::QueryError(body) => f.write_str(&serde_json::to_string(body).map_err(|_| std::fmt::Error)?),
                   OpError::Missing(body) => f.write_str(&serde_json::to_string(body).map_err(|_| std::fmt::Error)?),
+                  OpError::BodyRejected(body) => f.write_str(&serde_json::to_string(body).map_err(|_| std::fmt::Error)?),
               }
           }
       }
@@ -289,10 +309,11 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
     `);
   });
 
-  it("gap 4 + 7: http_auto.rs handlers take State<Arc<S>>, router(state), @statusCode mapping", () => {
+  it("gap 4 + 7 + 8: http_auto.rs handlers take State<Arc<S>>, router(state), @statusCode mapping, 500 body is ServerError, undecodable body is 422 BodyRejected", () => {
     expect(wire["http_auto.rs"]).toMatchInlineSnapshot(`
       "use axum::Json;
       use axum::extract::State;
+      use axum::extract::rejection::JsonRejection;
       use axum::http::StatusCode;
       use axum::response::IntoResponse;
       use axum::response::Response;
@@ -300,10 +321,12 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
       use axum::routing::post;
       use std::sync::Arc;
 
+      use crate::_9_wire::models::body_rejected::BodyRejected;
       use crate::_9_wire::models::change::Change;
       use crate::_9_wire::models::column::Column;
       use crate::_9_wire::models::delta::Delta;
       use crate::_9_wire::models::query_request::QueryRequest;
+      use crate::_9_wire::models::server_error::ServerError;
       use crate::_9_wire::models::table::Table;
       use crate::_9_wire::ops_auto::CommitArgs;
       use crate::_9_wire::ops_auto::OpError;
@@ -315,9 +338,11 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
       impl IntoResponse for OpError {
           fn into_response(self) -> Response {
               match self {
-                  OpError::Internal(error) => (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": error}))).into_response(),
+                  OpError::Internal(error) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ServerError { error })).into_response(),
+                  OpError::ServerError(body) => (StatusCode::from_u16(500).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), Json(body)).into_response(),
                   OpError::QueryError(body) => (StatusCode::from_u16(400).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), Json(body)).into_response(),
                   OpError::Missing(body) => (StatusCode::from_u16(404).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), Json(body)).into_response(),
+                  OpError::BodyRejected(body) => (StatusCode::from_u16(422).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), Json(body)).into_response(),
               }
           }
       }
@@ -330,7 +355,8 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
         Ok(Json(out))
       }
 
-      pub async fn query<S: Wire>(State(ops): State<Arc<S>>, Json(body): Json<QueryRequest>) -> OpResult<Json<Table>> {
+      pub async fn query<S: Wire>(State(ops): State<Arc<S>>, body: Result<Json<QueryRequest>, JsonRejection>) -> OpResult<Json<Table>> {
+        let Json(body) = body.map_err(|rejection| OpError::BodyRejected(BodyRejected { error: rejection.body_text() }))?;
         let args = QueryArgs {
             request: body,
         };
@@ -361,16 +387,19 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
     expect(useLines(wire["http_auto.rs"]!)).toMatchInlineSnapshot(`
       "use axum::Json;
       use axum::extract::State;
+      use axum::extract::rejection::JsonRejection;
       use axum::http::StatusCode;
       use axum::response::IntoResponse;
       use axum::response::Response;
       use axum::routing::get;
       use axum::routing::post;
       use std::sync::Arc;
+      use crate::_9_wire::models::body_rejected::BodyRejected;
       use crate::_9_wire::models::change::Change;
       use crate::_9_wire::models::column::Column;
       use crate::_9_wire::models::delta::Delta;
       use crate::_9_wire::models::query_request::QueryRequest;
+      use crate::_9_wire::models::server_error::ServerError;
       use crate::_9_wire::models::table::Table;
       use crate::_9_wire::ops_auto::CommitArgs;
       use crate::_9_wire::ops_auto::OpError;
@@ -381,15 +410,18 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
     `);
     expect(useLines(plain["http_auto.rs"]!)).toMatchInlineSnapshot(`
       "use axum::Json;
+      use axum::extract::rejection::JsonRejection;
       use axum::http::StatusCode;
       use axum::response::IntoResponse;
       use axum::response::Response;
       use axum::routing::get;
       use axum::routing::post;
+      use crate::models::body_rejected::BodyRejected;
       use crate::models::change::Change;
       use crate::models::column::Column;
       use crate::models::delta::Delta;
       use crate::models::query_request::QueryRequest;
+      use crate::models::server_error::ServerError;
       use crate::models::table::Table;
       use crate::ops_auto::CommitArgs;
       use crate::ops_auto::OpError;
@@ -399,7 +431,7 @@ describe("wire gaps: sprefa v9 HTTP boundary", () => {
     `);
   });
 
-  it.skipIf(!process.env.CARGO_CHECK)("generated crate: JSON round-trips the openapi3 shapes and maps @statusCode", () => {
+  it.skipIf(!process.env.CARGO_CHECK)("generated crate: JSON round-trips the openapi3 shapes, maps @statusCode, answers 500 and 422 with declared models", () => {
     const dir = mkdtempSync(join(tmpdir(), "wire-crate-"));
     writeCrate(emitCrate(ops.types, wireOptions()), join(dir, "src/_9_wire"));
     writeFileSync(join(dir, "Cargo.toml"), `[package]

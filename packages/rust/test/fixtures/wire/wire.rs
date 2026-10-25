@@ -1,6 +1,7 @@
 // Compiled against the crate 08_wire-gaps.test.tsx generates from wire.tsp:
 // JSON shapes equal the openapi3 schemas, the router serves a trait impl through
-// axum State, and @error models answer with their @statusCode.
+// axum State, @error models answer with their @statusCode, the 500 catch-all
+// answers the declared ServerError shape, and an undecodable body answers BodyRejected.
 
 use std::sync::Arc;
 
@@ -79,12 +80,16 @@ fn json_shapes_match_openapi3() {
 }
 
 async fn call(method: &str, path: &str, body: Option<Value>) -> (u16, Value) {
+    call_text(method, path, body.map(|b| b.to_string())).await
+}
+
+async fn call_text(method: &str, path: &str, body: Option<String>) -> (u16, Value) {
     let app = router(Arc::new(Fixed));
     let request = Request::builder()
         .method(method)
         .uri(path)
         .header("content-type", "application/json")
-        .body(body.map(|b| Body::from(b.to_string())).unwrap_or_else(Body::empty))
+        .body(body.map(Body::from).unwrap_or_else(Body::empty))
         .unwrap();
     let response = app.oneshot(request).await.unwrap();
     let status = response.status().as_u16();
@@ -105,6 +110,10 @@ async fn router_serves_trait_state_and_maps_status_codes() {
         let (status, value) = call(method, path, body).await;
         seen.push(json!({ "route": format!("{method} {path}"), "status": status, "body": value }));
     }
+    for body in ["{\"sql\": 1}", "not json"] {
+        let (status, value) = call_text("POST", "/query", Some(body.into())).await;
+        seen.push(json!({ "route": "POST /query", "status": status, "body": value }));
+    }
     assert_eq!(
         Value::Array(seen),
         json!([
@@ -113,6 +122,8 @@ async fn router_serves_trait_state_and_maps_status_codes() {
             { "route": "POST /query", "status": 500, "body": { "error": "boom" } },
             { "route": "GET /plan", "status": 200, "body": [{ "name": "a", "type": "Text", "mode": "slow-ish", "note": null }] },
             { "route": "POST /commit", "status": 200, "body": { "event": 7, "changes": [{ "rel": "edge", "cells": [1], "diff": -1 }] } },
+            { "route": "POST /query", "status": 422, "body": { "error": "Failed to deserialize the JSON body into the target type: sql: invalid type: integer `1`, expected a string at line 1 column 9" } },
+            { "route": "POST /query", "status": 422, "body": { "error": "Failed to parse the request body as JSON: expected ident at line 1 column 2" } },
         ])
     );
 }

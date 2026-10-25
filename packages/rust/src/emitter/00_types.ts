@@ -114,9 +114,13 @@ export interface UnionDef {
 export type TypeDef = ModelDef | EnumDef | UnionDef;
 
 // An @error model an op can return, with its @statusCode (500 when it declares none).
+// `field`: the model's one property when it is a required string. A 500 model with a
+// `field` is the body of the catch-all `OpError::Internal`; a 422 model with a `field`
+// is the body of a request body the JSON extractor cannot decode.
 export interface ErrorDef {
   name: string;
   status: number;
+  field?: string;
 }
 
 // Operations: the single source both transports (clap, axum) project from.
@@ -145,6 +149,7 @@ export interface OperationDef {
   params: OperationParam[];
   returns?: ModelProperty["type"];
   returnsStream?: boolean; // JsonlStream<T> response: `returns` is the item T
+  errors?: string[]; // @error model names in the op's return union
 }
 
 export interface ServiceDef {
