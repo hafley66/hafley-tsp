@@ -477,11 +477,11 @@ describe("typespec-to-neutral", () => {
   });
 
   it("handles unknown type kinds by falling back to string scalar", () => {
-    const unionType = { kind: "Union", name: "Foo" };
+    const tupleType = { kind: "Tuple", values: [] };
 
     const ns = mockNamespace("Api", [
       mockModel("Thing", [
-        mockModelProperty("data", unionType),
+        mockModelProperty("data", tupleType),
       ]),
     ]);
 

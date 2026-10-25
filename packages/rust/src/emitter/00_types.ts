@@ -6,7 +6,7 @@ export type ParamValue = string | number | boolean;
 
 export interface ModelProperty {
   name: string;
-  type: ScalarType | ArrayType | MapType | ModelRef | EnumRef;
+  type: ScalarType | ArrayType | MapType | ModelRef | EnumRef | UnionRef | NullableType;
   optional?: boolean;
   doc?: string;
   default?: ParamValue;
@@ -54,6 +54,17 @@ export interface EnumRef {
   name: string;
 }
 
+export interface UnionRef {
+  kind: "union";
+  name: string;
+}
+
+// `T | null`: the property is present and may be JSON null (openapi3 `nullable: true`).
+export interface NullableType {
+  kind: "nullable";
+  inner: ModelProperty["type"];
+}
+
 export interface ModelDef {
   kind: "model";
   name: string;
@@ -76,7 +87,37 @@ export interface EnumDef {
   members: EnumMember[];
 }
 
-export type TypeDef = ModelDef | EnumDef;
+// How a union crosses the wire, matching what @typespec/openapi3 declares for it:
+//   untagged  -> `anyOf`                  -> #[serde(untagged)]
+//   literals  -> string `enum`            -> unit variants
+//   adjacent  -> @discriminated (default) -> #[serde(tag, content)]: { "<tag>": "<variant>", "<content>": <value> }
+//   internal  -> @discriminated envelope "none" -> #[serde(tag)]: { "<tag>": "<variant>", ...value }
+export type UnionTagging =
+  | { kind: "untagged" }
+  | { kind: "literals" }
+  | { kind: "adjacent"; tag: string; content: string }
+  | { kind: "internal"; tag: string };
+
+export interface UnionVariant {
+  name: string; // TypeSpec variant name, or the literal value for `literals`
+  type?: ModelProperty["type"]; // absent for `literals`
+}
+
+export interface UnionDef {
+  kind: "union";
+  name: string;
+  doc?: string;
+  tagging: UnionTagging;
+  variants: UnionVariant[];
+}
+
+export type TypeDef = ModelDef | EnumDef | UnionDef;
+
+// An @error model an op can return, with its @statusCode (500 when it declares none).
+export interface ErrorDef {
+  name: string;
+  status: number;
+}
 
 // Operations: the single source both transports (clap, axum) project from.
 // Param and return types reference TypeDefs by name; the ops never define models.
@@ -113,5 +154,6 @@ export interface ServiceDef {
   rootArgs?: string;
   afterHelp?: string;
   argsConflictsWithSubcommands?: boolean;
+  errors?: ErrorDef[];
   operations: OperationDef[];
 }

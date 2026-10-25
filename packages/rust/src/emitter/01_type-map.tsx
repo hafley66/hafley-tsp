@@ -60,8 +60,11 @@ export function mapType(type: ModelProperty["type"], registry: RefkeyRegistry): 
         externalUses: ["std::collections::HashMap", ...key.externalUses, ...val.externalUses],
       };
     }
+    case "nullable":
+      return wrapOptional(mapType(type.inner, registry));
     case "model":
-    case "enum": {
+    case "enum":
+    case "union": {
       const rk = registry.get(type.name);
       if (rk) {
         // Refkey -- Alloy's Reference component resolves this to the right name
@@ -82,4 +85,16 @@ function mapScalar(type: ScalarType): RustType {
 
 export function wrapOptional(rt: RustType): RustType {
   return { code: <>Option&lt;{rt.code}&gt;</>, externalUses: rt.externalUses };
+}
+
+export const RUST_KEYWORDS = new Set([
+  "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern",
+  "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub",
+  "ref", "return", "self", "Self", "static", "struct", "super", "trait", "true", "type", "unsafe",
+  "use", "where", "while", "abstract", "become", "box", "do", "final", "macro", "override", "priv",
+  "typeof", "unsized", "virtual", "yield", "try", "gen",
+]);
+
+export function rustIdent(name: string): string {
+  return RUST_KEYWORDS.has(name) ? `r#${name}` : name;
 }

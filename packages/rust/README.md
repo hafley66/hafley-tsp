@@ -121,7 +121,17 @@ const types = namespaceToTypeDefs(myNamespace);
 const allTypes = namespaceToTypeDefs(myNamespace, { recursive: true });
 ```
 
-Types that the adapter doesn't handle (unions, literals, etc.) fall back to `string`.
+Unions become Rust enums whose serde shape is the schema `@typespec/openapi3` emits for the same union (variant names pass through verbatim):
+
+| TypeSpec | openapi3 | Rust |
+|---|---|---|
+| `union Cell { text: string, int: int64 }` | `anyOf` | `#[serde(untagged)] enum Cell { text(String), int(i64) }` |
+| `@discriminated union Shape { circle: Circle }` | `oneOf` + `discriminator`, `{kind, value}` envelope | `#[serde(tag = "kind", content = "value")]` |
+| `@discriminated(#{ envelope: "none" })` | `oneOf` + `discriminator` on the variant schema | `#[serde(tag = "kind")]` |
+| `"fast" \| "slow-ish"` | string `enum` | unit variants; a value that is no Rust identifier gets `serde(rename)` |
+| `T \| null` | `nullable: true` | `Option<T>` |
+
+Anonymous unions are hoisted to a named enum: `<Model><Prop>` for a property, `<Op><Param>` / `<Op>Returns` for an op. Literals and other unhandled kinds fall back to `string`. Keyword field names emit as raw identifiers (`pub r#type: ColType`), which serde reads and writes as `type`.
 
 ## Type mapping
 
@@ -552,6 +562,19 @@ Endpoints can bind to multiple transports from the same operation definition. Ea
 | resolved (shared) | `State(name): State<T>` | `conn.state::<T>()` |
 
 The domain function stays the same. Only the transport wrappers differ.
+
+## Emitter options
+
+`tsp compile ops.tsp --emit @hafley66/alloy-rs` reads:
+
+| Option | Default | Effect |
+|---|---|---|
+| `transports` | `["cli", "http"]` | `["http"]` emits no `clap` derive or attr and no `cli_auto.rs` |
+| `module-prefix` | `"crate"` | root of every generated `use` path, e.g. `"crate::_9_wire"` |
+| `handler-trait` | unset | name of a generated trait in `ops_auto.rs` (one method per op); `http_auto.rs` handlers take `State<Arc<S>>` and `router<S: Trait>(state: Arc<S>)` serves it. Unset: handlers call `<prefix>::ops::<op>` |
+| `routes` | unset | maps top-level outputs to paths under the output dir |
+
+`@error` models an op returns (`op q(): Table | QueryError`) turn `OpError` into an enum: `Internal(String)` plus one variant per error model with `From<Model>`; `IntoResponse` answers each with its `@statusCode` and the model as the JSON body (500 when the model declares no `@statusCode`, matching openapi3's `default` response). The `@statusCode` property is left out of the Rust struct, as openapi3 leaves it out of the body schema. Without `@error` models `OpError(String)` and its 500 response are unchanged.
 
 ## Running tests
 
