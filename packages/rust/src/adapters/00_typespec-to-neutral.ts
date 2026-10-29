@@ -6,12 +6,14 @@ import type {
   ModelProperty as TspModelProperty,
   Enum as TspEnum,
   Scalar,
+  Union,
   Type,
   Namespace,
   Value,
   Program,
 } from "@typespec/compiler";
-import { getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
+import { getDiscriminatedUnion, getMinValue, getMaxValue, getMinItems, resolveEncodedName } from "@typespec/compiler";
+import { isStatusCode } from "@typespec/http";
 import { isStream } from "@typespec/streams";
 import { getClapArg, getClapModel } from "@hafley/typespec-decorator-def";
 
@@ -26,6 +28,9 @@ import type {
   ModelRef,
   EnumRef,
   ParamValue,
+  UnionDef,
+  UnionRef,
+  UnionVariant,
 } from "../emitter/00_types.js";
 
 export type DocOf = (type: Type) => string | undefined;
@@ -72,8 +77,83 @@ export function paramValue(value: Value | undefined): ParamValue | undefined {
   }
 }
 
+// Where anonymous unions found while mapping a type are hoisted to: `name` is the
+// TypeDef name the union gets (e.g. `Column` + `mode` -> `ColumnMode`); `out`
+// collects the hoisted UnionDefs, keyed by the compiler Union so each hoists once.
+export interface MapContext {
+  program?: Program;
+  name?: string;
+  unions?: Map<Union, UnionDef>;
+}
+
+function isNull(type: Type): boolean {
+  return type.kind === "Intrinsic" && type.name === "null";
+}
+
+function upperFirst(name: string): string {
+  return name ? name[0]!.toUpperCase() + name.slice(1) : name;
+}
+
+// A variant without a declared name (`union U { string, Circle }`) is named after its type.
+function variantName(name: string | symbol, type: Type): string {
+  if (typeof name === "string") return name;
+  if ("name" in type && typeof type.name === "string") return type.name;
+  return type.kind;
+}
+
+// Literal variants inside a non-literal union carry their scalar type.
+function literalScalar(type: Type): ScalarType | undefined {
+  if (type.kind === "String") return { kind: "scalar", name: "string" };
+  if (type.kind === "Boolean") return { kind: "scalar", name: "boolean" };
+  if (type.kind === "Number") return { kind: "scalar", name: Number.isInteger(type.value) ? "int64" : "float64" };
+  return undefined;
+}
+
+export function convertUnion(union: Union, name: string, ctx: MapContext = {}): UnionDef {
+  const variants = [...union.variants.values()].filter(v => !isNull(v.type));
+  if (variants.length > 0 && variants.every(v => v.type.kind === "String")) {
+    return {
+      kind: "union",
+      name,
+      tagging: { kind: "literals" },
+      variants: variants.map(v => ({ name: (v.type as Extract<Type, { kind: "String" }>).value })),
+    };
+  }
+  const discriminated = ctx.program ? getDiscriminatedUnion(ctx.program, union)[0] : undefined;
+  const tagging: UnionDef["tagging"] = !discriminated
+    ? { kind: "untagged" }
+    : discriminated.options.envelope === "none"
+      ? { kind: "internal", tag: discriminated.options.discriminatorPropertyName }
+      : { kind: "adjacent", tag: discriminated.options.discriminatorPropertyName, content: discriminated.options.envelopePropertyName };
+  return {
+    kind: "union",
+    name,
+    tagging,
+    variants: variants.map(v => {
+      const vname = variantName(v.name, v.type);
+      return { name: vname, type: literalScalar(v.type) ?? mapPropertyType(v.type, { ...ctx, name: name + upperFirst(vname) }) } satisfies UnionVariant;
+    }),
+  };
+}
+
+function mapUnion(union: Union, ctx: MapContext): ModelProperty["type"] {
+  const variants = [...union.variants.values()];
+  const nonNull = variants.filter(v => !isNull(v.type));
+  const nullable = nonNull.length < variants.length;
+  const wrap = (inner: ModelProperty["type"]): ModelProperty["type"] => (nullable ? { kind: "nullable", inner } : inner);
+  if (nullable && nonNull.length === 1) return wrap(mapPropertyType(nonNull[0]!.type, ctx));
+  if (union.name) return wrap({ kind: "union", name: union.name } satisfies UnionRef);
+  if (!ctx.unions || !ctx.name) return wrap({ kind: "scalar", name: "string" } satisfies ScalarType);
+  let def = ctx.unions.get(union);
+  if (!def) {
+    def = convertUnion(union, ctx.name, ctx);
+    ctx.unions.set(union, def);
+  }
+  return wrap({ kind: "union", name: def.name });
+}
+
 // Map a TypeSpec Type to our neutral type representation.
-export function mapPropertyType(type: Type): ModelProperty["type"] {
+export function mapPropertyType(type: Type, ctx: MapContext = {}): ModelProperty["type"] {
   switch (type.kind) {
     case "Scalar": {
       const alias = scalarAlias(type as Scalar);
@@ -84,6 +164,9 @@ export function mapPropertyType(type: Type): ModelProperty["type"] {
     case "Enum":
       return { kind: "enum", name: (type as TspEnum).name } satisfies EnumRef;
 
+    case "Union":
+      return mapUnion(type, ctx);
+
     case "Model": {
       const model = type as Model;
 
@@ -91,7 +174,7 @@ export function mapPropertyType(type: Type): ModelProperty["type"] {
       if (model.name === "Array" && model.indexer) {
         return {
           kind: "array",
-          element: mapPropertyType(model.indexer.value),
+          element: mapPropertyType(model.indexer.value, ctx),
         } satisfies ArrayType;
       }
 
@@ -100,7 +183,7 @@ export function mapPropertyType(type: Type): ModelProperty["type"] {
         return {
           kind: "map",
           key: { kind: "scalar", name: resolveScalarName(model.indexer.key) },
-          value: mapPropertyType(model.indexer.value),
+          value: mapPropertyType(model.indexer.value, ctx),
         } satisfies MapType;
       }
 
@@ -108,21 +191,23 @@ export function mapPropertyType(type: Type): ModelProperty["type"] {
       return { kind: "model", name: model.name } satisfies ModelRef;
     }
 
-    // Fallback: treat anything else as a string scalar (unions, literals, etc.)
+    // Fallback: treat anything else as a string scalar (literals, intrinsics)
     default:
       return { kind: "scalar", name: "string" } satisfies ScalarType;
   }
 }
 
-function convertModel(model: Model, docOf?: DocOf, program?: Program): ModelDef {
+function convertModel(model: Model, docOf?: DocOf, program?: Program, unions?: Map<Union, UnionDef>): ModelDef {
   const properties: ModelProperty[] = [];
   for (const [, prop] of model.properties) {
+    // @statusCode is response metadata: openapi3 leaves it out of the body schema.
+    if (program && isStatusCode(program, prop)) continue;
     const doc = docOf?.(prop);
     const value = paramValue(prop.defaultValue);
     const cli = program ? cliOf(program, prop) : undefined;
     properties.push({
       name: prop.name,
-      type: mapPropertyType(prop.type),
+      type: mapPropertyType(prop.type, { program, unions, name: model.name + upperFirst(prop.name) }),
       optional: prop.optional || undefined,
       ...(doc !== undefined ? { doc } : {}),
       ...(value !== undefined ? { default: value } : {}),
@@ -146,6 +231,7 @@ export interface ConvertOptions {
   recursive?: boolean;
   docOf?: DocOf;
   program?: Program;
+  unions?: Map<Union, UnionDef>; // anonymous unions hoisted from property types land here
 }
 
 export function namespaceToTypeDefs(
@@ -158,11 +244,17 @@ export function namespaceToTypeDefs(
     // Skip anonymous/template models
     if (!model.name || model.name === "") continue;
     if (options.program && isStream(options.program, model)) continue;
-    defs.push(convertModel(model, options.docOf, options.program));
+    defs.push(convertModel(model, options.docOf, options.program, options.unions));
   }
 
   for (const [, tspEnum] of ns.enums) {
     defs.push(convertEnum(tspEnum));
+  }
+
+  for (const [, union] of ns.unions ?? []) {
+    if (!union.name) continue;
+    const doc = options.docOf?.(union);
+    defs.push({ ...convertUnion(union, union.name, { program: options.program, unions: options.unions }), ...(doc !== undefined ? { doc } : {}) });
   }
 
   if (options.recursive) {
@@ -179,6 +271,7 @@ export function namespaceToTypeDefs(
 export function programToTypeDefs(
   program: { getGlobalNamespaceType(): Namespace },
   docOf?: DocOf,
+  unions: Map<Union, UnionDef> = new Map(),
 ): TypeDef[] {
   const globalNs = program.getGlobalNamespaceType();
   const defs: TypeDef[] = [];
@@ -186,11 +279,11 @@ export function programToTypeDefs(
   // Decorator declarations are metadata, not domain types.
   for (const [name, childNs] of globalNs.namespaces) {
     if (name === "TypeSpec" || name === "DecoratorDef" || name === "Clap" || name === "Daemon") continue;
-    defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
+    defs.push(...namespaceToTypeDefs(childNs, { recursive: true, docOf, unions, ...( "stateMap" in program ? { program: program as Program } : {}) }));
   }
 
   // Also collect top-level (un-namespaced) types
-  defs.push(...namespaceToTypeDefs(globalNs, { docOf, ...( "stateMap" in program ? { program: program as Program } : {}) }));
+  defs.push(...namespaceToTypeDefs(globalNs, { docOf, unions, ...( "stateMap" in program ? { program: program as Program } : {}) }));
 
-  return defs;
+  return [...defs, ...unions.values()];
 }

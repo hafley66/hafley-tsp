@@ -84,7 +84,11 @@ function clientFile(service: ServiceDef, plans: OpPlan[], bin: string): string {
 
 function inputHandler(plan: OpPlan, bin: string): string {
   const raw = plan.input?.param.streamFormat === "raw";
-  const response = plan.returnsStream ? "jsonl_response(out, diagnostics).await" : "raw_response(out, &diagnostics).await";
+  const response = plan.returnsStream ? "jsonl_response(out, diagnostics, guard).await" : "raw_response(out, &diagnostics).await";
+  const call = raw ? `crate::ops::with_request_input(input, || crate::ops::${plan.fn}(&args))` : `crate::ops::${plan.fn}(&args, input)`;
+  // A streaming op runs under the request's cancel flag; the guard that sets it lives in the handler, then the body.
+  const guard = plan.returnsStream ? "\n    let guard = OpGuard(Arc::new(AtomicBool::new(false)));\n    let cancel = guard.0.clone();" : "";
+  const op = plan.returnsStream ? `crate::ops::with_request_cancel(cancel, || ${call})` : call;
   const header = `x-${bin}-request`;
   const decode = raw ? `let (json, input) = if let Some(encoded) = headers.get(${JSON.stringify(header)}) {
         let json = match base64::engine::general_purpose::STANDARD.decode(encoded.as_bytes()) {
@@ -124,8 +128,8 @@ function inputHandler(plan: OpPlan, bin: string): string {
     let args: ${plan.argsName} = match request.decode() { Ok(args) => args, Err(error) => return bad_request(error) };
     ${raw ? "" : "let input = jsonl_input(body);"}
     let diagnostics = Arc::new(Mutex::new(Vec::new()));
-    let captured = diagnostics.clone();
-    let out = tokio::task::spawn_blocking(move || crate::ops::with_request_context(root, Some(captured), || ${raw ? `crate::ops::with_request_input(input, || crate::ops::${plan.fn}(&args))` : `crate::ops::${plan.fn}(&args, input)`})).await;
+    let captured = diagnostics.clone();${guard}
+    let out = tokio::task::spawn_blocking(move || crate::ops::with_request_context(root, Some(captured), || ${op})).await;
     match out { Ok(out) => ${response}, Err(error) => error_response(OpError(error.to_string(), 1)) }
 }`;
 }

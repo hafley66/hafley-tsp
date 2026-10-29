@@ -2,6 +2,7 @@ import { computed, For, memo, resolve, Refkey } from "@alloy-js/core";
 import { UseRecords } from "../../scopes/03_source-file.js";
 import { RustSourceFileScope } from "../../scopes/03_source-file.js";
 import { RustScope } from "../../scopes/00_rust.js";
+import { RustModuleScope } from "../../scopes/02_module.js";
 import { RustSymbol } from "../../symbols/00_rust.js";
 import { RustNamedTypeSymbol } from "../../symbols/01_named-type.js";
 
@@ -40,6 +41,7 @@ function buildUsePath(sym: RustNamedTypeSymbol): string {
 
   // Find the source file scope that contains this symbol
   // by walking up through its spaces
+  let root = "crate";
   const spaces = sym.spaces;
   if (spaces.length > 0) {
     const space = spaces[0];
@@ -60,8 +62,11 @@ function buildUsePath(sym: RustNamedTypeSymbol): string {
       }
       scope = scope.parent as RustScope | undefined;
     }
+    // The root module scope (CrateDirectory) names the path every `use` starts from.
+    while (scope?.parent) scope = scope.parent as RustScope;
+    if (scope instanceof RustModuleScope) root = scope.name;
   }
 
-  parts.unshift("crate");
+  parts.unshift(root);
   return parts.join("::");
 }

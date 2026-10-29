@@ -1,12 +1,14 @@
 import { For, List, type Children, type Refkey } from "@alloy-js/core";
 import { Attributes } from "../0_primitives/1_Attributes.js";
 import { StructDeclaration, StructField, TupleStructDeclaration } from "../1_declarations/0_StructDeclaration.js";
-import { EnumDeclaration } from "../1_declarations/1_EnumDeclaration.js";
+import { EnumDeclaration, TupleVariant } from "../1_declarations/1_EnumDeclaration.js";
+import { TraitDeclaration, TraitMethod } from "../1_declarations/2_TraitDeclaration.js";
 import { TypeAlias } from "../1_declarations/3_TypeAlias.js";
 import { FunctionDeclaration, type FunctionParam } from "../1_declarations/4_FunctionDeclaration.js";
 import { SourceFile } from "../3_files/0_SourceFile.js";
 import { CodegenPair, ImplCall } from "./1_CodegenPair.js";
 import { axumRoutes, httpField, pascalCase, type OpPlan } from "../../emitter/04_ops-plan.js";
+import { rustIdent } from "../../emitter/01_type-map.js";
 import type { RefkeyRegistry, RustType } from "../../emitter/01_type-map.js";
 import type { ServiceDef } from "../../emitter/00_types.js";
 
@@ -15,6 +17,40 @@ export interface OpsKeys {
   opResult: Refkey;
   root: Refkey;
   cmd: Refkey;
+  handlerTrait: Refkey;
+}
+
+// An @error model as an OpError variant; `key` resolves the model's type.
+export interface ErrorVariant {
+  name: string;
+  status: number;
+  key: Refkey | string;
+  field?: string;
+}
+
+// The @error model that carries a message as its one string field, by status: 500 is the
+// catch-all `OpError::Internal`, 422 a request body the JSON extractor cannot decode.
+function messageModel(errors: ErrorVariant[], status: number, among?: string[]): ErrorVariant | undefined {
+  const found = errors.find(e => e.status === status && (!among || among.includes(e.name)));
+  if (found && !found.field) {
+    throw new Error(`@error model ${found.name} answers ${status}; it needs exactly one property, a required string, so the generated code can build it from a message`);
+  }
+  return found;
+}
+
+function messageBody(model: ErrorVariant, message: string): Children {
+  const field = rustIdent(model.field!);
+  return <>{model.key} {"{"} {field === message ? field : `${field}: ${message}`} {"}"}</>;
+}
+
+// With @error models OpError is an enum whose catch-all is `Internal(String)`;
+// without, it stays the `OpError(String)` tuple struct.
+export function opErrorCtor(errors: ErrorVariant[]): string {
+  return errors.length ? "OpError::Internal" : "OpError";
+}
+
+function opErrorText(errors: ErrorVariant[], value: string): string {
+  return errors.length ? `${value}.to_string()` : `${value}.0`;
 }
 
 function uses(types: (RustType | undefined)[], base: string[]): string[] {
@@ -60,27 +96,67 @@ function opCallArgs(p: OpPlan, input: string): string[] {
   return p.input ? ["&args", input] : ["&args"];
 }
 
+function OpErrorItems(props: { keys: OpsKeys; daemon?: boolean; errors: ErrorVariant[] }): Children[] {
+  if (!props.errors.length) {
+    return [
+      <TupleStructDeclaration name="OpError" refkey={props.keys.opError} derive={["Debug"]} fields={props.daemon ? ["pub String", "pub i32"] : ["pub String"]} />,
+      props.daemon ? "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string(), 1)\n    }\n}" : "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string())\n    }\n}",
+      "impl std::fmt::Display for OpError {\n    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n        f.write_str(&self.0)\n    }\n}",
+    ];
+  }
+  return [
+    <EnumDeclaration name="OpError" refkey={props.keys.opError} derive={["Debug"]}>
+      <List hardline>
+        {[<TupleVariant name="Internal" fields={["String"]} />, ...props.errors.map(e => <TupleVariant name={e.name} fields={[e.key]} />)]}
+      </List>
+    </EnumDeclaration>,
+    "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError::Internal(e.to_string())\n    }\n}",
+    ...props.errors.map(e => <>impl From{"<"}{e.key}{">"} for OpError {"{"}{"\n"}    fn from(e: {e.key}) -&gt; Self {"{"}{"\n"}        OpError::{e.name}(e){"\n"}    {"}"}{"\n"}{"}"}</>),
+    <>impl std::fmt::Display for OpError {"{"}{"\n"}    fn fmt(&amp;self, f: &amp;mut std::fmt::Formatter{"<'_>"}) -&gt; std::fmt::Result {"{"}{"\n"}        match self {"{"}{"\n"}            OpError::Internal(message) =&gt; f.write_str(message),{"\n"}{props.errors.map(e => <>            OpError::{e.name}(body) =&gt; f.write_str(&amp;serde_json::to_string(body).map_err(|_| std::fmt::Error)?),{"\n"}</>)}        {"}"}{"\n"}    {"}"}{"\n"}{"}"}</>,
+  ];
+}
+
+// The handler trait: one method per op, same args and result as the free fns in ops.rs.
+function HandlerTrait(props: { name: string; plans: OpPlan[]; keys: OpsKeys }) {
+  return (
+    <TraitDeclaration name={props.name} refkey={props.keys.handlerTrait} supertraits={["Send", "Sync", "'static"]}>
+      <List hardline>
+        {props.plans.map(p => {
+          const life = p.returnsStream ? "'a " : "";
+          const params = [{ name: "args", type: <>&amp;{life}{p.argsKey}</> }];
+          if (p.input) params.push({ name: "input", type: <>impl Iterator{"<"}Item = {itemResult(props.keys, p.input.cliType)}{">"} + Send + 'static</> });
+          return p.returnsStream ? (
+            <TraitMethod name={`${p.fn}<'a>`} params={[{ name: "&'a self", type: undefined }, ...params]} returns={<>impl Iterator{"<"}Item = {itemResult(props.keys, p.returns)}{">"} + 'a</>} />
+          ) : (
+            <TraitMethod name={p.fn} selfParam="&" params={params} returns={itemResult(props.keys, p.returns)} />
+          );
+        })}
+      </List>
+    </TraitDeclaration>
+  );
+}
+
 // ops_auto.rs: the request shape per op, plus the error both transports share.
-export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: boolean }) {
+export function OpsAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; daemon?: boolean; cli?: boolean; handlerTrait?: string; errors?: ErrorVariant[] }) {
   const fieldTypes = props.plans.flatMap(p => p.fields.map(f => f.cliType));
+  const cli = props.cli !== false;
   return (
     <SourceFile path="ops_auto.rs" externalUses={uses(fieldTypes, [])}>
       <Items items={[
-        <TupleStructDeclaration name="OpError" refkey={props.keys.opError} derive={["Debug"]} fields={props.daemon ? ["pub String", "pub i32"] : ["pub String"]} />,
-        props.daemon ? "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string(), 1)\n    }\n}" : "impl<E: std::error::Error> From<E> for OpError {\n    fn from(e: E) -> Self {\n        OpError(e.to_string())\n    }\n}",
-        "impl std::fmt::Display for OpError {\n    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n        f.write_str(&self.0)\n    }\n}",
+        ...OpErrorItems({ keys: props.keys, daemon: props.daemon, errors: props.errors ?? [] }),
         <TypeAlias name="OpResult" refkey={props.keys.opResult} typeParams={[{ name: "T" }]}>
           Result{"<"}T, {props.keys.opError}{">"}
         </TypeAlias>,
         ...props.plans.map(p => (
-          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={["clap::Args", "Debug", "Clone", "serde::Serialize", ...(props.daemon ? ["serde::Deserialize"] : []), ...(p.fields.length ? [] : ["Default"])]} attrs={p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
+          <StructDeclaration name={p.argsName} refkey={p.argsKey} derive={[...(cli ? ["clap::Args"] : []), "Debug", "Clone", "serde::Serialize", ...(props.daemon ? ["serde::Deserialize"] : []), ...(p.fields.length ? [] : ["Default"])]} attrs={cli && p.op.requiredOneOf?.length ? [`command(group(clap::ArgGroup::new(${JSON.stringify(p.op.requiredOneOfName ?? "required_one_of")}).required(true).args([${p.op.requiredOneOf.map(n => JSON.stringify(n)).join(", ")}])))`] : undefined} braced>
             {p.fields.length > 0 ? (
               <List hardline>
-                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...f.cliAttrs, ...(props.daemon && f.role === "flatten" ? ["serde(flatten)"] : []), ...(props.daemon && f.param.cli?.skip ? ["serde(skip)"] : []), ...(props.daemon && f.param.default !== undefined ? [`serde(default = ${JSON.stringify(serdeDefaultName(p, f))})`] : props.daemon && (f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean") ? ["serde(default)"] : [])]} />)}
+                {p.fields.map(f => <StructField name={f.field} type={f.cliType.code} attrs={[...(cli ? f.cliAttrs : f.cliAttrs.filter(a => a.startsWith("doc = "))), ...(props.daemon && f.role === "flatten" ? ["serde(flatten)"] : []), ...(props.daemon && f.param.cli?.skip ? ["serde(skip)"] : []), ...(props.daemon && f.param.default !== undefined ? [`serde(default = ${JSON.stringify(serdeDefaultName(p, f))})`] : props.daemon && (f.param.type.kind === "array" || f.param.type.kind === "scalar" && f.param.type.name === "boolean") ? ["serde(default)"] : [])]} />)}
               </List>
             ) : undefined}
           </StructDeclaration>
         )),
+        props.handlerTrait && <HandlerTrait name={props.handlerTrait} plans={props.plans} keys={props.keys} />,
         ...(props.daemon ? props.plans.flatMap(p => p.fields.filter(f => f.param.default !== undefined).map(f => `fn ${serdeDefaultName(p, f)}() -> ${f.cliType.code} { serde_json::from_value(serde_json::json!(${JSON.stringify(f.param.default)})).expect("TypeSpec default matches Rust field") }`)) : []),
       ]} />
     </SourceFile>
@@ -135,7 +211,8 @@ function cliArm(keys: OpsKeys, p: OpPlan, optional: boolean): Children {
 }
 
 // cli_auto.rs: clap derive tree; run() writes JSON (JSONL for streams) and reads stdin JSONL.
-export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string; service: ServiceDef; registry: RefkeyRegistry; implPath: string }) {
+export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string; service: ServiceDef; registry: RefkeyRegistry; implPath: string; errors?: ErrorVariant[] }) {
+  const errors = props.errors ?? [];
   const about = props.service.doc !== undefined ? `, about = ${JSON.stringify(props.service.doc)}` : "";
   const root = props.service.rootArgs ? props.registry.get(props.service.rootArgs) : undefined;
   const rootPlan = props.service.daemon && props.service.rootArgs
@@ -202,7 +279,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
         match item {
             Ok(value) => { write_json(out, &value)?; rows += 1; }
             Err(error) => {
-                write_json(out, &serde_json::json!({"error": &error.0}))?;
+                write_json(out, &serde_json::json!({"error": &${opErrorText(errors, "error")}}))?;
                 write_json(out, &serde_json::json!({"complete": false, "rows": rows}))?;
                 return Err(error);
             }
@@ -220,7 +297,7 @@ export function CliAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; bin: string
 
 const AXUM_VERB: Record<string, string> = { get: "get", post: "post", put: "put", patch: "patch", delete: "delete", head: "head" };
 
-const JSONL_RESPONSE = `fn jsonl_response(produce: impl FnOnce(&mut dyn FnMut(OpResult<Vec<u8>>) -> bool) + Send + 'static) -> Response {
+const jsonlResponse = (errors: ErrorVariant[]) => `fn jsonl_response(produce: impl FnOnce(&mut dyn FnMut(OpResult<Vec<u8>>) -> bool) + Send + 'static) -> Response {
     let (tx, rx) = tokio::sync::mpsc::channel::<Result<Bytes, std::io::Error>>(64);
     tokio::task::spawn_blocking(move || {
         let mut rows = 0u64;
@@ -231,7 +308,7 @@ const JSONL_RESPONSE = `fn jsonl_response(produce: impl FnOnce(&mut dyn FnMut(Op
                 Ok(bytes) => { rows += 1; bytes }
                 Err(error) => {
                     failed = true;
-                    serde_json::to_vec(&serde_json::json!({"error": error.0})).expect("error row serializes")
+                    serde_json::to_vec(&serde_json::json!({"error": ${opErrorText(errors, "error")}})).expect("error row serializes")
                 }
             };
             bytes.push(b'\\n');
@@ -264,16 +341,30 @@ const JSONL_INPUT = `fn jsonl_input<T: DeserializeOwned + Send + 'static>(body: 
     std::iter::from_fn(move || rx.blocking_recv())
 }`;
 
-// http_auto.rs: one axum handler per op (extractors -> <Op>Args -> crate::ops on the blocking pool) and the Router.
-export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: RefkeyRegistry; implPath: string }) {
+function opErrorResponse(keys: OpsKeys, errors: ErrorVariant[]): Children {
+  if (!errors.length) {
+    return <>impl IntoResponse for {keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"{"}"error": self.0{"}"}))).into_response(){"\n"}    {"}"}{"\n"}{"}"}</>;
+  }
+  const arms = errors.map(e => `            OpError::${e.name}(body) => (StatusCode::from_u16(${e.status}).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), Json(body)).into_response(),\n`).join("");
+  const internal = messageModel(errors, 500);
+  const internalBody = internal ? messageBody(internal, "error") : <>serde_json::json!({"{"}"error": error{"}"})</>;
+  return <>impl IntoResponse for {keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        match self {"{"}{"\n"}            OpError::Internal(error) =&gt; (StatusCode::INTERNAL_SERVER_ERROR, Json({internalBody})).into_response(),{"\n"}{arms}        {"}"}{"\n"}    {"}"}{"\n"}{"}"}</>;
+}
+
+// http_auto.rs: one axum handler per op (extractors -> <Op>Args -> the op impl on the blocking pool) and the Router.
+// The op impl is `<prefix>::ops::<op>` or, with `handlerTrait`, a method on the router's `State<Arc<S>>`.
+export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: RefkeyRegistry; implPath: string; handlerTrait?: string; errors?: ErrorVariant[] }) {
+  const errors = props.errors ?? [];
+  const stateful = !!props.handlerTrait;
   const handlers = props.plans.map(p => {
-    const fields = p.fields.map(f => ({ plan: f, http: httpField(f, props.registry) }));
+    const fields = p.fields.map(f => ({ plan: f, http: httpField(f, props.registry, opErrorCtor(errors)) }));
     const pathFields = fields.filter(f => f.plan.param.source === "path");
     const queryFields = fields.filter(f => f.plan.param.source === "query");
     const headerFields = fields.filter(f => f.plan.param.source === "header");
     const body = fields.find(f => f.plan.param.source === "body");
     const optionalPath = pathFields.some(f => f.plan.param.optional);
-    return { p, fields, pathFields, queryFields, headerFields, body, optionalPath };
+    const rejection = body ? messageModel(errors, 422, p.op.errors ?? []) : undefined;
+    return { p, fields, pathFields, queryFields, headerFields, body, optionalPath, rejection };
   });
   const streamsOut = props.plans.some(p => p.returnsStream);
   const streamsIn = props.plans.some(p => p.input);
@@ -285,13 +376,15 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
         path="http_auto.rs"
         externalUses={uses(structTypes.concat(props.plans.map(p => p.returns)), [
           "axum::Json",
-          "axum::extract::Path",
+          ...(handlers.some(h => h.pathFields.length) ? ["axum::extract::Path"] : []),
+          ...(handlers.some(h => h.rejection) ? ["axum::extract::rejection::JsonRejection"] : []),
+          ...(stateful ? ["axum::extract::State", "std::sync::Arc"] : []),
           "axum::http::StatusCode",
           ...(handlers.some(h => h.headerFields.length) ? ["axum::http::HeaderMap"] : []),
           "axum::response::IntoResponse",
           "axum::response::Response",
-          "axum_extra::extract::Query",
-          "serde::Deserialize",
+          ...(handlers.some(h => h.queryFields.length) ? ["axum_extra::extract::Query"] : []),
+          ...(handlers.some(h => h.pathFields.length || h.queryFields.length) ? ["serde::Deserialize"] : []),
           ...verbs,
           ...(streamsOut || streamsIn ? ["axum::body::Body"] : []),
           ...(streamsOut ? ["axum::body::Bytes", "axum::http::header::CONTENT_TYPE"] : []),
@@ -299,8 +392,8 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
         ])}
       >
         <Items items={[
-          <>impl IntoResponse for {props.keys.opError} {"{"}{"\n"}    fn into_response(self) -&gt; Response {"{"}{"\n"}        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"{"}"error": self.0{"}"}))).into_response(){"\n"}    {"}"}{"\n"}{"}"}</>,
-          streamsOut && JSONL_RESPONSE,
+          opErrorResponse(props.keys, errors),
+          streamsOut && jsonlResponse(errors),
           streamsIn && JSONL_INPUT,
           ...handlers.flatMap(h => {
             const out: Children[] = [];
@@ -327,6 +420,7 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
               );
             }
             const params: FunctionParam[] = [
+              ...(stateful ? [{ name: "State(ops)", type: "State<Arc<S>>" }] : []),
               ...(h.pathFields.length === 0
                 ? []
                 : h.optionalPath
@@ -334,10 +428,11 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
                   : [{ name: "Path(path)", type: <>Path{"<"}{h.p.variant}Path{">"}</> }]),
               ...(h.queryFields.length === 0 ? [] : [{ name: "Query(query)", type: <>Query{"<"}{h.p.variant}Query{">"}</> }]),
               ...(h.headerFields.length === 0 ? [] : [{ name: "headers", type: "HeaderMap" }]),
-              ...(h.body ? [{ name: "Json(body)", type: <>Json{"<"}{h.body.plan.cliType.code}{">"}</> }] : []),
+              ...(h.body && h.rejection ? [{ name: "body", type: <>Result{"<"}Json{"<"}{h.body.plan.cliType.code}{">"}, JsonRejection{">"}</> }] : []),
+              ...(h.body && !h.rejection ? [{ name: "Json(body)", type: <>Json{"<"}{h.body.plan.cliType.code}{">"}</> }] : []),
               ...(h.p.input ? [{ name: "body", type: "Body" }] : []),
             ];
-            const call = <ImplCall fn={h.p.fn} args={opCallArgs(h.p, "input")} />;
+            const call = stateful ? <>ops.{h.p.fn}({opCallArgs(h.p, "input").join(", ")})</> : <ImplCall fn={h.p.fn} args={opCallArgs(h.p, "input")} />;
             const invoke = h.p.returnsStream ? (
               <>jsonl_response(move |emit| {"{"}{"\n"}    for item in {call} {"{"}{"\n"}        if !emit(item.and_then(|v| Ok(serde_json::to_vec(&amp;v)?))) {"{"}{"\n"}            break;{"\n"}        {"}"}{"\n"}    {"}"}{"\n"}{"}"})</>
             ) : (
@@ -347,10 +442,12 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
               <FunctionDeclaration
                 name={h.p.fn}
                 async
+                typeParams={stateful ? [{ name: "S", bounds: [props.keys.handlerTrait] }] : undefined}
                 params={params}
                 returns={h.p.returnsStream ? "Response" : <>{props.keys.opResult}{"<"}Json{"<"}{h.p.returns?.code ?? "()"}{">>"}</>}
               >
                 {h.optionalPath ? <>let path = path.map(|Path(p)| p).unwrap_or_default();{"\n"}</> : null}
+                {h.rejection ? <>let Json(body) = body.map_err(|rejection| OpError::{h.rejection.name}({messageBody(h.rejection, "rejection.body_text()")}))?;{"\n"}</> : null}
                 let args = {h.p.argsKey} {"{"}{"\n"}
                 <List hardline>{h.fields.map(f => <>    {f.plan.field}: {f.http.expr},</>)}</List>
                 {"\n};\n"}
@@ -360,13 +457,19 @@ export function HttpAutoFile(props: { plans: OpPlan[]; keys: OpsKeys; registry: 
             );
             return out;
           }),
-          <FunctionDeclaration name="router" returns="axum::Router">
+          <FunctionDeclaration
+            name="router"
+            typeParams={stateful ? [{ name: "S", bounds: [props.keys.handlerTrait] }] : undefined}
+            params={stateful ? [{ name: "state", type: "Arc<S>" }] : undefined}
+            returns="axum::Router"
+          >
             axum::Router::new(){"\n"}
             <List hardline>
               {props.plans.flatMap(p =>
-                axumRoutes(p.op).map(route => <>    .route({JSON.stringify(route)}, {AXUM_VERB[p.op.verb]}({p.fn}))</>),
+                axumRoutes(p.op).map(route => <>    .route({JSON.stringify(route)}, {AXUM_VERB[p.op.verb]}({p.fn}{stateful ? "::<S>" : ""}))</>),
               )}
             </List>
+            {stateful ? <>{"\n"}    .with_state(state)</> : null}
           </FunctionDeclaration>,
         ]} />
       </SourceFile>

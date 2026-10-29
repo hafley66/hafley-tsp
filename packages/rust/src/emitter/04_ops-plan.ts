@@ -2,7 +2,7 @@
 // components in 4_codegen/7_OpsTransports.tsx only render what this decides.
 
 import type { Refkey } from "@alloy-js/core";
-import { mapType, wrapOptional, type RefkeyRegistry, type RustType } from "./01_type-map.js";
+import { mapType, wrapOptional, rustIdent, type RefkeyRegistry, type RustType } from "./01_type-map.js";
 import type {
   EnumDef,
   ModelDef,
@@ -13,18 +13,6 @@ import type {
   ServiceDef,
   TypeDef,
 } from "./00_types.js";
-
-const RUST_KEYWORDS = new Set([
-  "as", "async", "await", "break", "const", "continue", "crate", "dyn", "else", "enum", "extern",
-  "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub",
-  "ref", "return", "self", "Self", "static", "struct", "super", "trait", "true", "type", "unsafe",
-  "use", "where", "while", "abstract", "become", "box", "do", "final", "macro", "override", "priv",
-  "typeof", "unsized", "virtual", "yield", "try", "gen",
-]);
-
-export function rustIdent(name: string): string {
-  return RUST_KEYWORDS.has(name) ? `r#${name}` : name;
-}
 
 export function pascalCase(name: string): string {
   return name
@@ -234,7 +222,8 @@ function stringType(): RustType {
   return { code: "String", externalUses: [] };
 }
 
-export function httpField(plan: FieldPlan, registry: RefkeyRegistry): HttpField {
+// `opError` constructs the catch-all error: `OpError` (tuple struct) or `OpError::Internal` (with @error models).
+export function httpField(plan: FieldPlan, registry: RefkeyRegistry, opError = "OpError"): HttpField {
   const p = plan.param;
   const f = plan.field;
   if (p.source === "path") {
@@ -253,13 +242,13 @@ export function httpField(plan: FieldPlan, registry: RefkeyRegistry): HttpField 
     const base = mapType(p.type, registry);
     if (p.type.kind === "array") {
       const element = mapType(p.type.element, registry).code;
-      const expr = `headers.get_all(${JSON.stringify(p.headerName ?? p.name)}).iter().map(|v| v.to_str().map_err(|e| OpError(e.to_string()))?.parse::<${element}>().map_err(|e| OpError(e.to_string()))).collect::<Result<Vec<${element}>, OpError>>()?`;
+      const expr = `headers.get_all(${JSON.stringify(p.headerName ?? p.name)}).iter().map(|v| v.to_str().map_err(|e| ${opError}(e.to_string()))?.parse::<${element}>().map_err(|e| ${opError}(e.to_string()))).collect::<Result<Vec<${element}>, OpError>>()?`;
       return { field: f, structType: undefined, wildcard: false, expr };
     }
-    const read = `headers.get(${JSON.stringify(p.headerName ?? p.name)}).and_then(|v| v.to_str().ok()).map(|v| v.parse::<${base.code}>()).transpose().map_err(|e| OpError(e.to_string()))?`;
+    const read = `headers.get(${JSON.stringify(p.headerName ?? p.name)}).and_then(|v| v.to_str().ok()).map(|v| v.parse::<${base.code}>()).transpose().map_err(|e| ${opError}(e.to_string()))?`;
     const expr = p.default !== undefined
       ? `${read}.unwrap_or(${rustLiteral(p.default, p.type)})`
-      : isBool(p.type) ? `${read}.unwrap_or(false)` : p.optional ? read : `${read}.ok_or_else(|| OpError(${JSON.stringify(`missing header ${p.headerName ?? p.name}`)}.into()))?`;
+      : isBool(p.type) ? `${read}.unwrap_or(false)` : p.optional ? read : `${read}.ok_or_else(|| ${opError}(${JSON.stringify(`missing header ${p.headerName ?? p.name}`)}.into()))?`;
     return { field: f, structType: undefined, wildcard: false, expr };
   }
   if (p.source === "query") {
